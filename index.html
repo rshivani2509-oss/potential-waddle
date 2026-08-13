@@ -1052,8 +1052,13 @@ function maybeAutoSuggestEnergyFromSleep(date){
 // ---- What's New / Changelog ----
 // A running log of feature additions, newest first. Bump WHATS_NEW_VERSION whenever a new entry
 // is added at the top — that's what triggers the "new" badge for anyone who hasn't seen it yet.
-const WHATS_NEW_VERSION = 5;
+const WHATS_NEW_VERSION = 6;
 const WHATS_NEW = [
+  { version: 6, date: '2026-08-13', items: [
+    '🔥 Class 11 7-day backlog cycles now stay on one chapter for the full week.',
+    '🎯 Added a weekly chapter mission with completion, accuracy, questions, PYQs, mistakes, understanding, exam tags and priority score.',
+    '📊 Backlog queue now shows more preparation data so the next action is clearer.'
+  ]},
   { version: 5, date: '2026-08-12', items: [
     '☁️ Optional Firebase cloud sync — sign in with Google to sync Pragati across devices while keeping local offline storage.',
   ]},
@@ -1289,10 +1294,10 @@ async function attachCloudUser(user, showToast=false){
       if(useCloud){
         cloudApplying=true; DATA=migrateData(cloudData); localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); cloudApplying=false;
       } else {
-        await cloudRef.set(DATA);
+        await cloudRef.set(firebaseSafeData(DATA));
       }
     } else if(localMeaningful){
-      await cloudRef.set(DATA);
+      await cloudRef.set(firebaseSafeData(DATA));
     }
     cloudLastRemoteWrite=Date.now();
     cloudReady=true;
@@ -1346,23 +1351,45 @@ async function signInWithGoogle(){
 async function cloudSignOut(){
   try{ await firebaseAuth?.signOut(); toast('Signed out of cloud sync. Local data is still safe on this device.'); }catch(e){ toast('⚠️ Could not sign out.'); }
 }
+
+function firebaseSafeData(value){
+  // Firebase Realtime Database rejects undefined values and non-finite numbers.
+  // Pragati intentionally uses undefined for some optional fields, so strip those
+  // fields before sending the in-memory DATA object to Firebase.
+  if(value === undefined) return undefined;
+  if(typeof value === 'number' && !Number.isFinite(value)) return null;
+  if(value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if(Array.isArray(value)){
+    return value.map(firebaseSafeData).map(v => v === undefined ? null : v);
+  }
+  if(typeof value === 'object'){
+    const out = {};
+    for(const [k,v] of Object.entries(value)){
+      const safe = firebaseSafeData(v);
+      if(safe !== undefined) out[k] = safe;
+    }
+    return out;
+  }
+  return undefined;
+}
+
 function scheduleCloudSave(){
   if(!cloudReady || !cloudRef || cloudApplying) return;
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer=setTimeout(async()=>{
     try{
       cloudLastLocalWrite=Date.now();
-      await cloudRef.set(DATA);
+      await cloudRef.set(firebaseSafeData(DATA));
       cloudLastRemoteWrite=Date.now();
       render();
-    }catch(e){ console.error('Cloud save failed',e); toast('⚠️ Cloud sync failed — your local data is still saved.'); }
+    }catch(e){ console.error('Cloud save failed',e); toast('⚠️ Cloud sync failed: '+(e?.message||e?.code||'unknown error')+' — local data is still saved.'); }
   },700);
 }
 function forceCloudSync(){
   if(!cloudReady || !cloudRef){ toast('☁️ Sign in to cloud sync first.'); return; }
   clearTimeout(cloudSaveTimer);
   cloudLastLocalWrite=Date.now();
-  cloudRef.set(DATA).then(()=>{ cloudLastRemoteWrite=Date.now(); toast('☁️ Synced now.'); render(); }).catch(()=>toast('⚠️ Cloud sync failed.'));
+  cloudRef.set(firebaseSafeData(DATA)).then(()=>{ cloudLastRemoteWrite=Date.now(); toast('☁️ Synced now.'); render(); }).catch(e=>{ console.error('Cloud force-sync failed',e); toast('⚠️ Cloud sync failed: '+(e?.message||e?.code||'unknown error')); });
 }
 function openCloudRules(){
   openModal(`
@@ -5391,18 +5418,85 @@ function ensureBacklogWeek(){
   return DATA.backlog;
 }
 function backlogWorkflowRows(){
-  ensureBacklogWeek(); const top=getBacklogChapters().slice(0,4); const pick=i=>top[Math.min(i,Math.max(0,top.length-1))];
+  // A 7-day backlog cycle is intentionally ONE chapter only.
+  // The method changes each day; the chapter does not.
+  ensureBacklogWeek();
+  const c=getBacklogChapters()[0];
   const actions=[
-    {day:'Mon',label:'One difficult chapter',icon:'📘',minutes:60,pick:0},
-    {day:'Tue',label:'Question bank',icon:'✏️',minutes:45,pick:0},
-    {day:'Wed',label:'NCERT re-reading',icon:'📗',minutes:30,pick:1},
-    {day:'Thu',label:'PYQ revision',icon:'📄',minutes:45,pick:1},
-    {day:'Fri',label:'Error review',icon:'🧯',minutes:30,pick:0},
-    {day:'Sat',label:'Mini test',icon:'📊',minutes:45,pick:2},
-    {day:'Sun',label:'Light revision + shift new backlog',icon:'☀️',minutes:30,pick:3}
+    {day:'Mon',label:'Learn + build foundation',icon:'📘',minutes:60},
+    {day:'Tue',label:'NCERT + notes + active recall',icon:'📗',minutes:45},
+    {day:'Wed',label:'Question bank',icon:'✏️',minutes:45},
+    {day:'Thu',label:'PYQs + timed practice',icon:'📄',minutes:45},
+    {day:'Fri',label:'Error review + reattempt',icon:'🧯',minutes:30},
+    {day:'Sat',label:'Mini test + analysis',icon:'📊',minutes:45},
+    {day:'Sun',label:'Active recall + weekly checkpoint',icon:'☀️',minutes:30}
   ];
-  return actions.map(a=>{const c=pick(a.pick);return {...a,chapter:c?.name||'Choose a backlog chapter',subject:c?.subject||'—'};});
+  return actions.map(a=>({
+    ...a,
+    chapter:c?.name||'Choose a backlog chapter',
+    subject:c?.subject||'—',
+    chapterId:c?.id||null
+  }));
 }
+
+function backlogWeeklyMission(c){
+  if(!c) return {goal:'Choose a Class 11 backlog chapter',detail:'Generate the workflow after a backlog chapter is available.'};
+  const stage=backlogStage(c);
+  if(stage.key==='foundation') return {
+    goal:'Reach Question Bank stage',
+    detail:'Finish the core lecture/NCERT foundation, make concise notes, then start basic questions.'
+  };
+  if(stage.key==='questions') return {
+    goal:'Reach PYQ stage',
+    detail:'Build to at least 30 chapter questions with proper error marking before moving on.'
+  };
+  if(stage.key==='pyq') return {
+    goal:'Reach Error Review stage',
+    detail:'Complete at least 10 PYQs, record mistakes, and reattempt the wrong ones.'
+  };
+  if(stage.key==='errors') return {
+    goal:'Push accuracy to 70%+',
+    detail:'Redo every recorded mistake and retest the weak concepts before counting the chapter as stable.'
+  };
+  return {
+    goal:'Stabilise with revision + testing',
+    detail:'Complete active recall, timed questions and a final revision checkpoint before leaving the chapter.'
+  };
+}
+
+function backlogChapterStatsHTML(c){
+  if(!c) return '';
+  const completion=chapterCompletion(c);
+  const accuracy=Number(c.accuracy)||0;
+  const stale=c.lastRevised ? daysBetween(c.lastRevised,todayStr()) : null;
+  const hy=highYieldTags(c.subject,c.name);
+  const exams=Object.entries(c.examTags||{}).filter(([,v])=>v).map(([k])=>k);
+  const mission=backlogWeeklyMission(c);
+  return `<div class="card mb-16" style="background:var(--sky-soft);border:none;">
+    <div class="card-head">
+      <h3>🎯 This Week's Backlog Mission</h3>
+      <span class="tag tag-med">ONE chapter · 7 days</span>
+    </div>
+    <div style="font-size:18px;font-weight:750;">${esc(c.subject)} — ${esc(c.name)}</div>
+    <div class="text-sm mt-4"><b>Weekly target:</b> ${esc(mission.goal)}</div>
+    <div class="text-xs muted mt-4">${esc(mission.detail)}</div>
+    <div class="grid grid-3 mt-12">
+      <div><div class="eyebrow">Completion</div><b>${completion}%</b></div>
+      <div><div class="eyebrow">Accuracy</div><b>${accuracy?accuracy+'%':'Not tested'}</b></div>
+      <div><div class="eyebrow">Questions</div><b>${c.questions||0}</b></div>
+      <div><div class="eyebrow">PYQs</div><b>${c.pyqCount||0}</b></div>
+      <div><div class="eyebrow">Mistakes</div><b>${c.mistakes||0}</b></div>
+      <div><div class="eyebrow">Understanding</div><b>${c.understanding||0}%</b></div>
+    </div>
+    <div class="text-xs faint mt-10">
+      ${c.lastRevised ? `Last revised: ${esc(c.lastRevised)} · ${stale} day${stale===1?'':'s'} ago` : 'Last revised: never'}
+      ${exams.length?` · Exams: ${exams.join(' · ')}`:''}
+      ${hy.length?` · 🔥 ${hy.join(' + ')}`:''}
+      · Priority score: ${c.score}
+    </div>
+  </div>`;
+}
+
 function generateWeeklyBacklogWorkflow(){
   const week=ensureBacklogWeek(), dates=backlogWeekDates(week.weekStart), actions=backlogWorkflowRows();
   DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>!(b.backlogWorkflow && b.weekStart===week.weekStart && !b.done));
@@ -5413,7 +5507,12 @@ function generateWeeklyBacklogWorkflow(){
 function rolloverIncompleteBacklog(){
   const week=ensureBacklogWeek(), pending=(DATA.plannerEvents||[]).filter(b=>b.backlogWorkflow&&b.weekStart===week.weekStart&&!b.done&&b.date<=todayStr());
   if(!pending.length) return toast('No incomplete backlog blocks to roll over.');
-  const next=new Date(week.weekStart+'T00:00:00'); next.setDate(next.getDate()+7); const nextStart=next.toISOString().slice(0,10); pending.forEach(b=>{b.date=nextStart;b.weekStart=nextStart;b.generated=true;b.rescheduled=(b.rescheduled||0)+1;}); week.rolloverCount=(week.rolloverCount||0)+pending.length; save(); render(); toast(`↪ Rolled ${pending.length} unfinished backlog block${pending.length===1?'':'s'} into next week.`);
+  const next=new Date(week.weekStart+'T00:00:00'); next.setDate(next.getDate()+7); const nextStart=next.toISOString().slice(0,10); pending.forEach(b=>{
+    const oldDate=new Date(b.date+'T00:00:00'), oldStart=new Date(week.weekStart+'T00:00:00');
+    const dayOffset=Math.max(0,Math.min(6,Math.round((oldDate-oldStart)/86400000)));
+    const d=new Date(nextStart+'T00:00:00'); d.setDate(d.getDate()+dayOffset);
+    b.date=d.toISOString().slice(0,10); b.weekStart=nextStart; b.generated=true; b.rescheduled=(b.rescheduled||0)+1;
+  }); week.rolloverCount=(week.rolloverCount||0)+pending.length; save(); render(); toast(`↪ Rolled ${pending.length} unfinished backlog block${pending.length===1?'':'s'} into next week.`);
 }
 function addBacklogBlockToday(){
   const week=ensureBacklogWeek(), top=getBacklogChapters()[0]; if(!top) return toast('🎉 No Class 11 backlog detected.');
@@ -5427,9 +5526,34 @@ function backlogTodayHTML(){
   return `<div class="card mb-16" style="background:linear-gradient(135deg,var(--coral-soft),var(--sky-soft));border:none;"><div class="flex-between flex-wrap gap-10" style="align-items:center;"><div><div class="text-xs faint" style="text-transform:uppercase;font-weight:700;letter-spacing:.05em;">🔥 Class 11 Backlog</div><div style="font-size:17px;font-weight:700;margin-top:3px;">${esc(top.subject)} — ${esc(top.name)}</div><div class="text-xs muted mt-4">Today: ${esc(top.stage.label)} · Week budget: ${week.targetHours}h · ${Math.round(week.ratio*100)}% backlog allocation · ${Math.round(todayBacklog)} min already planned</div></div><div class="flex gap-8 flex-wrap"><button class="btn btn-primary btn-sm" onclick="addBacklogBlockToday()">+ Add ${target}-min block</button><a class="btn btn-outline btn-sm" href="#backlog">Open Backlog Engine</a></div></div></div>`;
 }
 function viewBacklog(){
-  const week=ensureBacklogWeek(), budget=backlogWeekBudget(week.weekStart), rows=getBacklogChapters().slice(0,15), workflow=backlogWorkflowRows();
-  return `<div class="section-desc">Class 11 recovery without sacrificing Class 12. The engine prioritizes prerequisites, weakness, stale revision and unfinished chapters, then gives backlog only a controlled share of available study capacity.</div><div class="grid grid-4 mb-16"><div class="card center"><div class="eyebrow">Backlog left</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${rows.length}</div><div class="text-xs muted">active Class 11 chapters</div></div><div class="card center"><div class="eyebrow">This week</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${budget.targetHours}h</div><div class="text-xs muted">${Math.round(budget.ratio*100)}% backlog budget</div></div><div class="card center"><div class="eyebrow">Capacity</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${Math.round(budget.capacityMinutes/60*10)/10}h</div><div class="text-xs muted">available / unscheduled</div></div><div class="card center"><div class="eyebrow">Rollover</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${week.rolloverCount||0}</div><div class="text-xs muted">unfinished blocks moved</div></div></div><div class="card mb-16" style="background:var(--bg-soft);"><div class="card-head"><h3>🗓️ 7-Day Backlog Workflow</h3><div class="flex gap-8"><button class="btn btn-primary btn-sm" onclick="generateWeeklyBacklogWorkflow()">Generate into Planner</button><button class="btn btn-outline btn-sm" onclick="rolloverIncompleteBacklog()">↪ Rollover</button></div></div><div class="grid grid-2">${workflow.map(a=>`<div class="list-item"><span class="txt"><b>${a.icon} ${a.day}</b> · ${esc(a.label)}<br><span class="faint">${esc(a.chapter)} ${a.subject!=='—'?`(${esc(a.subject)})`:''}</span></span><span class="tag tag-low">${a.minutes}m</span></div>`).join('')}</div><div class="text-xs faint mt-8">Normal week = 30% backlog · test-heavy week = 15% · holiday-heavy week = 50%. Sunday is intentionally lighter and acts as the rollover point.</div></div><div class="card"><div class="card-head"><h3>🔥 Priority Queue</h3><span class="text-xs muted">Prerequisite + weakness + stale revision + completion + high-yield priority</span></div>${rows.length?rows.map((x,i)=>`<div class="list-item"><span class="txt"><b>${i+1}. ${esc(x.name)}</b> <span class="faint">(${esc(x.subject)})</span><br><span class="faint">${x.stage.icon} ${esc(x.stage.label)} · ${chapterCompletion(x)}% complete${x.accuracy?` · ${x.accuracy}% accuracy`:''} ${highYieldTags(x.subject,x.name).length?` · 🔥 ${highYieldTags(x.subject,x.name).join(' + ')}`:''}</span></span><span class="tag ${x.score>=80?'tag-high':x.score>=50?'tag-med':'tag-low'}">${x.score}</span></div>`).join(''):`<div class="empty">🎉 No Class 11 backlog detected.</div>`}</div>`;
+  const week=ensureBacklogWeek(), budget=backlogWeekBudget(week.weekStart), rows=getBacklogChapters().slice(0,15), workflow=backlogWorkflowRows(), focus=getBacklogChapters()[0];
+  const focusMission=backlogWeeklyMission(focus);
+  return `<div class="section-desc">Class 11 recovery without sacrificing Class 12. Each generated 7-day cycle now stays on <b>one chapter</b> and changes the study method across the week, so you actually move that chapter forward instead of touching seven chapters superficially.</div>
+  ${backlogChapterStatsHTML(focus)}
+  <div class="grid grid-4 mb-16">
+    <div class="card center"><div class="eyebrow">Backlog left</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${rows.length}</div><div class="text-xs muted">active Class 11 chapters</div></div>
+    <div class="card center"><div class="eyebrow">This week</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${budget.targetHours}h</div><div class="text-xs muted">${Math.round(budget.ratio*100)}% backlog budget</div></div>
+    <div class="card center"><div class="eyebrow">Capacity</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${Math.round(budget.capacityMinutes/60*10)/10}h</div><div class="text-xs muted">available / unscheduled</div></div>
+    <div class="card center"><div class="eyebrow">Rollover</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${week.rolloverCount||0}</div><div class="text-xs muted">unfinished blocks moved</div></div>
+  </div>
+  <div class="card mb-16" style="background:var(--bg-soft);">
+    <div class="card-head">
+      <h3>🗓️ 7-Day Backlog Workflow — Same Chapter</h3>
+      <div class="flex gap-8">
+        <button class="btn btn-primary btn-sm" onclick="generateWeeklyBacklogWorkflow()">Generate into Planner</button>
+        <button class="btn btn-outline btn-sm" onclick="rolloverIncompleteBacklog()">↪ Rollover</button>
+      </div>
+    </div>
+    ${focus?`<div class="text-xs muted mb-10"><b>Focus:</b> ${esc(focus.subject)} — ${esc(focus.name)} · <b>Goal:</b> ${esc(focusMission.goal)}</div>`:''}
+    <div class="grid grid-2">${workflow.map(a=>`<div class="list-item"><span class="txt"><b>${a.icon} ${a.day}</b> · ${esc(a.label)}<br><span class="faint">${esc(a.chapter)} ${a.subject!=='—'?`(${esc(a.subject)})`:''}</span></span><span class="tag tag-low">${a.minutes}m</span></div>`).join('')}</div>
+    <div class="text-xs faint mt-8">The same chapter is deliberately repeated for all 7 days. Sunday is a checkpoint, not a new chapter switch. If unfinished, the chapter rolls forward rather than being replaced.</div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>🔥 Priority Queue</h3><span class="text-xs muted">Prerequisite + weakness + stale revision + completion + high-yield priority</span></div>
+    ${rows.length?rows.map((x,i)=>`<div class="list-item"><span class="txt"><b>${i+1}. ${esc(x.name)}</b> <span class="faint">(${esc(x.subject)})</span><br><span class="faint">${x.stage.icon} ${esc(x.stage.label)} · ${chapterCompletion(x)}% complete${x.accuracy?` · ${x.accuracy}% accuracy`:''} · ${x.questions||0} Q · ${x.pyqCount||0} PYQ · ${x.mistakes||0} mistakes ${highYieldTags(x.subject,x.name).length?` · 🔥 ${highYieldTags(x.subject,x.name).join(' + ')}`:''}</span></span><span class="tag ${x.score>=80?'tag-high':x.score>=50?'tag-med':'tag-low'}">${x.score}</span></div>`).join(''):`<div class="empty">🎉 No Class 11 backlog detected.</div>`}
+  </div>`;
 }
+
 function viewHighYield(){
   const order=['NEET','JEE'];
   const labels={NEET:'🧬 NEET Highest-Yield Class 11 Topics',JEE:'⚡ JEE High-Weightage Class 11 Topics'};
