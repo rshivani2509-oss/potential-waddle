@@ -543,6 +543,161 @@ html[data-theme="dark"] .breath-circle{ color:#D8D0F2; }
 }
 .zero-roadmap i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--coral),var(--amber),var(--sage))}
 
+
+/* ===== PRAGATI FULL-APP PREMIUM POLISH ===== */
+body{
+  background:
+    radial-gradient(circle at 0 0,rgba(185,215,255,.13),transparent 24%),
+    radial-gradient(circle at 100% 15%,rgba(190,235,215,.10),transparent 22%),
+    var(--bg);
+}
+.card{
+  border-radius:18px;
+  border-color:color-mix(in srgb,var(--card-border) 86%,transparent);
+  box-shadow:0 7px 24px rgba(31,41,55,.045);
+}
+.card:hover{box-shadow:0 12px 32px rgba(31,41,55,.075)}
+.section-head{
+  margin-bottom:14px;
+}
+.section-head h2,h2,h3,h4{
+  letter-spacing:-.018em;
+}
+.btn{
+  border-radius:11px!important;
+}
+.field input,.field textarea,.field select,input,textarea,select{
+  border-radius:11px!important;
+}
+.tag{
+  border-radius:999px!important;
+}
+.sidebar{
+  box-shadow:8px 0 30px rgba(31,41,55,.035);
+}
+.topbar{
+  backdrop-filter:blur(14px);
+  background:rgba(255,255,255,.72);
+}
+.notebook-hero{
+  border:1px solid var(--card-border);border-radius:22px;padding:17px;
+  background:
+    radial-gradient(circle at 95% 5%,rgba(185,215,255,.28),transparent 30%),
+    radial-gradient(circle at 5% 100%,rgba(190,235,215,.23),transparent 30%),
+    linear-gradient(135deg,var(--card-bg),var(--sky-soft));
+  box-shadow:0 12px 34px rgba(31,41,55,.06);
+}
+.notebook-tabs{
+  display:flex;gap:7px;flex-wrap:wrap;margin-top:13px;
+}
+.notebook-tab{
+  border:1px solid var(--card-border);background:rgba(255,255,255,.55);
+  border-radius:999px;padding:7px 11px;font-size:11px;font-weight:800;
+}
+.notebook-stat{
+  border:1px solid var(--card-border);border-radius:14px;
+  background:rgba(255,255,255,.56);padding:10px 12px;
+}
+.flash-section{
+  border:1px solid var(--card-border);border-radius:18px;padding:14px;
+  background:linear-gradient(135deg,var(--card-bg),var(--sage-soft));
+}
+.flash-section-head{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;
+}
+.formula-highlight{
+  border:1px solid var(--card-border);border-radius:18px;padding:14px;
+  background:linear-gradient(135deg,var(--card-bg),var(--lav-soft,var(--sky-soft)));
+}
+
+
+/* ===== DAILY CORE REWARDS ===== */
+.daily-core-card{
+  border:1px solid var(--card-border);border-radius:20px;padding:16px;
+  background:
+    radial-gradient(circle at 95% 0,rgba(255,220,150,.22),transparent 28%),
+    linear-gradient(135deg,var(--card-bg),var(--sky-soft));
+  box-shadow:0 10px 30px rgba(31,41,55,.055);
+}
+.core-item{
+  display:flex;align-items:center;gap:10px;padding:10px 11px;
+  border:1px solid var(--card-border);border-radius:13px;background:rgba(255,255,255,.56);
+}
+.core-item.done{opacity:.72}
+.core-check{
+  width:22px;height:22px;border-radius:7px;border:1px solid var(--card-border);
+  display:grid;place-items:center;background:var(--card-bg);cursor:pointer;font-size:12px;
+}
+.core-check.done{background:var(--sage-soft)}
+.reward-pill{
+  display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border-radius:999px;
+  background:rgba(255,255,255,.62);border:1px solid var(--card-border);
+  font-size:11px;font-weight:800;
+}
+.reward-progress{height:9px;border-radius:99px;background:var(--bg-soft);overflow:hidden}
+.reward-progress i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--sky),var(--sage))}
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:650px){.badge-grid{grid-template-columns:1fr 1fr}}
+.reward-badge{
+  text-align:center;padding:12px 8px;border-radius:14px;border:1px solid var(--card-border);
+  background:rgba(255,255,255,.55);
+}
+.reward-badge.locked{opacity:.45;filter:grayscale(.7)}
+.reward-badge .emoji{font-size:24px}
+.reward-badge .name{font-size:10px;font-weight:850;margin-top:5px}
+
+
+/* ===== GENERATION WINDOW ===== */
+.generation-window-card{
+  border:1px solid var(--card-border);border-radius:20px;padding:16px;
+  background:
+    radial-gradient(circle at 96% 0,rgba(185,215,255,.24),transparent 30%),
+    linear-gradient(135deg,var(--card-bg),var(--sky-soft));
+  box-shadow:0 10px 30px rgba(31,41,55,.055);
+}
+.window-time{
+  font-family:var(--font-mono);font-size:22px;font-weight:850;letter-spacing:-.02em;
+}
+.window-pill{
+  display:inline-flex;align-items:center;gap:5px;border-radius:999px;
+  padding:6px 10px;background:rgba(255,255,255,.62);border:1px solid var(--card-border);
+  font-size:10.5px;font-weight:800;
+}
+.window-warning{
+  border-radius:12px;padding:10px 12px;background:var(--amber-soft);
+  border:1px solid var(--card-border);font-size:11.5px;line-height:1.4;
+}
+.window-ok{
+  border-radius:12px;padding:10px 12px;background:var(--sage-soft);
+  border:1px solid var(--card-border);font-size:11.5px;line-height:1.4;
+}
+
+
+/* ===== FINAL REFINEMENT / WEEKLY REVIEW / COMMAND CENTER ===== */
+.final-panel{
+  border:1px solid var(--card-border);border-radius:20px;padding:16px;
+  background:
+    radial-gradient(circle at 96% 0,rgba(185,215,255,.20),transparent 28%),
+    linear-gradient(135deg,var(--card-bg),var(--sky-soft));
+  box-shadow:0 9px 28px rgba(31,41,55,.05);
+}
+.review-stat{
+  border:1px solid var(--card-border);border-radius:14px;padding:11px 12px;
+  background:rgba(255,255,255,.55);
+}
+.review-stat .n{font-family:var(--font-mono);font-size:20px;font-weight:850;margin-top:3px}
+.test-command{
+  border:1px solid var(--card-border);border-radius:15px;padding:12px;
+  background:var(--card-bg);
+}
+.command-progress{height:8px;border-radius:99px;background:var(--bg-soft);overflow:hidden}
+.command-progress i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--sky),var(--sage))}
+.week-review-good{background:var(--sage-soft)!important}
+.week-review-warn{background:var(--amber-soft)!important}
+.week-review-note{background:var(--sky-soft)!important}
+.clean-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:720px){.clean-grid{grid-template-columns:repeat(2,1fr)}}
+
 </style>
 </head>
 <body>
@@ -1063,6 +1218,27 @@ function freshData(){
     resources: [],
     flashcards: [], // [{id,subject,chapter,front,back,tags,due,interval,streak}]
     flashcardSettings: {dailyLimit:20},
+    generationWindow: {
+      enabled: false,
+      byDay: {},
+      defaultStart: '08:00',
+      defaultEnd: '17:00'
+    },
+    dailyCore: {
+      tasks: [
+        {id:'core-current', title:'Current portion review', icon:'📖', points:1, enabled:true},
+        {id:'core-recall', title:'Active recall', icon:'🧠', points:1, enabled:true},
+        {id:'core-questions', title:'Questions / PYQs', icon:'📝', points:1, enabled:true},
+        {id:'core-mistakes', title:'Mistake review', icon:'🔁', points:1, enabled:true},
+        {id:'core-backlog', title:'Class 11 backlog', icon:'🟡', points:1, enabled:true}
+      ],
+      completed:{},
+      points:0,
+      streak:0,
+      bestStreak:0,
+      lastDay:null,
+      badges:[]
+    },
     calendarEvents: [],
     doubts: [],
     achievements: [],
@@ -1228,8 +1404,29 @@ function maybeAutoSuggestEnergyFromSleep(date){
 // ---- What's New / Changelog ----
 // A running log of feature additions, newest first. Bump WHATS_NEW_VERSION whenever a new entry
 // is added at the top — that's what triggers the "new" badge for anyone who hasn't seen it yet.
-const WHATS_NEW_VERSION = 10;
+const WHATS_NEW_VERSION = 14;
 const WHATS_NEW = [
+  { version: 14, date: '2026-08-15', items: [
+    '🎯 Test Command Center — upcoming tests, days remaining and readiness in one place.',
+    '🌙 Weekly Review — planned vs completed time, Daily Core consistency and backlog progress.',
+    '✨ Final UI refinement for a cleaner daily workflow and clearer next-week focus.',
+  ]},
+  { version: 13, date: '2026-08-15', items: [
+    '🕐 User-controlled daily generation windows — Pragati generates study slots only inside the time period you set.',
+    '📅 Different generation windows can be set for each day of the week.',
+    '🔒 Existing school/classes/tuition and other locked commitments remain unavailable inside the window.',
+  ]},
+  { version: 12, date: '2026-08-15', items: [
+    '🔒 Daily Core — a small set of strict daily study habits.',
+    '✨ Reward points, streaks and milestone badges for consistency.',
+    '🌱 Missing a day pauses the streak without wiping your accumulated points.',
+  ]},
+  { version: 11, date: '2026-08-15', items: [
+    '✨ Premium visual polish across the app — softer cards, notebook headers, clearer hierarchy and calmer spacing.',
+    '📝 Flashcards moved out of Today’s Planner into the Notes workspace.',
+    '📐 Formula Book now has a dedicated formula-recall area and Quiz Mode.',
+    '🧠 Notes can be converted directly into flashcards.',
+  ]},
   { version: 10, date: '2026-08-15', items: [
     '🤖 Study Intelligence dashboard — test readiness, prerequisites and question targets.',
     '🧯 Smart Catch-Up — move, compress, protect or skip missed work without rebuilding the whole day.',
@@ -1852,6 +2049,7 @@ function updateWeakSinceTracking(){
   if(changed) save();
 }
 function render(){
+  try{ enforceGenerationWindowOnEvents(todayStr()); }catch(e){}
   renderSidebar();
   renderBottomNav();
   updateStreak();
@@ -4595,7 +4793,8 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       // A block that already IS one specific step (Lecture/NCERT/Qns, from the plan modal's split)
       // doesn't need its own checklist — but an undifferentiated "Study" chunk (no split given,
       // e.g. surplus free time or a simple add) gets the full lecture/NCERT/questions checklist.
-      events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+chunk), subject:pick.subject, activity:label, done:false, generated:true, chapter:pick.chapter, taskType:pick.type||undefined, subtasks: pick.type ? undefined : defaultStudySubtasks()});
+      const boundedEvent = clampGeneratedEventToWindow({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+chunk), subject:pick.subject, activity:label, done:false, generated:true, chapter:pick.chapter, taskType:pick.type||undefined, subtasks: pick.type ? undefined : defaultStudySubtasks()});
+      if(boundedEvent) events.push(boundedEvent);
       remainingMin.set(pick.key, want-chunk);
       if(remainingMin.get(pick.key) <= 5) used.add(pick.key); // tiny leftovers count as done, no 3-minute crumbs later
       cursor += chunk;
@@ -5098,12 +5297,15 @@ function viewPlanner(){
   ${taperBannerHTML(date)}
   ${recapBannerHTML(date)}
   ${plannerEnergyStripHTML(date)}
+  ${generationWindowHTML()}
+  ${dailyCoreHTML()}
+  ${finalTestCommandHTML()}
   ${smartStudyDashboardHTML()}
   ${backlogZeroHTML()}
   ${smartCatchUpHTML()}
   ${todayStrategyHTML(date)}
-  ${notesFlashcardsHTML()}
   ${todayTimeControlHTML(date)}
+  ${finalWeeklyReviewHTML()}
   ${todayCommandCenterHTML(date)}
   ${isToday ? backlogTodayHTML() : ''}
   ${mitTopThreeHTML(date)}
@@ -6030,7 +6232,7 @@ function smartStudyDashboardHTML(){
     <div class="flex-between flex-wrap gap-10">
       <div><div class="eyebrow">🤖 PRAGATI STUDY INTELLIGENCE</div>
       <h3 style="margin:3px 0 0;">Your preparation, not just your timetable.</h3>
-      <div class="text-xs muted mt-4">Tests, readiness, backlog, question targets and revision are connected.</div></div>
+      <div class="text-xs muted mt-4">Tests, readiness, current portion, prerequisite backlog, question targets and revision are connected.</div></div>
       ${t?`<span class="tag ${t.d<=3?'tag-high':t.d<=7?'tag-med':'tag-low'}">${t.d===0?'TEST TODAY':t.d+'d left'}</span>`:''}
     </div>
     <div class="grid grid-4 mt-12" style="gap:8px;">
@@ -6075,6 +6277,389 @@ function smartCatchUpHTML(){
     <h3 style="margin:3px 0 0;">A block gets missed? Don't rebuild the whole day.</h3>
     <div class="text-xs muted mt-5"><b>${esc(b.subject)}</b> · ${esc(b.chapter||b.activity||'Study block')}</div>
     <div class="catchup-grid mt-10">${smartCatchUpOptions(b).map(o=>`<button class="catchup-btn" onclick="applySmartCatchUp('${o.key}','${b.id}')"><b>${o.title}</b><span>${o.desc}</span></button>`).join('')}</div>
+  </div>`;
+}
+
+
+/* ============================================================
+   DAILY CORE + REWARD SYSTEM
+   Strict daily habits with gentle accountability and rewards.
+   Completing the core earns points; missing a day does not
+   erase progress, but the streak pauses.
+   ============================================================ */
+
+/* ============================================================
+   DAILY GENERATION WINDOW
+   User chooses the period in which Pragati is allowed to
+   generate Today's Planner. Generated study slots never
+   start before the window or end after it.
+   Fixed commitments inside the window remain unavailable.
+   ============================================================ */
+
+/* ============================================================
+   FINAL REFINEMENT
+   - Test Command Center
+   - Weekly Review
+   - connected current/backlog priorities
+   ============================================================ */
+function weekDateRange(){
+  const now=new Date();
+  const day=(now.getDay()+6)%7;
+  const mon=new Date(now); mon.setDate(now.getDate()-day); mon.setHours(0,0,0,0);
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  return {start:mon,end:sun,startStr:mon.toISOString().slice(0,10),endStr:sun.toISOString().slice(0,10)};
+}
+function weeklyPlannerEvents(){
+  const r=weekDateRange();
+  return (DATA.plannerEvents||[]).filter(e=>e.date>=r.startStr&&e.date<=r.endStr);
+}
+function eventMinutes(e){
+  return Math.max(0,(toMin(e.endTime)||0)-(toMin(e.startTime)||0));
+}
+function weeklyReviewStats(){
+  const ev=weeklyPlannerEvents();
+  const study=ev.filter(e=>e.subject!=='Break');
+  const planned=study.reduce((a,e)=>a+eventMinutes(e),0);
+  const done=study.filter(e=>e.done).reduce((a,e)=>a+eventMinutes(e),0);
+  const breaks=ev.filter(e=>e.subject==='Break').reduce((a,e)=>a+eventMinutes(e),0);
+  const core=DATA.dailyCore||{};
+  let coreDays=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(weekDateRange().start);d.setDate(d.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    const tasks=(core.tasks||[]).filter(t=>t.enabled!==false);
+    if(tasks.length && tasks.every(t=>core.completed?.[`${ds}::${t.id}`])) coreDays++;
+  }
+  const z=backlogZeroStats();
+  const test=upcomingTestSmart();
+  return {
+    planned,done,breaks,
+    completion:planned?Math.round(done/planned*100):0,
+    coreDays,
+    backlogRemaining:z.remaining,
+    testReadiness:test?testPreparationMeter(test).score:null
+  };
+}
+function finalTestCommandHTML(){
+  const tests=(DATA.upcomingTests||[])
+    .map(t=>({...t,d:daysBetween(todayStr(),t.date)}))
+    .filter(t=>t.d>=0).sort((a,b)=>a.d-b.d).slice(0,3);
+  return `<div class="final-panel mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">🎯 TEST COMMAND CENTER</div>
+        <h3 style="margin:3px 0 0;">Know what matters before the test arrives.</h3>
+        <div class="text-xs muted mt-4">Upcoming tests are connected to chapter readiness so Today's Planner can prioritize them early.</div>
+      </div>
+      <span class="tag tag-low">${tests.length} upcoming</span>
+    </div>
+    ${tests.length?`<div class="grid grid-2 mt-12" style="gap:8px;">${tests.map(t=>{
+      const m=testPreparationMeter(t);
+      return `<div class="test-command">
+        <div class="flex-between"><b class="text-xs">${esc(t.name)}</b><span class="tag ${t.d<=3?'tag-high':t.d<=7?'tag-med':'tag-low'}">${t.d===0?'TODAY':t.d+'d'}</span></div>
+        <div class="text-xs muted mt-4">${esc(t.source||'Test')} · ${m.score}% readiness</div>
+        <div class="command-progress mt-8"><i style="width:${m.score}%"></i></div>
+        <div class="text-xs mt-7">${m.items.slice(0,3).map(x=>`${esc(x.subject)} · ${esc(x.chapter)} ${x.score}%`).join(' · ')}</div>
+      </div>`;
+    }).join('')}</div>`:
+    `<div class="premium-note mt-12 text-xs">No upcoming tests are entered yet. Add them to unlock test-aware planning.</div>`}
+  </div>`;
+}
+function finalWeeklyReviewHTML(){
+  const s=weeklyReviewStats();
+  const completion=s.completion;
+  const status=completion>=80?'week-review-good':completion>=55?'week-review-note':'week-review-warn';
+  return `<div class="final-panel mb-16 ${status}">
+    <div class="flex-between flex-wrap gap-10">
+      <div><div class="eyebrow">🌙 WEEKLY REVIEW</div><h3 style="margin:3px 0 0;">Use the week to improve the next week.</h3></div>
+      <span class="reward-pill">${completion}% plan completion</span>
+    </div>
+    <div class="clean-grid mt-12">
+      <div class="review-stat"><div class="eyebrow">Planned</div><div class="n">${minsLabel(s.planned)}</div></div>
+      <div class="review-stat"><div class="eyebrow">Completed</div><div class="n">${minsLabel(s.done)}</div></div>
+      <div class="review-stat"><div class="eyebrow">Daily Core</div><div class="n">${s.coreDays}/7</div></div>
+      <div class="review-stat"><div class="eyebrow">Backlog</div><div class="n">${s.backlogRemaining}</div></div>
+    </div>
+    <div class="grid grid-2 mt-10" style="gap:8px;">
+      <div class="premium-note text-xs">
+        <b>📌 Next-week focus:</b>
+        ${s.testReadiness!==null && s.testReadiness<70 ? 'Increase test preparation and question practice.' :
+          s.coreDays<5 ? 'Protect the Daily Core more consistently.' :
+          completion<70 ? 'Reduce over-planning and keep priority blocks realistic.' :
+          'Maintain the current balance and strengthen weak chapters.'}
+      </div>
+      <div class="premium-note text-xs">
+        <b>🧠 Planner lesson:</b>
+        ${s.breaks>0?'Breaks were included in the week rather than treating every minute as study time.':'Add recovery breaks to long study sessions.'}
+      </div>
+    </div>
+  </div>`;
+}
+
+function ensureGenerationWindow(){
+  if(!DATA.generationWindow) DATA.generationWindow={enabled:false,byDay:{},defaultStart:'08:00',defaultEnd:'17:00'};
+  if(!DATA.generationWindow.byDay) DATA.generationWindow.byDay={};
+  if(!DATA.generationWindow.defaultStart) DATA.generationWindow.defaultStart='08:00';
+  if(!DATA.generationWindow.defaultEnd) DATA.generationWindow.defaultEnd='17:00';
+}
+function generationDayKey(date){
+  const d=new Date(date+'T00:00:00');
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+}
+function getGenerationWindow(date=todayStr()){
+  ensureGenerationWindow();
+  const day=generationDayKey(date);
+  const custom=DATA.generationWindow.byDay[day]||{};
+  const start=custom.start||DATA.generationWindow.defaultStart;
+  const end=custom.end||DATA.generationWindow.defaultEnd;
+  return {date,day,start,end,startMin:toMin(start),endMin:toMin(end),enabled:DATA.generationWindow.enabled!==false};
+}
+function setGenerationWindowDay(day,start,end){
+  ensureGenerationWindow();
+  if(!start||!end||toMin(end)<=toMin(start)){
+    toast('Choose a valid start and end time.');
+    return;
+  }
+  DATA.generationWindow.byDay[day]={start,end};
+  save(); render();
+  toast(`🕐 ${day}: generation window ${fmtTime(start)}–${fmtTime(end)} saved.`);
+}
+function setGenerationWindowDefault(start,end){
+  ensureGenerationWindow();
+  if(!start||!end||toMin(end)<=toMin(start)){
+    toast('Choose a valid default window.');
+    return;
+  }
+  DATA.generationWindow.defaultStart=start;
+  DATA.generationWindow.defaultEnd=end;
+  save(); render();
+  toast(`🕐 Default generation window ${fmtTime(start)}–${fmtTime(end)} saved.`);
+}
+function toggleGenerationWindow(){
+  ensureGenerationWindow();
+  DATA.generationWindow.enabled=!DATA.generationWindow.enabled;
+  save(); render();
+  toast(DATA.generationWindow.enabled?'🟢 Planner is now restricted to your generation windows.':'🔓 Generation-window restriction disabled.');
+}
+function generationWindowHTML(){
+  ensureGenerationWindow();
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const today=getGenerationWindow();
+  return `<div class="generation-window-card mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">🕐 GENERATION WINDOW</div>
+        <h3 style="margin:3px 0 0;">Tell Pragati exactly when it is allowed to plan.</h3>
+        <div class="text-xs muted mt-4">Generated study slots stay completely inside this period. Pragati will not create study blocks before the start or after the end.</div>
+      </div>
+      <button class="btn ${DATA.generationWindow.enabled?'btn-primary':'btn-outline'} btn-sm" onclick="toggleGenerationWindow()">
+        ${DATA.generationWindow.enabled?'🔒 Window ON':'🔓 Window OFF'}
+      </button>
+    </div>
+
+    <div class="grid grid-2 mt-12" style="gap:8px;">
+      <div class="notebook-stat">
+        <div class="eyebrow">Today · ${today.day}</div>
+        <div class="window-time">${fmtTime(today.start)} – ${fmtTime(today.end)}</div>
+        <div class="text-xs muted mt-3">${today.enabled?'Planner generation is restricted to this range.':'Restriction is currently off.'}</div>
+      </div>
+      <div class="notebook-stat">
+        <div class="eyebrow">Default window</div>
+        <div class="field-row" style="margin-top:6px;">
+          <div><input id="genDefaultStart" type="time" value="${DATA.generationWindow.defaultStart}"></div>
+          <div><input id="genDefaultEnd" type="time" value="${DATA.generationWindow.defaultEnd}"></div>
+        </div>
+        <button class="btn btn-soft btn-sm mt-6" onclick="setGenerationWindowDefault(document.getElementById('genDefaultStart').value,document.getElementById('genDefaultEnd').value)">Save default</button>
+      </div>
+    </div>
+
+    <div class="mt-12">
+      <div class="eyebrow mb-6">DAY-SPECIFIC WINDOWS</div>
+      <div class="grid grid-2" style="gap:8px;">
+      ${days.map(day=>{
+        const w=DATA.generationWindow.byDay[day]||{start:DATA.generationWindow.defaultStart,end:DATA.generationWindow.defaultEnd};
+        return `<div class="notebook-stat">
+          <div class="flex-between"><b>${day}</b><span class="window-pill">Generated only here</span></div>
+          <div class="field-row mt-6">
+            <input id="gen_${day}_s" type="time" value="${w.start}">
+            <input id="gen_${day}_e" type="time" value="${w.end}">
+          </div>
+          <button class="btn btn-outline btn-sm mt-6" onclick="setGenerationWindowDay('${day}',document.getElementById('gen_${day}_s').value,document.getElementById('gen_${day}_e').value)">Save ${day}</button>
+        </div>`;
+      }).join('')}
+      </div>
+    </div>
+
+    <div class="window-ok mt-10">
+      <b>Example:</b> If you set <b>8:00 AM–5:00 PM</b>, Pragati can generate only inside 8:00 AM–5:00 PM. School, classes, tuition, meals and other locked commitments inside that range are removed from available study time automatically.
+    </div>
+  </div>`;
+}
+function generationWindowFreeSlots(date, extraBusy=[]){
+  const w=getGenerationWindow(date);
+  if(!w.enabled) return null;
+  if(w.endMin<=w.startMin) return [];
+  const busy=(DATA.plannerEvents||[])
+    .filter(b=>b.date===date && b.startTime && b.endTime)
+    .map(b=>({start:Math.max(w.startMin,toMin(b.startTime)),end:Math.min(w.endMin,toMin(b.endTime))}))
+    .filter(b=>b.end>b.start);
+  extraBusy.forEach(b=>{
+    const s=Math.max(w.startMin,Number(b.start)),e=Math.min(w.endMin,Number(b.end));
+    if(e>s) busy.push({start:s,end:e});
+  });
+  const merged=mergeBusyBlocks(busy);
+  const free=[]; let cursor=w.startMin;
+  merged.forEach(b=>{
+    if(b.start>cursor) free.push({start:cursor,end:b.start});
+    cursor=Math.max(cursor,b.end);
+  });
+  if(cursor<w.endMin) free.push({start:cursor,end:w.endMin});
+  return free.filter(s=>s.end-s.start>=10);
+}
+function clampGeneratedEventToWindow(event){
+  const w=getGenerationWindow(event.date);
+  if(!w.enabled) return event;
+  let s=Math.max(w.startMin,toMin(event.startTime));
+  let e=Math.min(w.endMin,toMin(event.endTime));
+  if(e<=s) return null;
+  event.startTime=toTimeStr(s);
+  event.endTime=toTimeStr(e);
+  return event;
+}
+function generationWindowViolation(event){
+  const w=getGenerationWindow(event.date);
+  if(!w.enabled || !event.startTime || !event.endTime) return false;
+  return toMin(event.startTime)<w.startMin || toMin(event.endTime)>w.endMin;
+}
+
+function enforceGenerationWindowOnEvents(date=todayStr()){
+  const w=getGenerationWindow(date);
+  if(!w.enabled) return;
+  const before=(DATA.plannerEvents||[]).length;
+  DATA.plannerEvents=(DATA.plannerEvents||[]).filter(e=>{
+    if(e.date!==date || e.generated!==true) return true;
+    const bounded=clampGeneratedEventToWindow(e);
+    return !!bounded;
+  });
+  if((DATA.plannerEvents||[]).length!==before) save();
+}
+
+function validateTodayPlannerWindow(date=todayStr()){
+  const w=getGenerationWindow(date);
+  if(!w.enabled) return {ok:true,violations:[]};
+  const violations=(DATA.plannerEvents||[]).filter(e=>e.date===date && !['Break'].includes(e.subject) && generationWindowViolation(e));
+  return {ok:violations.length===0,violations};
+}
+
+function ensureDailyCore(){
+  if(!DATA.dailyCore) DATA.dailyCore={};
+  const d=DATA.dailyCore;
+  if(!Array.isArray(d.tasks)) d.tasks=[];
+  if(!d.completed || typeof d.completed!=='object') d.completed={};
+  if(!Number.isFinite(Number(d.points))) d.points=0;
+  if(!Number.isFinite(Number(d.streak))) d.streak=0;
+  if(!Number.isFinite(Number(d.bestStreak))) d.bestStreak=0;
+  if(!d.badges) d.badges=[];
+}
+function coreKey(day,id){ return `${day}::${id}`; }
+function dailyCoreDone(id,day=todayStr()){
+  ensureDailyCore(); return !!DATA.dailyCore.completed[coreKey(day,id)];
+}
+function dailyCoreToggle(id){
+  ensureDailyCore();
+  const day=todayStr(), key=coreKey(day,id);
+  const task=DATA.dailyCore.tasks.find(t=>t.id===id);
+  if(!task) return;
+  if(DATA.dailyCore.completed[key]){
+    delete DATA.dailyCore.completed[key];
+    DATA.dailyCore.points=Math.max(0,Number(DATA.dailyCore.points||0)-Number(task.points||1));
+    toast('↩️ Daily Core unchecked.');
+  }else{
+    DATA.dailyCore.completed[key]=Date.now();
+    DATA.dailyCore.points=Number(DATA.dailyCore.points||0)+Number(task.points||1);
+    toast(`✨ +${task.points||1} point · ${task.title}`);
+  }
+  updateDailyCoreStreak();
+  save(); render();
+}
+function updateDailyCoreStreak(){
+  ensureDailyCore();
+  const d=DATA.dailyCore;
+  const enabled=d.tasks.filter(t=>t.enabled!==false);
+  if(!enabled.length) return;
+  const today=todayStr();
+  const completeToday=enabled.every(t=>dailyCoreDone(t.id,today));
+  if(completeToday && d.lastDay!==today){
+    const prev=new Date(today+'T00:00:00'); prev.setDate(prev.getDate()-1);
+    const prevDay=prev.toISOString().slice(0,10);
+    d.streak = d.lastDay===prevDay ? Number(d.streak||0)+1 : 1;
+    d.bestStreak=Math.max(Number(d.bestStreak||0),d.streak);
+    d.lastDay=today;
+    const s=d.streak;
+    if(s===3 && !d.badges.includes('3-day')) d.badges.push('3-day');
+    if(s===7 && !d.badges.includes('7-day')) d.badges.push('7-day');
+    if(s===14 && !d.badges.includes('14-day')) d.badges.push('14-day');
+    if(s===30 && !d.badges.includes('30-day')) d.badges.push('30-day');
+  }
+}
+function dailyCoreStats(){
+  ensureDailyCore();
+  const enabled=DATA.dailyCore.tasks.filter(t=>t.enabled!==false);
+  const done=enabled.filter(t=>dailyCoreDone(t.id)).length;
+  return {enabled,done,total:enabled.length,pct:enabled.length?Math.round(done/enabled.length*100):0};
+}
+function dailyCoreRewardName(points){
+  if(points>=100) return '🏆 Master';
+  if(points>=50) return '🥇 Consistent';
+  if(points>=25) return '🥈 Builder';
+  if(points>=10) return '🥉 Starter';
+  return '🌱 Beginning';
+}
+function dailyCoreHTML(){
+  ensureDailyCore();
+  const s=dailyCoreStats(), d=DATA.dailyCore;
+  const reward=dailyCoreRewardName(Number(d.points||0));
+  const next=[10,25,50,100].find(x=>x>Number(d.points||0))||100;
+  const progress=Math.min(100,Math.round(Number(d.points||0)/next*100));
+  const badgeList=[
+    ['🌱','3-Day Starter','3-day'],['🔥','7-Day Consistent','7-day'],
+    ['💪','14-Day Strong','14-day'],['🏆','30-Day Core','30-day'],
+    ['👑','100 Points','points100'],['✨','Best Streak','best']
+  ];
+  return `<div class="daily-core-card mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">🔒 DAILY CORE</div>
+        <h3 style="margin:3px 0 0;">The few things you keep every day.</h3>
+        <div class="text-xs muted mt-4">Complete the core to earn points and build consistency. Missing a day pauses the streak — it does not erase your progress.</div>
+      </div>
+      <div class="reward-pill">✨ ${reward} · ${d.points||0} pts</div>
+    </div>
+    <div class="grid grid-2 mt-12" style="gap:8px;">
+      <div>
+        <div class="flex-between text-xs"><b>Today's Core</b><span>${s.done}/${s.total}</span></div>
+        <div class="reward-progress mt-6"><i style="width:${s.pct}%"></i></div>
+      </div>
+      <div>
+        <div class="flex-between text-xs"><b>Next reward</b><span>${next} pts</span></div>
+        <div class="reward-progress mt-6"><i style="width:${progress}%"></i></div>
+      </div>
+    </div>
+    <div class="grid grid-2 mt-10" style="gap:8px;">
+      ${s.enabled.map(t=>`<div class="core-item ${dailyCoreDone(t.id)?'done':''}">
+        <button class="core-check ${dailyCoreDone(t.id)?'done':''}" onclick="dailyCoreToggle('${t.id}')">${dailyCoreDone(t.id)?'✓':' '}</button>
+        <div style="flex:1"><b class="text-xs">${t.icon||'•'} ${esc(t.title)}</b><div class="text-xs faint mt-2">+${t.points||1} point</div></div>
+      </div>`).join('')}
+    </div>
+    <div class="mt-12">
+      <div class="flex-between text-xs"><b>🔥 Current streak</b><span>${d.streak||0} days · best ${d.bestStreak||0}</span></div>
+      <div class="badge-grid mt-8">
+        ${badgeList.map(b=>{
+          const unlocked=b[2]==='points100'?d.points>=100:b[2]==='best'?d.bestStreak>=7:d.badges.includes(b[2]);
+          return `<div class="reward-badge ${unlocked?'':'locked'}"><div class="emoji">${b[0]}</div><div class="name">${b[1]}</div></div>`;
+        }).join('')}
+      </div>
+    </div>
   </div>`;
 }
 
@@ -7454,19 +8039,59 @@ function deleteConcept(id){ DATA.concepts = DATA.concepts.filter(c=>c.id!==id); 
    ============================================================ */
 let notesTab = 'Physics';
 function viewNotes(){
+  ensureFlashcards();
   const tabs = [...subjectNames()];
   const list = DATA.notes.filter(n=>n.subject===notesTab);
+  const cards = DATA.flashcards.filter(c=>c.subject===notesTab);
+  const due = cards.filter(c=>!c.due || c.due<=todayStr()).length;
   return `
+  <div class="notebook-hero mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">📝 ${esc(notesTab)} NOTEBOOK</div>
+        <h2 style="margin:4px 0 0;">Learn → write → recall</h2>
+        <div class="text-xs muted mt-4">Keep detailed notes here. Turn the important points into compact active-recall cards instead of filling Today's Planner with them.</div>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-primary btn-sm" onclick="openNoteForm()">+ New Note</button>
+        <button class="btn btn-soft btn-sm" onclick="addFlashcard()">🧠 New Flashcard</button>
+      </div>
+    </div>
+    <div class="notebook-tabs">
+      ${tabs.map(t=>`<button class="notebook-tab" onclick="notesTab='${t}'; render();">${t===notesTab?'● ':''}${t}</button>`).join('')}
+    </div>
+    <div class="grid grid-3 mt-12" style="gap:8px;">
+      <div class="notebook-stat"><div class="eyebrow">Notes</div><b style="font-size:20px;">${list.length}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Flashcards</div><b style="font-size:20px;">${cards.length}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Due</div><b style="font-size:20px;">${due}</b></div>
+    </div>
+  </div>
   <div class="flex-between mb-12 flex-wrap gap-10">
+    <div class="section-desc" style="margin:0;">Detailed notes for ${esc(notesTab)}</div>
+  </div>
     <div class="flex gap-8 flex-wrap">
       ${tabs.map(t=>`<button class="btn ${notesTab===t?'btn-primary':'btn-outline'} btn-sm" onclick="notesTab='${t}'; render();">${t}</button>`).join('')}
     </div>
     <button class="btn btn-primary" onclick="openNoteForm()">+ New Note</button>
   </div>
+  <div class="flash-section mb-16">
+    <div class="flash-section-head">
+      <div>
+        <div class="eyebrow">🧠 ACTIVE-RECALL CARDS</div>
+        <h3 style="margin:3px 0 0;">${esc(notesTab)} flashcards</h3>
+        <div class="text-xs muted mt-4">${due ? `${due} due for review today.` : 'Nothing due today.'} Tap a card to reveal the answer.</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="addFlashcard()">+ Add card</button>
+    </div>
+    <div class="flash-deck mt-12">
+      ${cards.length ? cards.slice().sort((a,b)=>(a.due||'').localeCompare(b.due||'')).slice(0,12).map(flashCardHTML).join('') :
+      `<div class="premium-note text-xs">Create cards from important NCERT lines, formulas, reactions, exceptions, definitions and mistakes.</div>`}
+    </div>
+  </div>
   <div class="grid grid-2">
   ${list.length ? list.slice().reverse().map(n=>`
     <div class="card">
-      <div class="flex-between mb-8"><h4 style="font-size:14.5px;">${esc(n.title)}</h4><button class="icon-btn" onclick="deleteNote('${n.id}')">✕</button></div>
+      <div class="flex-between mb-8"><h4 style="font-size:14.5px;">${esc(n.title)}</h4><div class="flex gap-4"><button class="btn btn-soft btn-sm" onclick="flashcardFromNote('${n.id}')">🧠 Card</button><button class="icon-btn" onclick="deleteNote('${n.id}')">✕</button></div></div>
       <p class="text-sm" style="white-space:pre-wrap;">${esc(n.content)}</p>
       <div class="flex-between mt-8"><span class="text-xs faint">${n.chapter?esc(n.chapter):'General'}</span><span class="text-xs faint">${fmtDate(n.date)}</span></div>
     </div>
@@ -7494,6 +8119,30 @@ function saveNote(){
 }
 function deleteNote(id){ DATA.notes = DATA.notes.filter(n=>n.id!==id); save(); render(); }
 
+function flashcardFromNote(id){
+  ensureFlashcards();
+  const n=DATA.notes.find(x=>x.id===id);
+  if(!n) return;
+  openModal(`
+    <div class="modal-head"><h3>🧠 Convert Note → Flashcard</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs muted mb-10">${esc(n.subject)}${n.chapter?' · '+esc(n.chapter):''}</div>
+    <div class="field"><label>Question / recall prompt</label><input id="nf_front" value="${esc(n.title)}"></div>
+    <div class="field"><label>Answer / key points</label><textarea id="nf_back" style="min-height:120px;">${esc(n.content)}</textarea></div>
+    <button class="btn btn-primary w-full" onclick="saveFlashcardFromNote('${n.id}')">Save Flashcard</button>
+  `);
+}
+function saveFlashcardFromNote(noteId){
+  const n=DATA.notes.find(x=>x.id===noteId);
+  if(!n) return;
+  const front=document.getElementById('nf_front').value.trim();
+  const back=document.getElementById('nf_back').value.trim();
+  if(!front||!back) return toast('Add both a question and an answer.');
+  ensureFlashcards();
+  DATA.flashcards.push({id:uid(),subject:n.subject,chapter:n.chapter||'',front,back,tags:['From note'],due:todayStr(),interval:1,streak:0,createdAt:todayStr()});
+  save(); closeModal(); render(); toast('🧠 Note converted to flashcard.');
+}
+
+
 /* ============================================================
    VIEW: FORMULA BOOK
    ============================================================ */
@@ -7502,6 +8151,24 @@ function viewFormulas(){
   DATA.formulas.forEach(f => { groups[f.subject] = groups[f.subject]||[]; groups[f.subject].push(f); });
   const dueCount = DATA.formulas.filter(f=>!f.srDue || f.srDue<=todayStr()).length;
   return `
+  <div class="notebook-hero mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">📐 FORMULA BOOK</div>
+        <h2 style="margin:4px 0 0;">Formulas + instant recall</h2>
+        <div class="text-xs muted mt-4">Keep formulas clean and searchable. Use Quiz Mode for active recall instead of rereading the formula list.</div>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-soft" onclick="openFormulaQuiz()" ${DATA.formulas.length?'':'disabled'}>🧠 Quiz ${dueCount?`· ${dueCount} due`:''}</button>
+        <button class="btn btn-primary" onclick="openFormulaForm()">+ Add Formula</button>
+      </div>
+    </div>
+    <div class="grid grid-3 mt-12" style="gap:8px;">
+      <div class="notebook-stat"><div class="eyebrow">Formulas</div><b style="font-size:20px;">${DATA.formulas.length}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Due</div><b style="font-size:20px;">${dueCount}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Subjects</div><b style="font-size:20px;">${Object.keys(groups).length}</b></div>
+    </div>
+  </div>
   <div class="flex-between mb-12 flex-wrap gap-10">
     <div class="section-desc" style="margin:0;">Quick-search formula & fact reference.</div>
     <div class="flex gap-8">
@@ -7510,6 +8177,21 @@ function viewFormulas(){
     </div>
   </div>
   <div class="field mb-16"><input placeholder="🔍 Search formulas..." oninput="formulaSearch(this.value)"></div>
+  <div class="formula-highlight mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">⚡ FORMULA RECALL</div>
+        <h3 style="margin:3px 0 0;">Don't memorize by staring.</h3>
+        <div class="text-xs muted mt-4">Quiz yourself on formulas and rate them. Due formulas return through spaced review.</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="openFormulaQuiz()" ${DATA.formulas.length?'':'disabled'}>Start recall</button>
+    </div>
+    <div class="grid grid-3 mt-10" style="gap:8px;">
+      <div class="notebook-stat"><div class="eyebrow">Again</div><div class="text-xs muted mt-3">Relearn weak formulas</div></div>
+      <div class="notebook-stat"><div class="eyebrow">Hard</div><div class="text-xs muted mt-3">Short-interval review</div></div>
+      <div class="notebook-stat"><div class="eyebrow">Easy</div><div class="text-xs muted mt-3">Longer review interval</div></div>
+    </div>
+  </div>
   <div id="formulaResults">${formulaListHTML(DATA.formulas)}</div>
   `;
 }
