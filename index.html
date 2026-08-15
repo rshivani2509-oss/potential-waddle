@@ -369,6 +369,180 @@ html[data-theme="dark"] .breath-circle{ color:#D8D0F2; }
   .float-timer{ bottom:238px; }
   .float-fab{ bottom:170px; }
 }
+
+/* ===== Pragati Smart Today — aesthetic layer ===== */
+.smart-today-card{
+  position:relative; overflow:hidden; border:1px solid var(--card-border);
+  background:linear-gradient(135deg,var(--card-bg),var(--sky-soft));
+  box-shadow:0 8px 28px rgba(40,50,70,.06);
+}
+.smart-today-card::after{
+  content:""; position:absolute; width:180px; height:180px; right:-70px; top:-80px;
+  border-radius:50%; background:var(--sage-soft); opacity:.65; pointer-events:none;
+}
+.smart-today-card .smart-content{position:relative;z-index:1}
+.smart-kpi{
+  background:rgba(255,255,255,.55); border:1px solid var(--card-border);
+  border-radius:12px; padding:10px 12px; min-width:100px;
+}
+.smart-kpi .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:var(--muted)}
+.smart-kpi .v{font-family:var(--font-mono);font-size:19px;font-weight:800;margin-top:3px}
+.smart-lane{
+  border-radius:10px; padding:9px 11px; border:1px solid var(--card-border);
+  background:var(--card-bg);
+}
+.smart-lane .lane-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.smart-lane .lane-desc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+.smart-break{
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  color:var(--muted); font-size:11px; font-weight:700;
+}
+
+
+/* ===== PRAGATI PREMIUM AESTHETIC ===== */
+:root{
+  --premium-shadow:0 12px 34px rgba(31,41,55,.07);
+  --premium-shadow-hover:0 16px 42px rgba(31,41,55,.11);
+}
+.card{
+  border-radius:16px;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.card:hover{box-shadow:var(--premium-shadow-hover)}
+.chapter-card,.list-item,.smart-lane,.smart-kpi{
+  border-radius:14px;
+}
+.smart-today-card{
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 95% 5%,rgba(180,210,255,.28),transparent 28%),
+    radial-gradient(circle at 5% 100%,rgba(190,235,215,.22),transparent 30%),
+    var(--card-bg)!important;
+  box-shadow:var(--premium-shadow);
+}
+.smart-today-card::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(120deg,rgba(255,255,255,.32),transparent 45%);
+  pointer-events:none;
+}
+.smart-kpi{
+  background:rgba(255,255,255,.66);
+  backdrop-filter:blur(7px);
+  box-shadow:0 4px 14px rgba(31,41,55,.04);
+}
+.smart-lane{
+  background:rgba(255,255,255,.52);
+  backdrop-filter:blur(6px);
+}
+.eyebrow{
+  letter-spacing:.09em!important;
+}
+.tag{
+  border-radius:999px!important;
+}
+.btn{
+  border-radius:10px!important;
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.btn:hover{transform:translateY(-1px)}
+.section-head h2,h2,h3{
+  letter-spacing:-.015em;
+}
+.smart-progress-wrap{
+  margin-top:12px;padding:12px;border-radius:14px;
+  background:rgba(255,255,255,.52);border:1px solid var(--card-border);
+}
+.smart-progress{
+  height:8px;border-radius:99px;background:var(--bg-soft);overflow:hidden;
+}
+.smart-progress>i{
+  display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--sky),var(--sage));
+}
+.today-flow{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  margin-top:12px;
+}
+.today-flow .node{
+  padding:7px 9px;border-radius:10px;background:var(--card-bg);
+  border:1px solid var(--card-border);font-size:10.5px;font-weight:750;
+}
+.today-flow .arrow{color:var(--muted);font-size:11px}
+.premium-note{
+  border-left:3px solid var(--sky);
+  padding:8px 11px;background:var(--sky-soft);
+  border-radius:0 10px 10px 0;
+}
+
+
+/* ===== SMART STUDY + FLASHCARD NOTES ===== */
+.flash-deck{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;
+}
+.flash-card{
+  min-height:150px;border:1px solid var(--card-border);border-radius:18px;
+  background:linear-gradient(145deg,var(--card-bg),var(--sky-soft));
+  padding:16px;cursor:pointer;position:relative;overflow:hidden;
+  box-shadow:0 8px 22px rgba(31,41,55,.055);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.flash-card:hover{transform:translateY(-2px);box-shadow:0 13px 30px rgba(31,41,55,.09)}
+.flash-card .flash-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:850;color:var(--muted)}
+.flash-card .flash-q{font-size:16px;font-weight:800;line-height:1.35;margin-top:10px}
+.flash-card .flash-a{font-size:13px;line-height:1.5;margin-top:10px;color:var(--ink-soft)}
+.flash-card .flash-hint{position:absolute;bottom:11px;right:13px;font-size:10px;color:var(--muted)}
+.flash-card.flipped{background:linear-gradient(145deg,var(--sage-soft),var(--card-bg))}
+.flash-review{
+  border-radius:18px;padding:16px;background:linear-gradient(135deg,var(--sky-soft),var(--card-bg));
+  border:1px solid var(--card-border);
+}
+.flash-rating{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.flash-rating button{flex:1;min-width:75px}
+.smart-study-panel{
+  border-radius:20px;background:
+    radial-gradient(circle at 100% 0,rgba(180,210,255,.22),transparent 30%),
+    linear-gradient(135deg,var(--card-bg),var(--sage-soft));
+  border:1px solid var(--card-border);padding:16px;
+  box-shadow:0 10px 28px rgba(31,41,55,.055);
+}
+.readiness-mini{
+  height:7px;border-radius:99px;background:var(--bg-soft);overflow:hidden;margin-top:7px;
+}
+.readiness-mini i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--sky),var(--sage))}
+
+
+/* ===== ULTIMATE SMART STUDY LAYER ===== */
+.ultimate-panel{
+  border:1px solid var(--card-border);border-radius:20px;padding:16px;
+  background:linear-gradient(135deg,var(--card-bg),var(--sky-soft));
+  box-shadow:0 10px 30px rgba(31,41,55,.055);
+}
+.ultimate-stat{
+  border:1px solid var(--card-border);border-radius:14px;padding:11px 12px;
+  background:rgba(255,255,255,.58);
+}
+.ultimate-stat .num{font-family:var(--font-mono);font-size:21px;font-weight:850;margin-top:3px}
+.readiness-row{display:grid;grid-template-columns:115px 1fr 45px;gap:8px;align-items:center;margin:8px 0}
+.readiness-bar{height:7px;border-radius:99px;background:var(--bg-soft);overflow:hidden}
+.readiness-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--sky),var(--sage))}
+.priority-card{
+  border:1px solid var(--card-border);border-radius:14px;padding:12px;
+  background:var(--card-bg);margin-top:8px;
+}
+.priority-card .why{font-size:11px;color:var(--muted);line-height:1.4;margin-top:4px}
+.prereq{
+  padding:11px 12px;border-radius:12px;background:var(--amber-soft);
+  border:1px solid var(--card-border);font-size:11.5px;line-height:1.45;
+}
+.catchup-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:700px){.catchup-grid{grid-template-columns:repeat(2,1fr)}}
+.catchup-btn{padding:10px;border-radius:12px;border:1px solid var(--card-border);background:var(--card-bg);cursor:pointer;text-align:center}
+.catchup-btn b{display:block;font-size:11px}.catchup-btn span{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.zero-roadmap{
+  height:10px;border-radius:99px;background:var(--bg-soft);overflow:hidden;
+}
+.zero-roadmap i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--coral),var(--amber),var(--sage))}
+
 </style>
 </head>
 <body>
@@ -887,6 +1061,8 @@ function freshData(){
     health: {},          // date -> {sleep,water,exercise,meditation,mood,screenTime,stressActivities:[]}
     formulas: [],
     resources: [],
+    flashcards: [], // [{id,subject,chapter,front,back,tags,due,interval,streak}]
+    flashcardSettings: {dailyLimit:20},
     calendarEvents: [],
     doubts: [],
     achievements: [],
@@ -1052,8 +1228,37 @@ function maybeAutoSuggestEnergyFromSleep(date){
 // ---- What's New / Changelog ----
 // A running log of feature additions, newest first. Bump WHATS_NEW_VERSION whenever a new entry
 // is added at the top — that's what triggers the "new" badge for anyone who hasn't seen it yet.
-const WHATS_NEW_VERSION = 6;
+const WHATS_NEW_VERSION = 10;
 const WHATS_NEW = [
+  { version: 10, date: '2026-08-15', items: [
+    '🤖 Study Intelligence dashboard — test readiness, prerequisites and question targets.',
+    '🧯 Smart Catch-Up — move, compress, protect or skip missed work without rebuilding the whole day.',
+    '🌱 Backlog → Zero roadmap with a realistic pace estimate.',
+    '📈 Chapter readiness combines coverage, understanding, accuracy, questions, PYQs and revision.',
+  ]},
+  { version: 9, date: '2026-08-15', items: [
+    '🧠 Notes → Flashcards — create concise Q/A cards for NCERT lines, formulas, reactions, definitions and mistakes.',
+    '🔁 Flashcards use simple spaced review intervals and daily due-card limits.',
+  ]},
+  { version: 8, date: '2026-08-15', items: [
+    '✨ Premium visual polish — softer cards, adaptive shadows, glass-style smart planner panels and clearer daily time balance.',
+  ]},
+  { version: 7, date: '2026-08-15', items: [
+    '🎯 Class 11 backlog can now be auto-selected by priority or manually selected and locked for the full 7-day chapter cycle.',
+  ]},
+  { version: 6, date: '2026-08-15', items: [
+    '🌿 Smart Today Planner — balances upcoming tests, current portion, Class 11 backlog and recovery time.',
+    '⏱️ Adaptive breaks — heavier/longer sessions receive longer recovery breaks.',
+    '🧠 Study-method hints are attached to generated blocks.',
+    '🎯 Aesthetic Today Strategy card shows why each part of the day is getting time.',
+  ]},
+  { version: 7, date: '2026-08-15', items: [
+    '🧭 Added What Should I Study Now? strategist with readiness, weakness, revision age and high-yield signals.',
+    '📈 Added chapter readiness scoring and weakest-first view.',
+    '🧯 Added recurring mistake intelligence and automatic revision queue.',
+    '📊 Added a 7-day preparation pulse for study hours, PYQs, mistakes and plan adherence.',
+    '🧠 Study-method suggestions now adapt to Physics, Chemistry, Biology and Maths chapter type.',
+  ]},
   { version: 6, date: '2026-08-13', items: [
     '🔥 Class 11 7-day backlog cycles now stay on one chapter for the full week.',
     '🎯 Added a weekly chapter mission with completion, accuracy, questions, PYQs, mistakes, understanding, exam tags and priority score.',
@@ -2722,6 +2927,129 @@ function coachMessage(){
   return lines;
 }
 
+
+/* ============================================================
+   PRAGATI 2.2+ — STUDY STRATEGIST LAYER
+   Adds decision-ready preparation data without replacing existing trackers.
+   ============================================================ */
+function chapterReadinessScore(ch, subject){
+  if(!ch) return 0;
+  const completion = chapterCompletion(ch);
+  const acc = Number(ch.accuracy)||0;
+  const understanding = Number(ch.understanding)||0;
+  const q = Math.min(100, Number(ch.questions||0)/40*100);
+  const pyq = Math.min(100, Number(ch.pyqCount||0)/15*100);
+  const rev = (ch.revision1?25:0)+(ch.revision2?25:0)+(ch.revision3?25:0);
+  const tested = acc>0 ? acc : 0;
+  return Math.round(completion*.25 + understanding*.15 + q*.15 + pyq*.15 + tested*.20 + Math.min(100,rev)*.10);
+}
+function readinessBand(score){
+  if(score>=80) return {label:'Exam-ready',icon:'🟢',cls:'tag-low'};
+  if(score>=60) return {label:'Practice-ready',icon:'🟡',cls:'tag-med'};
+  if(score>=35) return {label:'Build',icon:'🟠',cls:'tag-high'};
+  return {label:'Foundation',icon:'🔴',cls:'tag-high'};
+}
+function chapterStudyTechnique(subject, ch){
+  const s=(subject||'').toLowerCase(), n=(ch?.name||'').toLowerCase();
+  if(s==='biology') return {method:'NCERT active recall → diagrams/terms → 25–40 MCQs → error review',why:'Biology gains most from precise recall plus question practice.'};
+  if(s==='physics') return {method:'Concept map → 2 solved examples → timed numericals → mistake reattempt',why:'Physics needs a short concept pass followed by problem solving.'};
+  if(s==='chemistry'){
+    if(/organic|hydrocarbon|halo|aldehyde|ketone|amine|alcohol|ether|acid|goc/.test(n)) return {method:'Reaction/mechanism recall → NCERT examples → PYQs → error loop',why:'Organic retention improves when reactions are recalled before practice.'};
+    if(/equilibrium|thermo|electro|kinetic|solution|chemical/.test(n)) return {method:'Formula/concept recall → 3 worked problems → timed set → error review',why:'Physical Chemistry benefits from concept-to-numerical repetition.'};
+    return {method:'NCERT/notes → active recall → questions → PYQs',why:'Use a concept-first pass, then convert it into questions.'};
+  }
+  if(s==='maths') return {method:'Formula/theorem recall → 2 examples → timed problem set → error reattempt',why:'Maths improves through repeated problem patterns and error correction.'};
+  return {method:'Recall → questions → PYQs → error review',why:'A balanced cycle keeps the chapter moving toward exam readiness.'};
+}
+function studyStrategistPick(){
+  const rows=[];
+  subjectNames().forEach(subject=>{
+    (DATA.subjects[subject]?.chapters||[]).forEach(ch=>{
+      const completion=chapterCompletion(ch), acc=Number(ch.accuracy)||0;
+      const due=ch.lastRevised ? daysBetween(ch.lastRevised,todayStr()) : 30;
+      const examTags=Object.entries(ch.examTags||{}).filter(([,v])=>v).map(([k])=>k);
+      const highYield=highYieldTags(subject,ch.name).length;
+      const weak=Math.max(0,100-(acc||55));
+      const unfinished=Math.max(0,100-completion);
+      const stale=Math.min(30,due*2);
+      const score=Math.round(unfinished*.28 + weak*.28 + stale*.18 + highYield*8 + (ch.mistakes||0)*3 + (examTags.length?5:0));
+      rows.push({subject,chapter:ch.name,ch,score,completion,acc,readiness:chapterReadinessScore(ch,subject),tech:chapterStudyTechnique(subject,ch),highYield});
+    });
+  });
+  return rows.sort((a,b)=>b.score-a.score)[0]||null;
+}
+function studyStrategistHTML(){
+  const pick=studyStrategistPick();
+  if(!pick) return '';
+  const band=readinessBand(pick.readiness);
+  const reasons=[];
+  if(pick.completion<80) reasons.push(`${100-pick.completion}% still to cover`);
+  if(pick.acc && pick.acc<70) reasons.push(`${pick.acc}% accuracy`);
+  if(!pick.acc) reasons.push('not tested yet');
+  if(pick.ch.lastRevised) reasons.push(`${daysBetween(pick.ch.lastRevised,todayStr())} days since revision`); else reasons.push('revision history is empty');
+  if(pick.highYield) reasons.push('high-yield priority');
+  return `<div class="card mb-16" style="background:linear-gradient(135deg,var(--sky-soft),var(--lav-soft));border:none;">
+    <div class="card-head"><h3>🧭 What Should I Study Now?</h3><span class="tag ${band.cls}">${band.icon} ${band.label}</span></div>
+    <div class="flex-between flex-wrap gap-10" style="align-items:flex-start;">
+      <div style="flex:1;min-width:240px;">
+        <div style="font-size:19px;font-weight:750;">${esc(pick.subject)} — ${esc(pick.chapter)}</div>
+        <div class="text-xs muted mt-4">Readiness ${pick.readiness}% · Completion ${pick.completion}% · ${pick.acc?pick.acc+'% accuracy':'not tested'}</div>
+        <div class="text-sm mt-10"><b>Why now:</b> ${esc(reasons.slice(0,3).join(' · '))}</div>
+        <div class="text-sm mt-8"><b>Use:</b> ${esc(pick.tech.method)}</div>
+        <div class="text-xs faint mt-6">${esc(pick.tech.why)}</div>
+      </div>
+      <button class="btn btn-primary" onclick="startFocusSession('${esc(pick.subject)}','${esc(pick.chapter)}',null,'${esc(pick.tech.method)}')">🎯 Start</button>
+    </div>
+  </div>`;
+}
+function mistakeDigestHTML(){
+  const ms=Array.isArray(DATA.mistakes)?DATA.mistakes:[];
+  if(!ms.length) return `<div class="card"><div class="card-head"><h3>🧯 Mistake Intelligence</h3></div><div class="empty text-sm">Log mistakes to see your recurring error pattern.</div></div>`;
+  const counts={}; ms.forEach(m=>{const k=m.reason||'Other';counts[k]=(counts[k]||0)+1;});
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const recent=ms.filter(m=>m.date && daysBetween(m.date,todayStr())<=30).length;
+  return `<div class="card"><div class="card-head"><h3>🧯 Mistake Intelligence</h3><span class="text-xs faint">${recent} in last 30d</span></div>
+    ${top.map(([k,v],i)=>`<div class="list-item"><span class="txt"><b>${i+1}. ${esc(k)}</b><br><span class="faint">${v} mistake${v===1?'':'s'} · ${Math.round(v/ms.length*100)}% of logged errors</span></span><span class="tag ${i===0?'tag-high':'tag-med'}">${v}</span></div>`).join('')}
+    <div class="text-xs faint mt-8">Your next revision should target the top error type, not just reread the chapter.</div>
+  </div>`;
+}
+function revisionQueueHTML(){
+  const due=getDueRevisions();
+  const next=due.slice(0,4);
+  return `<div class="card"><div class="card-head"><h3>🔁 Automatic Revision Queue</h3><span class="tag ${due.length?'tag-high':'tag-low'}">${due.length} due</span></div>
+    ${next.length?next.map(r=>`<div class="list-item"><span class="dot dot-red"></span><span class="txt"><b>${esc(r.chapter)}</b> <span class="faint">(${esc(r.subject)})</span></span><button class="btn btn-soft btn-sm" onclick="markRevisionDone('${r.id}')">Done</button></div>`).join(''):`<div class="empty text-sm">Nothing due. Use this space for advance revision.</div>`}
+    ${due.length>4?`<div class="text-xs faint mt-8">+ ${due.length-4} more due. Open Today's Planner for the full queue.</div>`:''}
+  </div>`;
+}
+function weeklyPreparationPulseHTML(){
+  const end=new Date(todayStr()+'T23:59:59'), start=new Date(end); start.setDate(end.getDate()-6);
+  const dates=[]; for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);dates.push(d.toISOString().slice(0,10));}
+  const hours=dates.reduce((a,d)=>a+hoursOnDate(d),0);
+  const questions=dates.reduce((a,d)=>a+(DATA.pyqs||[]).filter(q=>q.date===d).length,0);
+  const mistakes=dates.reduce((a,d)=>a+(DATA.mistakes||[]).filter(m=>m.date===d).length,0);
+  const done=dates.reduce((a,d)=>a+(DATA.plannerEvents||[]).filter(b=>b.date===d&&b.done).length,0);
+  const planned=dates.reduce((a,d)=>a+(DATA.plannerEvents||[]).filter(b=>b.date===d).length,0);
+  const adherence=planned?Math.round(done/planned*100):0;
+  return `<div class="card"><div class="card-head"><h3>📊 7-Day Preparation Pulse</h3><span class="text-xs faint">last 7 days</span></div>
+    <div class="grid grid-2">
+      <div><div class="eyebrow">Study</div><b>${hours.toFixed(1)}h</b></div>
+      <div><div class="eyebrow">PYQs</div><b>${questions}</b></div>
+      <div><div class="eyebrow">Mistakes</div><b>${mistakes}</b></div>
+      <div><div class="eyebrow">Plan adherence</div><b>${planned?adherence+'%':'—'}</b></div>
+    </div>
+    <div class="text-xs faint mt-10">Use the trend to adjust next week: low adherence → smaller blocks; low questions → more practice; high mistakes → error-loop revision.</div>
+  </div>`;
+}
+function chapterReadinessTableHTML(){
+  const rows=[];
+  subjectNames().forEach(subject=>(DATA.subjects[subject]?.chapters||[]).forEach(ch=>rows.push({subject,ch,score:chapterReadinessScore(ch,subject)})));
+  rows.sort((a,b)=>a.score-b.score);
+  const weakest=rows.slice(0,6);
+  return `<div class="card mb-16"><div class="card-head"><h3>📈 Chapter Readiness — Weakest First</h3><span class="text-xs faint">concept + questions + PYQs + accuracy + revision</span></div>
+    ${weakest.map(r=>{const b=readinessBand(r.score);return `<div class="list-item"><span class="txt"><b>${esc(r.ch.name)}</b> <span class="faint">(${esc(r.subject)})</span><br><span class="faint">${b.icon} ${b.label} · ${chapterCompletion(r.ch)}% coverage · ${r.ch.questions||0} Q · ${r.ch.pyqCount||0} PYQ</span></span><span class="tag ${b.cls}">${r.score}%</span></div>`}).join('') || `<div class="empty text-sm">Add chapter progress to build readiness data.</div>`}
+  </div>`;
+}
+
 /* ============================================================
    VIEW: DASHBOARD
    ============================================================ */
@@ -2764,6 +3092,10 @@ function viewDashboard(){
     ${countdownCard('CBSE Boards', DATA.meta.exams.boards)}
   </div>
   ${backlogTodayHTML()}
+  ${studyStrategistHTML()}
+  <div class="grid grid-2 mb-16">${revisionQueueHTML()}${mistakeDigestHTML()}</div>
+  ${chapterReadinessTableHTML()}
+  <div class="grid grid-2 mb-16">${weeklyPreparationPulseHTML()}<div class="card"><div class="card-head"><h3>🗓️ Weekly Review</h3></div><div class="text-sm muted">Use your weekly retrospective to decide what to keep, drop, or move into next week.</div><button class="btn btn-outline btn-sm mt-10" onclick="openWeeklyRetrospective()">Open Review</button></div></div>
   <div class="grid grid-3 mb-16">${['NEET','JEE','CBSE'].map(e=>{const r=examReadiness(e);return `<div class="card"><div class="flex-between"><b>${e} roadmap</b><span class="tag ${r.score>=70?'tag-low':r.score>=45?'tag-med':'tag-high'}">${r.score}%</span></div><div class="bar-track mt-8"><div class="bar-fill" style="width:${r.score}%"></div></div><div class="text-xs faint mt-6">Coverage ${r.coverage}% · ${r.pyqs} PYQs · ${r.mocks} mocks</div></div>`}).join('')}</div>
   ${nextTask ? `
   <div class="card mb-16" style="background:linear-gradient(135deg,var(--sage-soft),var(--sky-soft)); border:none;">
@@ -3954,6 +4286,144 @@ function confirmGeneratePlan(date){
   generateTodaysPlan(date, selected, class11Override, vedantuOverride);
 }
 // The button the whole feature revolves around: reads routine + syllabus + exams + revisions + homework + yesterday, and lays out the whole day
+
+/* ============================================================
+   SMART TODAY ALLOCATION
+   Goal: prevent last-minute stress by balancing:
+   1) upcoming test pressure
+   2) current/test-linked portion
+   3) Class 11 backlog
+   4) revision / recovery buffer
+   The split is adaptive rather than a rigid percentage.
+   ============================================================ */
+function smartTodayPressure(date){
+  date = date || todayStr();
+  const tests = (DATA.upcomingTests||[])
+    .map(t=>({t, d:daysBetween(date,t.date)}))
+    .filter(x=>x.d>=0)
+    .sort((a,b)=>a.d-b.d);
+  const nearest = tests[0] || null;
+  let testShare = 0.30;
+  let label = 'Balanced';
+  if(nearest){
+    if(nearest.d<=1){ testShare=.70; label='Test emergency'; }
+    else if(nearest.d<=3){ testShare=.58; label='Test-heavy'; }
+    else if(nearest.d<=7){ testShare=.45; label='Test ramp'; }
+    else if(nearest.d<=14){ testShare=.35; label='Early test prep'; }
+  }
+  return {nearest, testShare, label};
+}
+function smartTodayAllocation(date){
+  date = date || todayStr();
+  const free = Math.max(0, estimateFreePlanningMinutes(date));
+  const pressure = smartTodayPressure(date);
+  const mandatory = todaysMandatoryTopics(date);
+  const testShare = pressure.testShare;
+  const backlogShare = free >= 180 ? 0.18 : free >= 120 ? 0.12 : 0.08;
+  const revisionShare = free >= 240 ? 0.10 : 0.07;
+  const currentShare = Math.max(0.10, 1-testShare-backlogShare-revisionShare);
+  const testMin = Math.round(free*testShare);
+  const currentMin = Math.round(free*currentShare);
+  const backlogMin = Math.round(free*backlogShare);
+  const revisionMin = Math.max(0, free-testMin-currentMin-backlogMin);
+  const backlogPick = nearestClass11RecapChapter(
+    date, new Set(),
+    mandatory.map(x=>({subject:x.subject,chapter:x.chapter}))
+  );
+  return {
+    free, pressure, mandatory, backlogPick,
+    testMin, currentMin, backlogMin, revisionMin,
+    testPct:Math.round(testShare*100),
+    currentPct:Math.round(currentShare*100),
+    backlogPct:Math.round(backlogShare*100),
+    revisionPct:Math.round((revisionMin/Math.max(1,free))*100)
+  };
+}
+function smartBreakMinutes(duration, type, subject){
+  // Breaks scale with cognitive load and continuous sitting time.
+  const heavy = type==='Qns' || /Physics|Maths/.test(subject||'') || /numerical|problem|mock|test/i.test(type||'');
+  if(duration >= 110) return 15;
+  if(duration >= 80) return heavy ? 12 : 10;
+  if(duration >= 60) return heavy ? 10 : 8;
+  if(duration >= 45) return heavy ? 8 : 6;
+  return 5;
+}
+function smartStudyMethod(subject, type, examUrgency){
+  if(type==='Lecture') return 'Lecture → 3-line recall → mark doubts';
+  if(type==='NCERT') return subject==='Biology' ? 'NCERT active recall → diagrams → 10 MCQs' : 'Read → close book → recall → examples';
+  if(type==='Qns') return /Physics|Maths/.test(subject||'') ? 'Formula recall → timed problems → reattempt errors' : 'Concept recall → timed questions → error review';
+  if(examUrgency<=3) return 'Rapid concept recall → PYQs → mistakes';
+  if(/Biology/.test(subject||'')) return 'NCERT → active recall → MCQs';
+  if(/Chemistry/.test(subject||'')) return 'Concept/formula recall → questions → errors';
+  return 'Concept → examples → timed practice';
+}
+function todayStrategyHTML(date){
+  date = date || todayStr();
+  const a = smartTodayAllocation(date);
+  const testText = a.pressure.nearest
+    ? `${esc(a.pressure.nearest.t.name)} · ${a.pressure.nearest.d===0?'today':a.pressure.nearest.d+'d left'}`
+    : 'No upcoming test entered';
+  const currentText = a.mandatory.length
+    ? a.mandatory.slice(0,2).map(x=>`${esc(x.subject)}: ${esc(x.chapter)}`).join(' · ')
+    : 'Use highest-priority current chapters';
+  const backlogText = a.backlogPick ? `${esc(a.backlogPick.subject)}: ${esc(a.backlogPick.chapter)}` : 'No Class 11 chapter due';
+  const overload = a.free>0 ? Math.max(0, Math.round((a.testMin+a.currentMin+a.backlogMin+a.revisionMin-a.free))) : 0;
+  return `
+  <div class="card mb-16 smart-today-card">
+    <div class="smart-content">
+      <div class="flex-between flex-wrap gap-10">
+        <div>
+          <div class="eyebrow">🌿 TODAY'S SMART PLAN</div>
+          <div style="font-size:20px;font-weight:850;margin-top:4px;">${esc(a.pressure.label)} · no last-minute pile-up</div>
+          <div class="text-xs muted mt-4">The planner protects the nearest test first, keeps current work moving, gives Class 11 a daily lane, and leaves recovery space.</div>
+        </div>
+        <span class="tag ${a.pressure.testShare>=.58?'tag-high':a.pressure.testShare>=.4?'tag-med':'tag-low'}">${a.testPct}% test focus</span>
+      </div>
+
+      <div class="grid grid-4 mt-12" style="gap:8px;">
+        <div class="smart-kpi"><div class="k">Available</div><div class="v">${minsLabel(a.free)}</div></div>
+        <div class="smart-kpi"><div class="k">Test prep</div><div class="v">${minsLabel(a.testMin)}</div></div>
+        <div class="smart-kpi"><div class="k">Current</div><div class="v">${minsLabel(a.currentMin)}</div></div>
+        <div class="smart-kpi"><div class="k">Backlog</div><div class="v">${minsLabel(a.backlogMin)}</div></div>
+      </div>
+
+      <div class="grid grid-2 mt-10" style="gap:8px;">
+        <div class="smart-lane">
+          <div class="lane-title">🔴 Test pressure</div>
+          <div class="lane-desc">${testText}</div>
+        </div>
+        <div class="smart-lane">
+          <div class="lane-title">🟠 Current portion</div>
+          <div class="lane-desc">${currentText}</div>
+        </div>
+        <div class="smart-lane">
+          <div class="lane-title">🟡 Class 11 backlog</div>
+          <div class="lane-desc">${backlogText}</div>
+        </div>
+        <div class="smart-lane">
+          <div class="lane-title">🟢 Recovery / revision</div>
+          <div class="lane-desc">${minsLabel(a.revisionMin)} protected — not every minute gets filled.</div>
+        </div>
+      </div>
+
+      <div class="smart-progress-wrap">
+  <div class="flex-between text-xs">
+    <b>Today's time balance</b>
+    <span class="faint">${a.free ? Math.round((a.testMin+a.currentMin+a.backlogMin+a.revisionMin)/a.free*100) : 0}% planned</span>
+  </div>
+  <div class="smart-progress mt-6"><i style="width:${Math.min(100,a.free ? Math.round((a.testMin+a.currentMin+a.backlogMin+a.revisionMin)/a.free*100) : 0)}%"></i></div>
+  <div class="today-flow">
+    <span class="node">🔴 Test ${a.testPct}%</span><span class="arrow">→</span>
+    <span class="node">🟠 Current ${a.currentPct}%</span><span class="arrow">→</span>
+    <span class="node">🟡 Backlog ${a.backlogPct}%</span><span class="arrow">→</span>
+    <span class="node">🟢 Recovery ${a.revisionPct}%</span>
+  </div>
+</div>
+<div class="premium-note text-xs mt-10">💡 ${a.pressure.nearest ? 'Test work ramps up gradually as the date approaches.' : 'Add your upcoming tests to make the allocation fully test-aware.'} Longer/heavier sessions automatically receive longer breaks.</div>
+    </div>
+  </div>`;
+}
+
 function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOverride){
   date = date || plannerViewDate || todayStr();
   let selectedSet = null;
@@ -4051,7 +4521,12 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
         c11pick = {subject: class11Override.subject, chapter: class11Override.chapter, linkedTo: null};
       }
     } else {
-      c11min = Math.max(5, Number(DATA.routine.class11DailyMin)||15);
+      const pressure = smartTodayPressure(date);
+      const baseC11 = Math.max(5, Number(DATA.routine.class11DailyMin)||15);
+      // Keep backlog alive without letting an imminent test be crowded out.
+      c11min = pressure.nearest && pressure.nearest.d<=1 ? Math.min(baseC11,10)
+             : pressure.nearest && pressure.nearest.d<=3 ? Math.min(baseC11,15)
+             : Math.max(baseC11, free.length ? 15 : 5);
       const focusChapters = priorities
         .filter(p=>{ const cObj = findChapterByName(p.subject, p.chapter); return cObj && chapterClassLevel(p.subject, cObj)===12; })
         .slice(0,5)
@@ -4112,6 +4587,10 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       const chunk = Math.max(15, Math.min(want, slot.end-cursor, 60));
       let label = pick.slipScore>0 ? `${pick.chapter} — slip test focus` : (pick.revisionScore>0 ? `Revision (Stage ${pick.revisionStage}): ${pick.chapter}` : (pick.examScore>=30 ? `${pick.chapter} — exam prep` : pick.chapter));
       if(pick.type) label += ` — ${pick.type}`;
+      const urgency = pick.examScore>=30 ? 3 : pick.examScore>=15 ? 7 : 14;
+      const qt = smartQuestionTarget(pick.subject, pick.chapter, Math.max(25,chunk), urgency);
+      if(pick.type==='Qns' || pick.type==='PYQ') label += ` · 🎯 ${qt.count} Q / ≥${qt.accuracy}%`;
+      label += ` · ${smartStudyMethod(pick.subject, pick.type, urgency)}`;
       if(usedFallback) label += ' (extra — more free time than chapters picked)';
       // A block that already IS one specific step (Lecture/NCERT/Qns, from the plan modal's split)
       // doesn't need its own checklist — but an undifferentiated "Study" chunk (no split given,
@@ -4123,11 +4602,13 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       // A breather after every study chunk keeps the day realistic instead of a wall-to-wall grind —
       // longer after a full 45+ min sitting, and longer still after a draining task type (solving
       // questions/numericals) than after a lighter one (watching a lecture or reading NCERT).
-      const isHeavyTask = pick.type==='Qns' || (!pick.type && pick.examScore>=20);
-      const isLightTask = pick.type==='Lecture' || pick.type==='NCERT';
-      const breakLen = 2;
+      const breakLen = smartBreakMinutes(chunk, pick.type, pick.subject);
       if(slot.end - cursor >= breakLen + 15){
-        events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+breakLen), subject:'Break', activity:'☕ 2-min reset — water + eye rest + stretch', done:false, generated:true});
+        const breakLabel = breakLen >= 15 ? '🌿 Recovery break — walk, water, reset'
+          : breakLen >= 10 ? '☕ Longer reset — water + stretch + eye rest'
+          : breakLen >= 8 ? '☕ Reset break — water + eye rest'
+          : '☕ Short reset — breathe + stretch';
+        events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+breakLen), subject:'Break', activity:`${breakLabel} · ${breakLen} min`, done:false, generated:true});
         cursor += breakLen;
       }
     }
@@ -4139,8 +4620,9 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+dur), subject:'Revision', activity, done:false, generated:true});
       cursor += dur;
       if(slot.end - cursor >= 25){
-        events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+2), subject:'Break', activity:'☕ 2-min reset — water + eye rest + stretch', done:false, generated:true});
-        cursor += 2;
+        const breakLen = smartBreakMinutes(dur, null, 'Revision');
+        events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+breakLen), subject:'Break', activity:`☕ Revision reset · ${breakLen} min`, done:false, generated:true});
+        cursor += breakLen;
       }
     }
   });
@@ -4616,6 +5098,11 @@ function viewPlanner(){
   ${taperBannerHTML(date)}
   ${recapBannerHTML(date)}
   ${plannerEnergyStripHTML(date)}
+  ${smartStudyDashboardHTML()}
+  ${backlogZeroHTML()}
+  ${smartCatchUpHTML()}
+  ${todayStrategyHTML(date)}
+  ${notesFlashcardsHTML()}
   ${todayTimeControlHTML(date)}
   ${todayCommandCenterHTML(date)}
   ${isToday ? backlogTodayHTML() : ''}
@@ -4717,6 +5204,7 @@ function viewPlanner(){
     ${vedantuCompletionCardHTML()}
   </div>
 
+  ${studyStrategistHTML()}
   <div class="grid grid-3 mb-16">
     <div class="card">
       <div class="card-head"><h3>🧠 AI Priority Engine</h3><span class="text-xs faint">Exam 40% · Weak 25% · Revision 20% · Homework 10% · Missed 5%${slipSubject?' · Slip Test +18':''}</span></div>
@@ -5413,15 +5901,368 @@ function ensureBacklogWeek(){
       DATA.backlog.history=DATA.backlog.history.slice(0,12);
     }
     DATA.backlog.weekStart=start; DATA.backlog.workflowGenerated=false; DATA.backlog.rolloverCount=0;
+    if(DATA.backlog.manualChapterId && !getBacklogChapters().some(c=>c.id===DATA.backlog.manualChapterId)){
+      DATA.backlog.manualChapterId=null; DATA.backlog.selectionMode='auto';
+    }
     const b=backlogWeekBudget(start); DATA.backlog.ratio=b.ratio; DATA.backlog.targetHours=b.targetHours; save();
   }
   return DATA.backlog;
 }
+
+
+/* ============================================================
+   NOTES AS FLASHCARDS
+   Notes are stored as concise Q/A cards so revision becomes
+   active recall instead of passive rereading.
+   ============================================================ */
+
+/* ============================================================
+   ULTIMATE SMART STUDY ENGINE
+   - test preparation meter
+   - chapter readiness
+   - prerequisite hints
+   - question targets
+   - smart catch-up
+   - backlog-to-zero roadmap
+   ============================================================ */
+function chapterDataByName(subject, name){
+  const s=DATA.subjects?.[subject];
+  if(!s?.chapters) return null;
+  return s.chapters.find(c=>c.name===name)||null;
+}
+function chapterReadiness(subject, name){
+  const c=chapterDataByName(subject,name);
+  if(!c) return {score:0,stage:'Not started',parts:{}};
+  const coverage=Number(c.coverage ?? c.completion ?? c.progress ?? 0);
+  const understanding=Number(c.understanding ?? c.confidence ?? 0);
+  const accuracy=Number(c.accuracy ?? 0);
+  const q=Number(c.questions ?? c.qns ?? 0);
+  const pyq=Number(c.pyqs ?? c.PYQs ?? 0);
+  const revision=c.lastRevised ? Math.max(0,100-Math.min(100,daysBetween(c.lastRevised,todayStr())*7)) : 0;
+  const parts={coverage,understanding,accuracy,questions:Math.min(100,q/Math.max(1,Number(c.questionTarget||50))*100),pyqs:Math.min(100,pyq/Math.max(1,Number(c.pyqTarget||20))*100),revision};
+  const score=Math.round(
+    parts.coverage*.20+parts.understanding*.15+parts.accuracy*.20+
+    parts.questions*.15+parts.pyqs*.15+parts.revision*.15
+  );
+  const stage=score>=85?'Exam-ready':score>=70?'Practice-ready':score>=45?'Building':'Foundation';
+  return {score,stage,parts};
+}
+function testPreparationMeter(test){
+  const chapters=test?.chapters||[];
+  if(!chapters.length) return {score:0,items:[]};
+  const items=chapters.map(x=>{
+    const r=chapterReadiness(x.subject,x.chapter);
+    return {...x,score:r.score,stage:r.stage};
+  });
+  return {score:Math.round(items.reduce((a,x)=>a+x.score,0)/items.length),items};
+}
+function upcomingTestSmart(){
+  const tests=(DATA.upcomingTests||[]).map(t=>({...t,d:daysBetween(todayStr(),t.date)}))
+    .filter(t=>t.d>=0).sort((a,b)=>a.d-b.d);
+  return tests[0]||null;
+}
+function smartQuestionTarget(subject, chapter, minutes, urgency){
+  const base=/Biology/.test(subject)?0.55:/Maths|Physics/.test(subject)?0.35:0.45;
+  const urgencyBoost=urgency<=3?1.25:urgency<=7?1.1:1;
+  const n=Math.max(5,Math.round(minutes*base/urgencyBoost));
+  const accuracy=urgency<=3?75:70;
+  return {count:n,accuracy};
+}
+function prerequisiteHint(subject, chapter){
+  const c=chapterDataByName(subject,chapter);
+  if(!c) return null;
+  const prereq=c.prerequisites||c.prerequisite||[];
+  if(!Array.isArray(prereq) || !prereq.length) return null;
+  const weak=prereq.map(p=>{
+    const name=typeof p==='string'?p:p.chapter;
+    const r=chapterReadiness(subject,name);
+    return {name,score:r.score};
+  }).filter(x=>x.score<60);
+  return weak.length?weak[0]:null;
+}
+function backlogZeroStats(){
+  const all=[];
+  Object.entries(DATA.subjects||{}).forEach(([subject,s])=>{
+    (s.chapters||[]).forEach(c=>{
+      if(chapterClassLevel(subject,c)===11) all.push({subject,name:c.name,c});
+    });
+  });
+  const remaining=all.filter(x=>Number(x.c.coverage??x.c.completion??x.c.progress??0)<90).length;
+  const total=all.length;
+  const done=Math.max(0,total-remaining);
+  const weeklyTarget=Math.max(1,Math.round((DATA.backlog?.targetHours||2)/2));
+  const pace=Number(DATA.backlog?.chaptersPerMonth||0);
+  return {total,remaining,done,weeklyTarget,pace,percent:total?Math.round(done/total*100):0};
+}
+function smartCatchUpOptions(block){
+  const mins=Math.max(15,(toMin(block?.endTime)||0)-(toMin(block?.startTime)||0));
+  return [
+    {key:'move-tomorrow',title:'Move tomorrow',desc:`Keep full ${mins} min`},
+    {key:'compress',title:'Compress',desc:`Convert to ${Math.max(15,Math.round(mins*.6))} min`},
+    {key:'protect-test',title:'Protect test',desc:'Keep if test-linked'},
+    {key:'skip',title:'Skip',desc:'Drop low-priority work'}
+  ];
+}
+function applySmartCatchUp(key,blockId){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b) return;
+  if(key==='skip'){
+    b.done=true;b.skippedReason='Smart catch-up';save();render();toast('🟢 Lower-priority block skipped.');
+    return;
+  }
+  if(key==='compress'){
+    const s=toMin(b.startTime), e=toMin(b.endTime), dur=Math.max(15,Math.round((e-s)*.6));
+    b.endTime=toTimeStr(s+dur);b.activity=(b.activity||'Study')+' · compressed';save();render();toast('⏱️ Block compressed.');
+    return;
+  }
+  if(key==='move-tomorrow'){
+    const d=new Date(b.date+'T00:00:00');d.setDate(d.getDate()+1);b.date=d.toISOString().slice(0,10);b.rescheduled=(b.rescheduled||0)+1;save();render();toast('↪ Block moved to tomorrow.');
+    return;
+  }
+  toast('🔴 Keep this block protected for the upcoming test.');
+}
+function smartStudyDashboardHTML(){
+  const t=upcomingTestSmart();
+  const meter=t?testPreparationMeter(t):null;
+  const z=backlogZeroStats();
+  const due=flashDueCount();
+  return `<div class="ultimate-panel mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div><div class="eyebrow">🤖 PRAGATI STUDY INTELLIGENCE</div>
+      <h3 style="margin:3px 0 0;">Your preparation, not just your timetable.</h3>
+      <div class="text-xs muted mt-4">Tests, readiness, backlog, question targets and revision are connected.</div></div>
+      ${t?`<span class="tag ${t.d<=3?'tag-high':t.d<=7?'tag-med':'tag-low'}">${t.d===0?'TEST TODAY':t.d+'d left'}</span>`:''}
+    </div>
+    <div class="grid grid-4 mt-12" style="gap:8px;">
+      <div class="ultimate-stat"><div class="eyebrow">Test readiness</div><div class="num">${meter?meter.score+'%':'—'}</div></div>
+      <div class="ultimate-stat"><div class="eyebrow">Cards due</div><div class="num">${due}</div></div>
+      <div class="ultimate-stat"><div class="eyebrow">Backlog</div><div class="num">${z.remaining}</div><div class="text-xs muted">chapters left</div></div>
+      <div class="ultimate-stat"><div class="eyebrow">Backlog done</div><div class="num">${z.percent}%</div></div>
+    </div>
+    ${t?`<div class="priority-card">
+      <b>🧪 ${esc(t.name)} · ${t.d===0?'today':t.d+' days left'}</b>
+      <div class="text-xs muted mt-4">${esc(t.source||'Upcoming test')} · ${meter.score}% average readiness</div>
+      ${meter.items.slice(0,5).map(x=>`<div class="readiness-row"><span class="text-xs">${esc(x.subject)} · ${esc(x.chapter)}</span><div class="readiness-bar"><i style="width:${x.score}%"></i></div><b class="text-xs">${x.score}%</b></div>`).join('')}
+    </div>`:''}
+    <div class="grid grid-2 mt-10" style="gap:8px;">
+      <div class="prereq">${(()=>{
+        const focus=t?.chapters?.[0];
+        if(!focus) return '🔗 Add an upcoming test or choose a chapter to get prerequisite guidance.';
+        const p=prerequisiteHint(focus.subject,focus.chapter);
+        return p?`⚠️ <b>Prerequisite:</b> ${esc(p.name)} is only ${p.score}% ready. Give it a short recap before ${esc(focus.chapter)}.`:`✅ No weak prerequisite detected for ${esc(focus.chapter)}.`;
+      })()}</div>
+      <div class="prereq" style="background:var(--sky-soft);">🎯 <b>Question target:</b> ${t?.chapters?.[0]?(()=>{const m=smartQuestionTarget(t.chapters[0].subject,t.chapters[0].chapter,45,t.d);return `${m.count} questions at ≥${m.accuracy}% accuracy in a 45-min block.`})():'The planner will generate a target when a study block is created.'}</div>
+    </div>
+  </div>`;
+}
+function backlogZeroHTML(){
+  const z=backlogZeroStats();
+  const weeks=Math.max(1,Math.ceil(z.remaining/z.weeklyTarget));
+  return `<div class="ultimate-panel mb-16">
+    <div class="flex-between"><div><div class="eyebrow">🌱 BACKLOG → ZERO</div><h3 style="margin:3px 0 0;">A mountain becomes a route.</h3></div><span class="tag tag-low">${z.remaining} left</span></div>
+    <div class="text-xs muted mt-6">${z.done} of ${z.total} Class 11 chapters are at/above the current completion threshold.</div>
+    <div class="zero-roadmap mt-10"><i style="width:${z.percent}%"></i></div>
+    <div class="flex-between text-xs mt-6"><span>Progress ${z.percent}%</span><span>~${weeks} weeks at current target</span></div>
+    <div class="text-xs faint mt-8">The estimate is a planning aid, not a deadline. Test-heavy weeks can intentionally slow backlog work.</div>
+  </div>`;
+}
+function smartCatchUpHTML(){
+  const pending=(DATA.plannerEvents||[]).filter(b=>b.date===todayStr()&&!b.done&&!b.locked&&b.subject!=='Break');
+  if(!pending.length) return '';
+  const b=pending[0];
+  return `<div class="ultimate-panel mb-16">
+    <div class="eyebrow">⚠️ SMART CATCH-UP</div>
+    <h3 style="margin:3px 0 0;">A block gets missed? Don't rebuild the whole day.</h3>
+    <div class="text-xs muted mt-5"><b>${esc(b.subject)}</b> · ${esc(b.chapter||b.activity||'Study block')}</div>
+    <div class="catchup-grid mt-10">${smartCatchUpOptions(b).map(o=>`<button class="catchup-btn" onclick="applySmartCatchUp('${o.key}','${b.id}')"><b>${o.title}</b><span>${o.desc}</span></button>`).join('')}</div>
+  </div>`;
+}
+
+function ensureFlashcards(){
+  if(!Array.isArray(DATA.flashcards)) DATA.flashcards=[];
+  if(!DATA.flashcardSettings) DATA.flashcardSettings={dailyLimit:20};
+}
+function flashDueCount(){
+  ensureFlashcards(); const d=todayStr();
+  return DATA.flashcards.filter(c=>!c.due || c.due<=d).length;
+}
+function flashEsc(s){ return esc(String(s??'')); }
+function flashNextDue(interval, quality){
+  // Simple learner-friendly spaced repetition:
+  // quality 0-2 => tomorrow; 3 => 2d; 4 => 4d; 5 => 7d, growing from prior interval.
+  const q=Number(quality)||0;
+  const base=Math.max(1,Number(interval)||1);
+  let next=q<=2 ? 1 : q===3 ? Math.max(2,Math.round(base*1.5)) : q===4 ? Math.max(4,Math.round(base*2)) : Math.max(7,Math.round(base*2.7));
+  const d=new Date(); d.setDate(d.getDate()+next);
+  return {date:d.toISOString().slice(0,10),interval:next};
+}
+function addFlashcard(){
+  ensureFlashcards();
+  const subject=prompt('Subject (Physics / Chemistry / Biology / Maths):','Biology');
+  if(!subject) return;
+  const chapter=prompt('Chapter:', '');
+  if(!chapter) return;
+  const front=prompt('Question / recall prompt:', '');
+  if(!front) return;
+  const back=prompt('Answer / key points:', '');
+  if(!back) return;
+  const tags=prompt('Tags (comma separated):','NCERT,Important')||'';
+  DATA.flashcards.push({
+    id:uid(),subject,chapter,front,back,
+    tags:tags.split(',').map(x=>x.trim()).filter(Boolean),
+    due:todayStr(),interval:1,streak:0,createdAt:todayStr()
+  });
+  save(); render(); toast('🧠 Flashcard added.');
+}
+function deleteFlashcard(id){
+  ensureFlashcards();
+  DATA.flashcards=DATA.flashcards.filter(c=>c.id!==id);
+  save(); render(); toast('Flashcard deleted.');
+}
+function rateFlashcard(id,quality){
+  ensureFlashcards();
+  const c=DATA.flashcards.find(x=>x.id===id); if(!c) return;
+  const n=flashNextDue(c.interval,quality);
+  c.due=n.date; c.interval=n.interval;
+  c.streak=(quality>=4?(c.streak||0)+1:0);
+  c.lastReviewed=todayStr();
+  save(); render();
+}
+function flashCardHTML(c){
+  return `<div class="flash-card" onclick="this.classList.toggle('flipped')">
+    <div class="flash-label">${flashEsc(c.subject)} · ${flashEsc(c.chapter)}</div>
+    <div class="flash-q">❓ ${flashEsc(c.front)}</div>
+    <div class="flash-a">💡 ${flashEsc(c.back)}</div>
+    <div class="flash-hint">Tap to flip · due ${c.due||'today'}</div>
+  </div>`;
+}
+function flashReviewHTML(){
+  ensureFlashcards();
+  const due=DATA.flashcards.filter(c=>!c.due||c.due<=todayStr()).slice(0,DATA.flashcardSettings.dailyLimit||20);
+  if(!due.length) return `<div class="flash-review"><b>✨ Flashcards are clear for today.</b><div class="text-xs muted mt-4">Add notes as cards whenever you learn something worth recalling.</div></div>`;
+  const c=due[0];
+  return `<div class="flash-review">
+    <div class="flex-between"><div><div class="eyebrow">🧠 ACTIVE RECALL</div><div class="text-xs muted">${flashEsc(c.subject)} · ${flashEsc(c.chapter)}</div></div><span class="tag tag-med">${due.length} due</span></div>
+    <div class="flash-card mt-10" onclick="this.classList.toggle('flipped')">
+      <div class="flash-label">Question</div>
+      <div class="flash-q">❓ ${flashEsc(c.front)}</div>
+      <div class="flash-a">💡 ${flashEsc(c.back)}</div>
+      <div class="flash-hint">Tap to reveal / hide answer</div>
+    </div>
+    <div class="text-xs muted mt-8">After recalling, rate how well you knew it:</div>
+    <div class="flash-rating">
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();rateFlashcard('${c.id}',1)">😵 Again</button>
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();rateFlashcard('${c.id}',3)">🙂 Hard</button>
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();rateFlashcard('${c.id}',4)">😊 Good</button>
+      <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();rateFlashcard('${c.id}',5)">🔥 Easy</button>
+    </div>
+  </div>`;
+}
+
+function openFlashcardsFromPlanner(){
+  // Keeps the feature accessible even if the app's navigation structure changes.
+  const el=document.getElementById('today-planner');
+  if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); toast('🧠 Flashcard notes are in Today’s Planner.'); }
+}
+
+function notesFlashcardsHTML(){
+  ensureFlashcards();
+  const q=DATA.flashcards;
+  const due=q.filter(c=>!c.due||c.due<=todayStr()).length;
+  const strong=q.filter(c=>(c.streak||0)>=3).length;
+  return `<div class="smart-study-panel mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div><div class="eyebrow">📚 NOTES → FLASHCARDS</div>
+      <h3 style="margin:3px 0 0;">Remember, don't just reread.</h3>
+      <div class="text-xs muted mt-4">Turn important NCERT lines, formulas, reactions, definitions and mistakes into one-question cards.</div></div>
+      <button class="btn btn-primary btn-sm" onclick="addFlashcard()">+ Add flashcard</button>
+    </div>
+    <div class="grid grid-3 mt-12" style="gap:8px;">
+      <div class="smart-kpi"><div class="k">Cards</div><div class="v">${q.length}</div></div>
+      <div class="smart-kpi"><div class="k">Due today</div><div class="v">${due}</div></div>
+      <div class="smart-kpi"><div class="k">Strong</div><div class="v">${strong}</div></div>
+    </div>
+    <div class="mt-12">${flashReviewHTML()}</div>
+    ${q.length?`<div class="flash-deck mt-12">${q.slice(0,8).map(flashCardHTML).join('')}</div>`:`<div class="premium-note mt-12 text-xs">Example: instead of a long note, write “What is the SI unit of electric flux?” → “N·m²/C”.</div>`}
+  </div>`;
+}
+function flashcardSubjectShortcut(subject,chapter,front,back){
+  ensureFlashcards();
+  DATA.flashcards.push({id:uid(),subject,chapter,front,back,tags:['Quick note'],due:todayStr(),interval:1,streak:0,createdAt:todayStr()});
+  save(); toast('🧠 Note saved as a flashcard.');
+}
+
+function backlogSelectedChapter(){
+  ensureBacklogWeek();
+  const list = getBacklogChapters();
+  const manualId = DATA.backlog?.manualChapterId;
+  if(manualId){
+    const manual = list.find(c=>c.id===manualId);
+    if(manual) return manual;
+  }
+  return list[0] || null;
+}
+function backlogSelectionMode(){
+  return DATA.backlog?.selectionMode === 'manual' ? 'manual' : 'auto';
+}
+function setBacklogSelectionMode(mode){
+  DATA.backlog = DATA.backlog || {history:[]};
+  DATA.backlog.selectionMode = mode === 'manual' ? 'manual' : 'auto';
+  if(DATA.backlog.selectionMode === 'auto') DATA.backlog.manualChapterId = null;
+  save(); render();
+  toast(DATA.backlog.selectionMode==='manual' ? '🎯 Manual backlog chapter mode enabled.' : '🤖 Auto backlog selection enabled.');
+}
+function setBacklogManualChapter(id){
+  DATA.backlog = DATA.backlog || {history:[]};
+  const ch = getBacklogChapters().find(c=>c.id===id);
+  if(!ch) return toast('Choose a valid Class 11 backlog chapter.');
+  DATA.backlog.selectionMode = 'manual';
+  DATA.backlog.manualChapterId = id;
+  save(); render();
+  toast(`🎯 ${ch.name} selected for this 7-day backlog cycle.`);
+}
+function clearBacklogManualChapter(){
+  DATA.backlog = DATA.backlog || {history:[]};
+  DATA.backlog.selectionMode = 'auto';
+  DATA.backlog.manualChapterId = null;
+  save(); render();
+  toast('🤖 Backlog will auto-select the highest-priority chapter.');
+}
+function backlogSelectionCardHTML(){
+  const list = getBacklogChapters();
+  const selected = backlogSelectedChapter();
+  const mode = backlogSelectionMode();
+  return `<div class="card mb-16 smart-today-card" style="border:1px solid var(--card-border);">
+    <div class="card-head">
+      <div>
+        <h3>🎯 Choose This Week's Backlog Lesson</h3>
+        <div class="text-xs muted mt-4">You can let Pragati choose automatically or manually lock one Class 11 chapter for the entire 7-day cycle.</div>
+      </div>
+      <span class="tag ${mode==='manual'?'tag-med':'tag-low'}">${mode==='manual'?'🎯 Manual':'🤖 Auto'}</span>
+    </div>
+    <div class="flex gap-8 flex-wrap mb-10">
+      <button class="btn ${mode==='auto'?'btn-primary':'btn-outline'} btn-sm" onclick="setBacklogSelectionMode('auto')">🤖 Auto-select</button>
+      <button class="btn ${mode==='manual'?'btn-primary':'btn-outline'} btn-sm" onclick="setBacklogSelectionMode('manual')">🎯 Manual selection</button>
+    </div>
+    ${mode==='manual' ? `<div class="field">
+      <label>Manual Class 11 chapter</label>
+      <select onchange="setBacklogManualChapter(this.value)">
+        <option value="">Choose a chapter…</option>
+        ${list.map(c=>`<option value="${esc(c.id)}" ${selected&&c.id===selected.id?'selected':''}>${esc(c.subject)} — ${esc(c.name)} · ${c.stage.label} · score ${c.score}</option>`).join('')}
+      </select>
+      <div class="text-xs faint mt-6">This chapter stays selected for all 7 days until you change it or switch back to Auto.</div>
+    </div>` : `<div class="smart-lane">
+      <div class="lane-title">🤖 Auto-selected</div>
+      <div class="lane-desc">${selected?`${esc(selected.subject)} — ${esc(selected.name)} · ${esc(selected.stage.label)} · priority score ${selected.score}`:'No Class 11 backlog chapter available.'}</div>
+    </div>`}
+  </div>`;
+}
+
 function backlogWorkflowRows(){
   // A 7-day backlog cycle is intentionally ONE chapter only.
   // The method changes each day; the chapter does not.
   ensureBacklogWeek();
-  const c=getBacklogChapters()[0];
+  const c=backlogSelectedChapter();
   const actions=[
     {day:'Mon',label:'Learn + build foundation',icon:'📘',minutes:60},
     {day:'Tue',label:'NCERT + notes + active recall',icon:'📗',minutes:45},
@@ -5515,20 +6356,21 @@ function rolloverIncompleteBacklog(){
   }); week.rolloverCount=(week.rolloverCount||0)+pending.length; save(); render(); toast(`↪ Rolled ${pending.length} unfinished backlog block${pending.length===1?'':'s'} into next week.`);
 }
 function addBacklogBlockToday(){
-  const week=ensureBacklogWeek(), top=getBacklogChapters()[0]; if(!top) return toast('🎉 No Class 11 backlog detected.');
+  const week=ensureBacklogWeek(), top=backlogSelectedChapter(); if(!top) return toast('🎉 No Class 11 backlog detected.');
   const duration=Math.min(45,Math.max(15,Math.round(week.targetHours*60/5))), slot=getFreeSlots(todayStr()).find(x=>x.end-x.start>=duration); if(!slot) return toast('No free slot left today for backlog.');
   DATA.plannerEvents.push({id:uid(),date:todayStr(),startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:top.subject,chapter:top.name,activity:`Backlog · ${top.stage.label}`,goals:['Clear Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:top.stage.key}); save(); render(); toast(`🔥 Added ${duration}-min backlog block for ${top.name}.`);
 }
 function backlogTodayHTML(){
-  const week=ensureBacklogWeek(), top=getBacklogChapters()[0]; if(!top) return '';
+  const week=ensureBacklogWeek(), top=backlogSelectedChapter(); if(!top) return '';
   const todayBacklog=(DATA.plannerEvents||[]).filter(b=>b.date===todayStr()&&b.backlogWorkflow&&!b.done).reduce((a,b)=>a+Math.max(0,(toMin(b.endTime)||0)-(toMin(b.startTime)||0)),0);
   const target=Math.round(Math.min(60,week.targetHours*60/5));
-  return `<div class="card mb-16" style="background:linear-gradient(135deg,var(--coral-soft),var(--sky-soft));border:none;"><div class="flex-between flex-wrap gap-10" style="align-items:center;"><div><div class="text-xs faint" style="text-transform:uppercase;font-weight:700;letter-spacing:.05em;">🔥 Class 11 Backlog</div><div style="font-size:17px;font-weight:700;margin-top:3px;">${esc(top.subject)} — ${esc(top.name)}</div><div class="text-xs muted mt-4">Today: ${esc(top.stage.label)} · Week budget: ${week.targetHours}h · ${Math.round(week.ratio*100)}% backlog allocation · ${Math.round(todayBacklog)} min already planned</div></div><div class="flex gap-8 flex-wrap"><button class="btn btn-primary btn-sm" onclick="addBacklogBlockToday()">+ Add ${target}-min block</button><a class="btn btn-outline btn-sm" href="#backlog">Open Backlog Engine</a></div></div></div>`;
+  return `<div class="card mb-16" style="background:linear-gradient(135deg,var(--coral-soft),var(--sky-soft));border:none;"><div class="flex-between flex-wrap gap-10" style="align-items:center;"><div><div class="text-xs faint" style="text-transform:uppercase;font-weight:700;letter-spacing:.05em;">🔥 Class 11 Backlog</div><div style="font-size:17px;font-weight:700;margin-top:3px;">${esc(top.subject)} — ${esc(top.name)}</div><div class="text-xs muted mt-4">${backlogSelectionMode()==='manual'?'🎯 Manually selected':'🤖 Auto-selected'} · Today: ${esc(top.stage.label)} · Week budget: ${week.targetHours}h · ${Math.round(week.ratio*100)}% backlog allocation · ${Math.round(todayBacklog)} min already planned</div></div><div class="flex gap-8 flex-wrap"><button class="btn btn-primary btn-sm" onclick="addBacklogBlockToday()">+ Add ${target}-min block</button><a class="btn btn-outline btn-sm" href="#backlog">Open Backlog Engine</a></div></div></div>`;
 }
 function viewBacklog(){
-  const week=ensureBacklogWeek(), budget=backlogWeekBudget(week.weekStart), rows=getBacklogChapters().slice(0,15), workflow=backlogWorkflowRows(), focus=getBacklogChapters()[0];
+  const week=ensureBacklogWeek(), budget=backlogWeekBudget(week.weekStart), rows=getBacklogChapters().slice(0,15), workflow=backlogWorkflowRows(), focus=backlogSelectedChapter();
   const focusMission=backlogWeeklyMission(focus);
   return `<div class="section-desc">Class 11 recovery without sacrificing Class 12. Each generated 7-day cycle now stays on <b>one chapter</b> and changes the study method across the week, so you actually move that chapter forward instead of touching seven chapters superficially.</div>
+  ${backlogSelectionCardHTML()}
   ${backlogChapterStatsHTML(focus)}
   <div class="grid grid-4 mb-16">
     <div class="card center"><div class="eyebrow">Backlog left</div><div style="font-family:var(--font-mono);font-size:32px;font-weight:700;">${rows.length}</div><div class="text-xs muted">active Class 11 chapters</div></div>
