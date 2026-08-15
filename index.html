@@ -698,6 +698,11 @@ body{
 .clean-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @media(max-width:720px){.clean-grid{grid-template-columns:repeat(2,1fr)}}
 
+
+/* ===== TEST EDIT + ANALYSIS TRACKER ===== */
+.analysis-tracker{border:1px solid var(--card-border);border-radius:18px;padding:14px;background:linear-gradient(135deg,var(--card-bg),var(--sky-soft));box-shadow:0 8px 24px rgba(31,41,55,.045)}
+.analysis-state{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:800;border:1px solid var(--card-border)}
+.analysis-state.pending{background:var(--amber-soft)} .analysis-state.done{background:var(--sage-soft)} .analysis-state.progress{background:var(--sky-soft)}
 </style>
 </head>
 <body>
@@ -1404,8 +1409,13 @@ function maybeAutoSuggestEnergyFromSleep(date){
 // ---- What's New / Changelog ----
 // A running log of feature additions, newest first. Bump WHATS_NEW_VERSION whenever a new entry
 // is added at the top — that's what triggers the "new" badge for anyone who hasn't seen it yet.
-const WHATS_NEW_VERSION = 14;
+const WHATS_NEW_VERSION = 15;
 const WHATS_NEW = [
+  { version: 15, date: '2026-08-15', items: [
+    '✏️ Test Calendar entries can now be edited after saving, including rescheduled dates and chapter lists.',
+    '📊 Test Analysis Tracker — mark completed tests pending, in progress or analysed, with fix notes.',
+    '✏️ Saved test-result entries can be edited when marks, date, rank or analysis notes need correction.',
+  ]},
   { version: 14, date: '2026-08-15', items: [
     '🎯 Test Command Center — upcoming tests, days remaining and readiness in one place.',
     '🌙 Weekly Review — planned vs completed time, Daily Core consistency and backlog progress.',
@@ -1878,7 +1888,7 @@ function migrateData(d){
   });
   if(!merged.examRecords) merged.examRecords = [];
   if(!merged.upcomingTests) merged.upcomingTests = [];
-  merged.upcomingTests.forEach(t=>{ if(!t.testType) t.testType = 'Other'; if(!t.examType) t.examType='NEET'; });
+  merged.upcomingTests.forEach(t=>{ if(!t.analysisStatus) t.analysisStatus='pending'; if(!t.testType) t.testType = 'Other'; if(!t.examType) t.examType='NEET'; });
   if(!merged.scheduleOverrides) merged.scheduleOverrides = {};
   merged.routine = Object.assign({}, fresh.routine, d.routine||{});
   merged.slipTests = Object.assign({}, fresh.slipTests, d.slipTests||{});
@@ -8783,7 +8793,7 @@ function viewMocks(){
           <td class="mono faint">${idx+1}</td>
           <td>${esc(m.name)}${hasBreakdown?` <span class="faint text-xs">${mockExpanded===m.id?'▾':'▸'}</span>`:''}</td><td>${fmtDate(m.date)}</td><td class="mono">${m.totalScore}</td><td>${m.accuracy||'—'}%</td><td>${m.rank||'—'}</td><td>${m.percentile!=null?m.percentile+'%':'—'}</td>
           <td style="color:${diff==null?'':diff>=0?'#3E5A3B':'#93332A'}; font-weight:600;">${diff==null?'—':(diff>=0?'+':'')+diff}</td>
-          <td><button class="icon-btn" onclick="event.stopPropagation(); deleteMock('${m.id}')">✕</button></td>
+          <td class="flex gap-4"><button class="btn btn-soft btn-sm" onclick="event.stopPropagation(); openMockEdit('${m.id}')">Edit</button><button class="icon-btn" onclick="event.stopPropagation(); deleteMock('${m.id}')">✕</button></td>
         </tr>`];
         if(hasBreakdown && mockExpanded===m.id){
           rows.push(`<tr><td colspan="9" style="padding:0;">
@@ -8942,6 +8952,49 @@ function saveMock(){
   save(); closeModal(); render(); checkAchievements();
   toast(`Mock saved — auto-scored ${r.totalScore}.`);
 }
+
+function openMockEdit(id){
+  const m=(DATA.mocks||[]).find(x=>x.id===id); if(!m)return;
+  const subs=subjectNames(), b=m.subjectBreakdown||{};
+  openModal(`
+    <div class="modal-head"><h3>✏️ Edit Test Result</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="field-row">
+      <div class="field"><label>Exam name</label><input id="em_name" value="${esc(m.name||'')}"></div>
+      <div class="field"><label>Date</label><input type="date" id="em_date" value="${m.date||todayStr()}"></div>
+    </div>
+    ${subs.map(s=>`<div class="field-row mb-8">
+      <div class="field"><label>${esc(s)}</label></div>
+      <div class="field"><label>Correct</label><input type="number" id="em_c_${s}" value="${b[s]?.c||0}"</div>
+      <div class="field"><label>Wrong</label><input type="number" id="em_w_${s}" value="${b[s]?.w||0}"</div>
+      <div class="field"><label>Unattempted</label><input type="number" id="em_u_${s}" value="${b[s]?.u||0}"</div>
+    </div>`).join('')}
+    <div class="field-row">
+      <div class="field"><label>Rank</label><input id="em_rank" value="${esc(m.rank||'')}"></div>
+      <div class="field"><label>Percentile</label><input type="number" step="0.01" id="em_pct" value="${m.percentile??''}"></div>
+    </div>
+    <div class="field"><label>Notes / analysis</label><textarea id="em_notes">${esc(m.notes||'')}</textarea></div>
+    <button class="btn btn-primary w-full" onclick="updateMockResult('${id}')">Save Changes</button>
+  `);
+}
+function updateMockResult(id){
+  const m=(DATA.mocks||[]).find(x=>x.id===id); if(!m)return;
+  const breakdown={};
+  subjectNames().forEach(s=>{
+    breakdown[s]={c:parseInt(document.getElementById('em_c_'+s)?.value)||0,w:parseInt(document.getElementById('em_w_'+s)?.value)||0,u:parseInt(document.getElementById('em_u_'+s)?.value)||0};
+  });
+  const r=computeMockFromBreakdown(breakdown);
+  if(!r.totalQuestions)return toast('Enter at least one result.');
+  m.name=document.getElementById('em_name').value.trim()||m.name;
+  m.date=document.getElementById('em_date').value||m.date;
+  m.subjectBreakdown=breakdown;
+  m.totalScore=r.totalScore;m.accuracy=r.accuracy;m.negMarks=r.negMarks;
+  m.totalCorrect=r.totalCorrect;m.totalWrong=r.totalWrong;m.totalUnattempted=r.totalUnattempted;m.totalQuestions=r.totalQuestions;
+  m.rank=document.getElementById('em_rank').value;
+  m.percentile=document.getElementById('em_pct').value?parseFloat(document.getElementById('em_pct').value):null;
+  m.notes=document.getElementById('em_notes').value;
+  save();closeModal();render();toast('✏️ Test result updated.');
+}
+
 function deleteMock(id){ DATA.mocks = DATA.mocks.filter(m=>m.id!==id); save(); render(); }
 
 /* ============================================================
@@ -10462,58 +10515,106 @@ function viewSyllabusSync(){
 /* ============================================================
    VIEW: TEST CALENDAR & EXAM ALIGNMENT
    ============================================================ */
-function openTestForm(){
-  const subs = subjectNames();
+
+function openTestForm(testId=null){
+  const test=testId?(DATA.upcomingTests||[]).find(t=>t.id===testId):null;
+  const subs=subjectNames();
+  const selected=new Set((test?.chapters||[]).map(c=>c.subject+'::'+c.chapter));
   openModal(`
-    <div class="modal-head"><h3>Add Upcoming Test</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-head"><h3>${test?'Edit Upcoming Test':'Add Upcoming Test'}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="field-row">
-      <div class="field"><label>Test Name</label><input id="t_name" placeholder="e.g. School Test / AIATS-5"></div>
-      <div class="field"><label>Date</label><input type="date" id="t_date" value="${todayStr()}"></div>
+      <div class="field"><label>Test Name</label><input id="t_name" value="${esc(test?.name||'')}" placeholder="e.g. School Test / AIATS-5"></div>
+      <div class="field"><label>Date</label><input type="date" id="t_date" value="${test?.date||todayStr()}"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Source</label><select id="t_source"><option>School</option><option>Aakash</option><option>Vedantu</option></select></div>
-      <div class="field"><label>Exam</label><select id="t_exam"><option>CBSE</option><option selected>NEET</option><option>JEE</option><option>Mixed</option></select></div>
+      <div class="field"><label>Source</label><select id="t_source">${['School','Aakash','Vedantu'].map(x=>`<option ${x===(test?.source||'School')?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Exam</label><select id="t_exam">${['CBSE','NEET','JEE','Mixed'].map(x=>`<option ${x===(test?.examType||'NEET')?'selected':''}>${x}</option>`).join('')}</select></div>
     </div>
-    <div class="field"><label>Test Type</label><select id="t_type">${TEST_TYPES.map(t=>`<option>${t}</option>`).join('')}</select>
-    </div>
-    <div class="text-xs faint mb-8" style="margin-top:-6px;">Periodic Tests and Month-end Exams get slightly higher priority in your daily plan.</div>
-    <div class="card-sub mb-8" style="margin-top:10px;">Chapters covered</div>
-    ${subs.map(s=>examChapterPickerHTMLNoScore(s)).join('')}
-    <button class="btn btn-primary w-full mt-16" onclick="saveTest()">Save Test</button>
-  `, true);
+    <div class="field"><label>Test Type</label><select id="t_type">${TEST_TYPES.map(t=>`<option ${t===(test?.testType||'Other')?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="text-xs faint mb-8">You can edit the date later if the test is postponed/rescheduled. The planner will use the new date immediately.</div>
+    <div class="card-sub mb-8">Chapters covered</div>
+    ${subs.map(s=>`<div class="card" style="padding:14px 16px;margin-bottom:10px;">
+      <div class="flex-between mb-8"><b style="font-size:13px;">${s}</b><input class="text-xs" style="max-width:150px;padding:5px 8px;border:1px solid var(--card-border);border-radius:8px;background:var(--bg);" placeholder="Search chapters…" oninput="filterExamChapters('tch_${s}',this.value)"></div>
+      <div id="tch_${s}" style="max-height:180px;overflow-y:auto;">
+        ${(DATA.subjects[s]?.chapters||[]).map(ch=>`<div class="exch-row" data-name="${esc(ch.name).toLowerCase()}" style="padding:5px 0;"><label class="checkbox-row"><input type="checkbox" id="tcb_${ch.id}" ${selected.has(s+'::'+ch.name)?'checked':''}><span>${esc(ch.name)}</span></label></div>`).join('')||`<div class="text-xs faint">No chapters yet.</div>`}
+      </div>
+    </div>`).join('')}
+    <button class="btn btn-primary w-full mt-16" onclick="${test?`updateTest('${test.id}')`:'saveTest()'}">${test?'Save Changes':'Save Test'}</button>
+  `,true);
 }
-function examChapterPickerHTMLNoScore(subj){
-  const chapters = (DATA.subjects[subj]?.chapters)||[];
-  const pid = 'tch_'+subj;
-  return `
-  <div class="card" style="padding:14px 16px; margin-bottom:10px;">
-    <div class="flex-between mb-8"><b style="font-size:13px;">${subj}</b><input class="text-xs" style="max-width:150px; padding:5px 8px; border:1px solid var(--card-border); border-radius:8px; background:var(--bg);" placeholder="Search chapters…" oninput="filterExamChapters('${pid}', this.value)"></div>
-    <div id="${pid}" style="max-height:180px; overflow-y:auto;">
-      ${chapters.map(ch=>`<div class="exch-row" data-name="${esc(ch.name).toLowerCase()}" style="padding:5px 0;"><label class="checkbox-row"><input type="checkbox" id="tcb_${ch.id}"><span>${esc(ch.name)}</span></label></div>`).join('') || `<div class="text-xs faint">No chapters yet.</div>`}
-    </div>
-  </div>`;
+function collectTestForm(){
+  const name=document.getElementById('t_name')?.value.trim();
+  if(!name)return {error:'Please enter a test name.'};
+  const date=document.getElementById('t_date')?.value||todayStr();
+  const source=document.getElementById('t_source')?.value||'School';
+  const testType=document.getElementById('t_type')?.value||'Other';
+  const examType=document.getElementById('t_exam')?.value||'NEET';
+  const chapters=[];
+  subjectNames().forEach(s=>(DATA.subjects[s]?.chapters||[]).forEach(ch=>{
+    const cb=document.getElementById('tcb_'+ch.id); if(cb?.checked) chapters.push({subject:s,chapter:ch.name});
+  }));
+  if(!chapters.length)return {error:'Select at least one chapter.'};
+  const daysLeft=daysBetween(todayStr(),date);
+  return {name,date,source,testType,examType,chapters,status:daysLeft<=3?'red':daysLeft<=7?'yellow':'green'};
 }
 function saveTest(){
-  const name = document.getElementById('t_name').value.trim();
-  if(!name) return toast('Please enter a test name.');
-  const date = document.getElementById('t_date').value || todayStr();
-  const source = document.getElementById('t_source').value;
-  const testType = document.getElementById('t_type').value;
-  const examType = document.getElementById('t_exam')?.value || 'NEET';
-  const chapters = [];
-  subjectNames().forEach(s=>{
-    (DATA.subjects[s]?.chapters||[]).forEach(ch=>{
-      const cb = document.getElementById('tcb_'+ch.id);
-      if(cb && cb.checked) chapters.push({subject:s, chapter:ch.name});
-    });
-  });
-  if(!chapters.length) return toast('Select at least one chapter.');
-  const daysLeft = daysBetween(todayStr(), date);
-  const status = daysLeft<=3 ? 'red' : daysLeft<=7 ? 'yellow' : 'green';
-  DATA.upcomingTests.push({id:uid(), source, examType, testType, name, date, chapters, status});
-  save(); closeModal(); render(); toast('Test added to calendar.');
+  const r=collectTestForm(); if(r.error)return toast(r.error);
+  DATA.upcomingTests.push({id:uid(),...r,analysisStatus:'pending',analysisNotes:''});
+  save();closeModal();render();toast('Test added to calendar.');
 }
-function deleteTest(id){ DATA.upcomingTests = DATA.upcomingTests.filter(t=>t.id!==id); save(); render(); }
+function updateTest(id){
+  const r=collectTestForm(); if(r.error)return toast(r.error);
+  const t=(DATA.upcomingTests||[]).find(x=>x.id===id); if(!t)return toast('Test not found.');
+  const oldDate=t.date;
+  Object.assign(t,r);
+  if(!t.analysisStatus)t.analysisStatus='pending';
+  save();closeModal();render();
+  toast(oldDate!==r.date?`📅 Test date changed to ${fmtDate(r.date)}. Planner updated.`:'✏️ Test updated.');
+}
+function deleteTest(id){DATA.upcomingTests=DATA.upcomingTests.filter(t=>t.id!==id);save();render();toast('Test removed.');}
+function setTestAnalysisStatus(id,status){
+  const t=(DATA.upcomingTests||[]).find(x=>x.id===id);if(!t)return;
+  t.analysisStatus=status;
+  if(status==='done')t.analysisCompletedAt=todayStr();
+  save();render();
+  toast(status==='done'?'✅ Test analysis marked complete.':status==='progress'?'🟡 Analysis in progress.':'↩️ Analysis reopened.');
+}
+function editTestAnalysisNotes(id){
+  const t=(DATA.upcomingTests||[]).find(x=>x.id===id);if(!t)return;
+  const notes=prompt('Test analysis notes / what to fix:',t.analysisNotes||'');
+  if(notes===null)return;
+  t.analysisNotes=notes;
+  if(notes.trim() && (!t.analysisStatus||t.analysisStatus==='pending'))t.analysisStatus='progress';
+  save();render();toast('📝 Analysis notes saved.');
+}
+function testAnalysisTrackerHTML(){
+  const today=todayStr();
+  const past=(DATA.upcomingTests||[]).filter(t=>t.date<today).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(!past.length)return `<div class="analysis-tracker mb-16"><div class="card-head"><h3>📊 Test Analysis Tracker</h3></div><div class="empty text-sm">After a test date passes, it will appear here.</div></div>`;
+  const done=past.filter(t=>t.analysisStatus==='done').length;
+  return `<div class="analysis-tracker mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div><div class="eyebrow">📊 TEST ANALYSIS TRACKER</div><h3 style="margin:3px 0 0;">Close the loop after every test.</h3><div class="text-xs muted mt-4">Track whether you've analysed the paper and record the main fixes.</div></div>
+      <span class="tag ${done===past.length?'tag-low':'tag-med'}">${done}/${past.length} analysed</span>
+    </div>
+    <div class="mt-12">${past.slice(0,12).map(t=>{
+      const st=t.analysisStatus||'pending';
+      const label=st==='done'?'✅ Analysed':st==='progress'?'🟡 In progress':'⚪ Pending';
+      const cls=st==='done'?'done':st==='progress'?'progress':'pending';
+      return `<div class="test-command mb-8">
+        <div class="flex-between flex-wrap gap-8"><div><b class="text-sm">${esc(t.name)}</b><div class="text-xs muted mt-3">${esc(t.source||'Test')} · ${fmtDate(t.date)} · ${esc(t.examType||'NEET')}</div></div><span class="analysis-state ${cls}">${label}</span></div>
+        ${t.analysisNotes?`<div class="text-xs mt-7"><b>Fix note:</b> ${esc(t.analysisNotes)}</div>`:''}
+        <div class="flex gap-6 flex-wrap mt-8">
+          <button class="btn btn-outline btn-sm" onclick="setTestAnalysisStatus('${t.id}','progress')">🟡 In progress</button>
+          <button class="btn btn-soft btn-sm" onclick="editTestAnalysisNotes('${t.id}')">📝 Notes</button>
+          <button class="btn btn-primary btn-sm" onclick="setTestAnalysisStatus('${t.id}','done')">✓ Mark analysed</button>
+          ${st==='done'?`<button class="btn btn-outline btn-sm" onclick="setTestAnalysisStatus('${t.id}','pending')">Reopen</button>`:''}
+        </div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
 function testOverlapScore(test){
   const sources = ['School','Aakash','Vedantu'];
   const scores = {};
@@ -10582,11 +10683,13 @@ function viewTestCalendar(){
           <td class="text-xs">${t.chapters.map(c=>esc(c.chapter)).join(', ')}</td>
           <td class="text-xs faint">${ovText||'—'}</td>
           <td>${statusDot[t.status]||'⚪'}</td>
-          <td class="flex gap-4">${daysBetween(todayStr(),t.date)>0?`<button class="btn btn-outline btn-sm" onclick="generateTestPrepPlan('${t.id}')">Plan</button>`:''}<button class="icon-btn" onclick="deleteTest('${t.id}')">✕</button></td>
+          <td class="flex gap-4">${daysBetween(todayStr(),t.date)>0?`<button class="btn btn-outline btn-sm" onclick="generateTestPrepPlan('${t.id}')">Plan</button>`:''}<button class="btn btn-soft btn-sm" onclick="openTestForm('${t.id}')">Edit</button><button class="icon-btn" onclick="deleteTest('${t.id}')">✕</button></td>
         </tr>`;
       }).join('') || `<tr><td colspan="9"><div class="empty">No upcoming tests scheduled yet.</div></td></tr>`}</tbody>
     </table>
   </div>
+
+  ${testAnalysisTrackerHTML()}
 
   ${align ? `
   <div class="card">
