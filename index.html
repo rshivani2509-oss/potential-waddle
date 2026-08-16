@@ -703,6 +703,27 @@ body{
 .analysis-tracker{border:1px solid var(--card-border);border-radius:18px;padding:14px;background:linear-gradient(135deg,var(--card-bg),var(--sky-soft));box-shadow:0 8px 24px rgba(31,41,55,.045)}
 .analysis-state{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:800;border:1px solid var(--card-border)}
 .analysis-state.pending{background:var(--amber-soft)} .analysis-state.done{background:var(--sage-soft)} .analysis-state.progress{background:var(--sky-soft)}
+
+/* ===== SCHOOL WEEKLY TEST SYSTEM ===== */
+.school-test-card{
+  border:1px solid var(--card-border);border-radius:18px;padding:14px;
+  background:linear-gradient(135deg,var(--card-bg),var(--sky-soft));
+}
+.school-test-badge{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;
+  font-size:10px;font-weight:850;border:1px solid var(--card-border);
+  background:var(--amber-soft);
+}
+.test-readiness-bar{height:8px;border-radius:99px;background:var(--bg-soft);overflow:hidden}
+.test-readiness-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--sky),var(--sage))}
+.school-prep-note{
+  border:1px solid var(--card-border);border-radius:13px;padding:10px 12px;
+  background:rgba(255,255,255,.55);font-size:11px;
+}
+
+.prashn-bridge-card{border:1px solid var(--card-border);background:linear-gradient(135deg,var(--sky-soft),var(--card-bg));}
+.prashn-stat{border:1px solid var(--card-border);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.45)}
+.prashn-mini-q{border:1px solid var(--card-border);border-radius:12px;padding:10px 12px;background:var(--card-bg)}
 </style>
 </head>
 <body>
@@ -1276,6 +1297,7 @@ function freshData(){
     dailyReviews: {},    // date -> {completed,why,distraction,mood,sleepHours}
     examRecords: [],     // [{id, source:'School'|'Aakash', name, date, examType, subjectMarks:{subj:{obtained,total}}, chapterEntries:[{subject,chapter,score,difficulty,confidence}], totalObtained, totalMax}]
     upcomingTests: [],   // [{id, source:'School'|'Aakash'|'Vedantu', name, date, testType, chapters:[{subject,chapter}], status}]
+    prashnSync: {connected:false, updatedAt:null, data:null},
     attendance: {
       school:  { classAttended:false, notesCompleted:false, teacherRating:0 },
       aakash:  { attended:false, dppCompleted:false, moduleStatus:'none' },
@@ -1409,8 +1431,23 @@ function maybeAutoSuggestEnergyFromSleep(date){
 // ---- What's New / Changelog ----
 // A running log of feature additions, newest first. Bump WHATS_NEW_VERSION whenever a new entry
 // is added at the top — that's what triggers the "new" badge for anyone who hasn't seen it yet.
-const WHATS_NEW_VERSION = 15;
+const WHATS_NEW_VERSION = 17;
 const WHATS_NEW = [
+  { version: 17, date: '2026-08-16', items: [
+    '🔗 Prashn ↔ Pragati bridge — wrong attempts, skipped questions, PYQs and weak chapters now flow into Pragati through the same Firebase account.',
+    '📒 Dashboard shows active Prashn mistake questions so the planner can prioritise them.',
+  ]},
+  { version: 16, date: '2026-08-16', items: [
+    '🏫 Separate School Weekly Test workflow — one subject and selected chapters instead of a full multi-subject exam day.',
+    '📅 School tests now show a dedicated 7-day preparation path and portion-readiness bar.',
+    '✏️ School weekly tests remain editable after saving, including date and chapters.',
+  ]},
+  { version: 16, date: '2026-08-16', items: [
+    '🎥 Sunday-first 7-day backlog workflow — the long 60+ minute concept/lecture session now starts the chapter.',
+    '📗 Monday NCERT + notes + active recall → ✏️ Tuesday questions → ⏱️ Wednesday 2-markers/timed practice → 🧯 Thursday errors → 📊 Friday mini-test/analysis → ☀️ Saturday checkpoint.',
+    '🏫 School Exam Protection — school-test chapters get priority in the final 7 days, with a portion-complete target set 7 days before the exam.',
+    '⚖️ Backlog budget automatically reduces during the final school-exam week so backlog does not overload exam preparation.',
+  ]},
   { version: 15, date: '2026-08-15', items: [
     '✏️ Test Calendar entries can now be edited after saving, including rescheduled dates and chapter lists.',
     '📊 Test Analysis Tracker — mark completed tests pending, in progress or analysed, with fix notes.',
@@ -1688,7 +1725,7 @@ function initFirebaseCloud(showToast=false){
         cloudUser=user||null; cloudReady=false;
         if(cloudListener && cloudRef){ try{cloudRef.off('value',cloudListener);}catch(e){} }
         cloudListener=null; cloudRef=null;
-        if(user){ await attachCloudUser(user, showToast); }
+        if(user){ await attachCloudUser(user, showToast); initPrashnBridge(); }
         else { render(); }
       });
     }
@@ -1729,6 +1766,7 @@ async function attachCloudUser(user, showToast=false){
       toast('☁️ Updated from your other device.');
     };
     cloudRef.on('value',cloudListener);
+    initPrashnBridge();
     if(showToast) toast('☁️ Cloud sync connected.');
     render();
   }catch(e){ console.error('Cloud attach failed',e); toast('⚠️ Could not connect to the cloud database. Check your Firebase rules.'); }
@@ -3261,6 +3299,52 @@ function chapterReadinessTableHTML(){
 /* ============================================================
    VIEW: DASHBOARD
    ============================================================ */
+
+/* ============================================================
+   PRASHN ↔ PRAGATI BRIDGE
+   Reads question-performance data written by Prashn under the same
+   Firebase authenticated user. Pragati remains the planning app;
+   Prashn remains the question database/practice app.
+   ============================================================ */
+let prashnBridgeRef=null, prashnBridgeListener=null;
+function prashnBridgeData(){return DATA.prashnSync?.data||null}
+function prashnBridgeSummary(){
+  const d=prashnBridgeData();
+  if(!d)return {attempts:0,wrong:0,skipped:0,pyqs:0,accuracy:0,chapters:[],mistakes:[]};
+  const logs=d.attemptLog||[];
+  const attempted=logs.filter(x=>!x.skipped).length, correct=logs.filter(x=>!x.skipped&&x.correct).length;
+  const wrong=logs.filter(x=>!x.skipped&&!x.correct).length;
+  const skipped=logs.filter(x=>x.skipped).length;
+  const pyqs=logs.filter(x=>x.pyq).length;
+  const chapters=Object.values(d.chapterStats||{}).map(x=>({...x,accuracy:x.attempts?Math.round(100*x.correct/x.attempts):0})).sort((a,b)=>a.accuracy-b.accuracy).slice(0,8);
+  return {attempts:attempted,wrong,skipped,pyqs,accuracy:attempted?Math.round(100*correct/attempted):0,chapters,mistakes:d.mistakeQuestions||[]};
+}
+function prashnBridgeHTML(){
+  const s=prashnBridgeSummary(), d=prashnBridgeData();
+  if(!d)return `<div class="card prashn-bridge-card mb-16"><div class="flex-between flex-wrap gap-10"><div><div class="eyebrow">🔗 PRASHN ↔ PRAGATI</div><h3 style="margin:3px 0 0;">Connect your Question Practice data</h3><div class="text-xs muted mt-4">Once Prashn is signed into the same Firebase/Google account, wrong attempts, skips, PYQs and weak chapters appear here automatically.</div></div><span class="tag tag-med">Not connected</span></div></div>`;
+  return `<div class="card prashn-bridge-card mb-16">
+    <div class="flex-between flex-wrap gap-10"><div><div class="eyebrow">🔗 PRASHN PERFORMANCE</div><h3 style="margin:3px 0 0;">Question practice is feeding your planner.</h3><div class="text-xs muted mt-4">Last sync: ${d.updatedAt?fmtDate(String(d.updatedAt).slice(0,10)):'—'} · ${esc(d.profile||'Prashn profile')}</div></div><span class="tag tag-low">☁️ Connected</span></div>
+    <div class="grid grid-4 mt-12">
+      <div class="prashn-stat"><div class="text-xs faint">Questions</div><b style="font-size:21px;">${s.attempts}</b></div>
+      <div class="prashn-stat"><div class="text-xs faint">Accuracy</div><b style="font-size:21px;">${s.accuracy}%</b></div>
+      <div class="prashn-stat"><div class="text-xs faint">Wrong</div><b style="font-size:21px;">${s.wrong}</b></div>
+      <div class="prashn-stat"><div class="text-xs faint">PYQs</div><b style="font-size:21px;">${s.pyqs}</b></div>
+    </div>
+    ${s.chapters.length?`<div class="mt-12"><div class="card-sub mb-8">Weakest question-practice chapters</div>${s.chapters.slice(0,5).map(c=>`<div class="flex-between text-xs mb-6"><span>${esc(c.subject)} · ${esc(c.chapter)}</span><span class="tag ${c.accuracy<50?'tag-high':c.accuracy<70?'tag-med':'tag-low'}">${c.accuracy}% · ${c.attempts} attempts</span></div>`).join('')}</div>`:''}
+    ${s.mistakes.length?`<div class="mt-12"><div class="card-sub mb-8">📒 Active mistake questions from Prashn</div>${s.mistakes.slice(0,4).map(q=>`<div class="prashn-mini-q mb-6"><div class="flex-between gap-8"><b class="text-xs">${esc(q.subject)} · ${esc(q.chapter)}</b><span class="tag tag-high">Wrong</span></div><div class="text-xs mt-5">${esc(q.q).slice(0,220)}${q.q.length>220?'…':''}</div><div class="text-xs faint mt-4">${esc(q.exam||'')} ${q.year?'· '+q.year:''} · next review ${q.nextReview||'—'}</div></div>`).join('')}</div>`:''}
+  </div>`;
+}
+function initPrashnBridge(){
+  if(typeof firebase==='undefined' || !cloudUser || !firebaseDb)return;
+  try{
+    prashnBridgeRef=firebaseDb.ref(`users/${cloudUser.uid}/prashn`);
+    if(prashnBridgeListener)prashnBridgeRef.off('value',prashnBridgeListener);
+    prashnBridgeListener=snap=>{const d=snap.val();DATA.prashnSync={connected:!!d,updatedAt:d?.updatedAt||null,data:d||null};saveLocalOnly();render();};
+    prashnBridgeRef.on('value',prashnBridgeListener);
+  }catch(e){console.error('Prashn bridge failed',e)}
+}
+function saveLocalOnly(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(DATA))}catch(e){}}
+
 function viewDashboard(){
   ensureDailyQuote();
   const mission = generateMission();
@@ -3277,6 +3361,7 @@ function viewDashboard(){
   ${weeklyRetroBannerHTML()}
   ${subjectFatigueBannerHTML()}
   ${backupNudgeBannerHTML()}
+  ${prashnBridgeHTML()}
   ${(notificationPermissionStatus()==='default' && !DATA.meta.notifBannerDismissed) ? `
   <div class="card mb-16" style="background:var(--sky-soft); border:none;">
     <div class="flex-between flex-wrap gap-10" style="align-items:center;">
@@ -5308,6 +5393,7 @@ function viewPlanner(){
   ${recapBannerHTML(date)}
   ${plannerEnergyStripHTML(date)}
   ${generationWindowHTML()}
+  ${schoolExamProtectionHTML()}
   ${dailyCoreHTML()}
   ${finalTestCommandHTML()}
   ${smartStudyDashboardHTML()}
@@ -6060,8 +6146,9 @@ function saveEndOfDayReview(date){
    BACKLOG ENGINE — Class 11 recovery + NEET/JEE/CBSE roadmap
    ============================================================ */
 function backlogWeekStart(date){
+  // Backlog week starts on SUNDAY so the longest/freest session can launch the chapter.
   const d = new Date((date||todayStr())+'T00:00:00');
-  const day = d.getDay(); const diff = day===0 ? -6 : 1-day;
+  const day = d.getDay(); const diff = -day;
   d.setDate(d.getDate()+diff); return d.toISOString().slice(0,10);
 }
 function backlogWeekDates(start){
@@ -6095,8 +6182,12 @@ function backlogWeekRatio(start){
   const dates=backlogWeekDates(start||backlogWeekStart());
   const tests=(DATA.upcomingTests||[]).filter(t=>daysBetween(todayStr(),t.date)>=0 && daysBetween(todayStr(),t.date)<=7);
   const nearTest=tests.some(t=>daysBetween(todayStr(),t.date)<=3);
+  const nearSchoolWeekly=tests.some(t=>isSchoolWeeklyTest(t) && daysBetween(todayStr(),t.date)<=7);
+  const schoolExam=upcomingSchoolExamWindow();
   const holidayCount=dates.filter(d=>(DATA.scheduleOverrides||{})[d]?.holiday).length;
-  if(holidayCount>=3) return 0.50; if(nearTest) return 0.15; return 0.30;
+  // During the final 7 days before a school exam, protect the school portion.
+  if(schoolExam && schoolExam.d<=7) return 0.05;
+  if(holidayCount>=3) return 0.50; if(nearTest) return 0.15; if(nearSchoolWeekly) return 0.20; return 0.30;
 }
 function dailyBacklogCapacityMinutes(date){ if(date<todayStr()) return 0; return getFreeSlots(date).reduce((sum,x)=>sum+Math.max(0,x.end-x.start),0); }
 function backlogWeekBudget(start){
@@ -6853,19 +6944,48 @@ function backlogSelectionCardHTML(){
   </div>`;
 }
 
+
+function upcomingSchoolExamWindow(){
+  const today=todayStr();
+  const exams=(DATA.upcomingTests||[])
+    .filter(t=>(t.source==='School'||t.examType==='CBSE') && t.date>=today)
+    .map(t=>({...t,d:daysBetween(today,t.date)}))
+    .sort((a,b)=>a.d-b.d);
+  return exams[0]||null;
+}
+function schoolExamCompletionDeadline(test){
+  if(!test?.date)return null;
+  const d=new Date(test.date+'T00:00:00'); d.setDate(d.getDate()-7);
+  return d.toISOString().slice(0,10);
+}
+function schoolExamProtection(date=todayStr()){
+  const t=upcomingSchoolExamWindow();
+  if(!t)return {active:false,test:null,deadline:null,daysToDeadline:null,daysToExam:null};
+  const deadline=schoolExamCompletionDeadline(t);
+  return {
+    active:t.d<=7,
+    test:t,
+    deadline,
+    daysToDeadline:daysBetween(date,deadline),
+    daysToExam:t.d
+  };
+}
 function backlogWorkflowRows(){
-  // A 7-day backlog cycle is intentionally ONE chapter only.
-  // The method changes each day; the chapter does not.
+  // One Class 11 chapter remains selected for the full cycle.
+  // The cycle intentionally starts on SUNDAY:
+  // Sun = long lecture/concept build; Mon = NCERT/notes/recall; Tue = question bank;
+  // Wed = 2-markers + timed practice; Thu = errors/reattempt; Fri = mini-test/analysis;
+  // Sat = active recall + weekly checkpoint.
   ensureBacklogWeek();
   const c=backlogSelectedChapter();
   const actions=[
-    {day:'Mon',label:'Learn + build foundation',icon:'📘',minutes:60},
-    {day:'Tue',label:'NCERT + notes + active recall',icon:'📗',minutes:45},
-    {day:'Wed',label:'Question bank',icon:'✏️',minutes:45},
-    {day:'Thu',label:'PYQs + timed practice',icon:'📄',minutes:45},
-    {day:'Fri',label:'Error review + reattempt',icon:'🧯',minutes:30},
-    {day:'Sat',label:'Mini test + analysis',icon:'📊',minutes:45},
-    {day:'Sun',label:'Active recall + weekly checkpoint',icon:'☀️',minutes:30}
+    {day:'Sun',label:'Lecture / video + build the concept',icon:'🎥',minutes:60,minMinutes:60},
+    {day:'Mon',label:'NCERT + notes + active recall',icon:'📗',minutes:40,minMinutes:30},
+    {day:'Tue',label:'Question bank practice',icon:'✏️',minutes:45,minMinutes:30},
+    {day:'Wed',label:'2-markers + timed practice',icon:'⏱️',minutes:45,minMinutes:30},
+    {day:'Thu',label:'Error review + reattempt',icon:'🧯',minutes:35,minMinutes:25},
+    {day:'Fri',label:'Mini test + analysis',icon:'📊',minutes:45,minMinutes:30},
+    {day:'Sat',label:'Active recall + weekly checkpoint',icon:'☀️',minutes:35,minMinutes:25}
   ];
   return actions.map(a=>({
     ...a,
@@ -6873,6 +6993,25 @@ function backlogWorkflowRows(){
     subject:c?.subject||'—',
     chapterId:c?.id||null
   }));
+}
+function schoolExamProtectionHTML(){
+  const p=schoolExamProtection();
+  if(!p.test)return '';
+  const chapters=(p.test.chapters||[]).map(x=>`${x.subject} · ${x.chapter}`).slice(0,4);
+  if(p.active){
+    return `<div class="card mb-16" style="background:var(--amber-soft);border:1px solid var(--card-border);">
+      <div class="card-head"><h3>🏫 School Exam Protection</h3><span class="tag tag-high">${p.daysToExam===0?'TODAY':p.daysToExam+'d left'}</span></div>
+      <b>${esc(p.test.name)}</b>
+      <div class="text-xs muted mt-4">Exam: ${fmtDate(p.test.date)} · Your priority is the school portion now. Class 11 backlog is automatically reduced so it does not compete with exam preparation.</div>
+      ${chapters.length?`<div class="text-xs mt-8"><b>Focus chapters:</b> ${chapters.map(esc).join(' · ')}</div>`:''}
+      <div class="text-xs mt-8"><b>Portion-complete target:</b> ${fmtDate(p.deadline)} — ideally finish the portion before this date, leaving the final week for revision, questions and analysis.</div>
+    </div>`;
+  }
+  return `<div class="card mb-16" style="background:var(--sky-soft);border:1px solid var(--card-border);">
+    <div class="card-head"><h3>🏫 School Exam Countdown</h3><span class="tag tag-low">${p.daysToExam}d left</span></div>
+    <b>${esc(p.test.name)}</b>
+    <div class="text-xs muted mt-4">Portion-complete target: <b>${fmtDate(p.deadline)}</b>. Pragati should finish the listed portion by this date, then use the final week for revision and practice.</div>
+  </div>`;
 }
 
 function backlogWeeklyMission(c){
@@ -6937,7 +7076,7 @@ function generateWeeklyBacklogWorkflow(){
   const week=ensureBacklogWeek(), dates=backlogWeekDates(week.weekStart), actions=backlogWorkflowRows();
   DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>!(b.backlogWorkflow && b.weekStart===week.weekStart && !b.done));
   let created=0,usedMinutes=0;
-  actions.forEach((a,i)=>{ const date=dates[i]; if(date<todayStr()) return; const budgetLeft=week.targetHours*60-usedMinutes; if(budgetLeft<15) return; const duration=Math.min(a.minutes,Math.max(15,budgetLeft)); const slot=getFreeSlots(date).find(x=>x.end-x.start>=duration); if(!slot) return; const ch=findChapterByName(a.subject,a.chapter); DATA.plannerEvents.push({id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:a.subject,chapter:a.chapter,activity:`Backlog · ${a.label}`,goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:backlogStage(ch).key}); created++; usedMinutes+=duration; });
+  actions.forEach((a,i)=>{ const date=dates[i]; if(date<todayStr()) return; const budgetLeft=week.targetHours*60-usedMinutes; if(budgetLeft<Math.min(15,a.minMinutes||15)) return; const duration=Math.min(a.minutes,Math.max(a.minMinutes||15,budgetLeft)); const slot=getFreeSlots(date).find(x=>x.end-x.start>=duration); if(!slot) return; const ch=findChapterByName(a.subject,a.chapter); DATA.plannerEvents.push({id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:a.subject,chapter:a.chapter,activity:`Backlog · ${a.label}`,goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:backlogStage(ch).key}); created++; usedMinutes+=duration; });
   week.workflowGenerated=true; week.generatedAt=todayStr(); save(); render(); toast(created?`🔥 ${created}-day backlog workflow added (${Math.round(usedMinutes/60*10)/10}h).`:'No free slots were available for the backlog workflow.');
 }
 function rolloverIncompleteBacklog(){
@@ -6983,7 +7122,7 @@ function viewBacklog(){
     </div>
     ${focus?`<div class="text-xs muted mb-10"><b>Focus:</b> ${esc(focus.subject)} — ${esc(focus.name)} · <b>Goal:</b> ${esc(focusMission.goal)}</div>`:''}
     <div class="grid grid-2">${workflow.map(a=>`<div class="list-item"><span class="txt"><b>${a.icon} ${a.day}</b> · ${esc(a.label)}<br><span class="faint">${esc(a.chapter)} ${a.subject!=='—'?`(${esc(a.subject)})`:''}</span></span><span class="tag tag-low">${a.minutes}m</span></div>`).join('')}</div>
-    <div class="text-xs faint mt-8">The same chapter is deliberately repeated for all 7 days. Sunday is a checkpoint, not a new chapter switch. If unfinished, the chapter rolls forward rather than being replaced.</div>
+    <div class="text-xs faint mt-8">The same chapter is deliberately repeated for all 7 days. Sunday starts the cycle with the long concept-building session; Monday–Saturday follow the fixed learning → practice → error → test → checkpoint sequence. If unfinished, the chapter rolls forward rather than being replaced.</div>
   </div>
   <div class="card">
     <div class="card-head"><h3>🔥 Priority Queue</h3><span class="text-xs muted">Prerequisite + weakness + stale revision + completion + high-yield priority</span></div>
@@ -10516,21 +10655,79 @@ function viewSyllabusSync(){
    VIEW: TEST CALENDAR & EXAM ALIGNMENT
    ============================================================ */
 
-function openTestForm(testId=null){
+
+function isSchoolWeeklyTest(t){
+  return t && (t.schoolWeekly===true || (t.source==='School' && (t.testType||'').toLowerCase().includes('weekly')));
+}
+function schoolWeeklyTests(){
+  return (DATA.upcomingTests||[]).filter(isSchoolWeeklyTest);
+}
+function schoolWeeklyTestReadiness(t){
+  const chapters=t?.chapters||[];
+  if(!chapters.length)return 0;
+  const vals=chapters.map(x=>chapterReadiness(x.subject,x.chapter).score||0);
+  return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+}
+function schoolWeeklyPrepPlan(t){
+  const d=daysBetween(todayStr(),t.date);
+  const r=schoolWeeklyTestReadiness(t);
+  if(d<0)return {phase:'completed',label:'Test completed',detail:'Analyse the paper and feed mistakes back into the planner.'};
+  if(d===0)return {phase:'test',label:'Test day',detail:'Only final recall and confidence checks — do not start a large new topic.'};
+  if(d<=1)return {phase:'final',label:'Final revision',detail:'NCERT/notes → active recall → timed questions → mistakes.'};
+  if(d<=3)return {phase:'practice',label:'Practice phase',detail:'Question bank + timed practice + reattempt weak questions.'};
+  if(d<=7)return {phase:'learn',label:'Complete portion first',detail:'Finish learning the complete school-test portion, then practise.'};
+  return {phase:'early',label:'Early preparation',detail:'Build the concept steadily; keep the portion comfortably ahead of the final week.'};
+}
+function schoolWeeklyTestCardHTML(t){
+  const d=daysBetween(todayStr(),t.date), r=schoolWeeklyTestReadiness(t), p=schoolWeeklyPrepPlan(t);
+  const subjectNamesIn=[...new Set((t.chapters||[]).map(x=>x.subject))];
+  return `<div class="school-test-card mb-10">
+    <div class="flex-between flex-wrap gap-8">
+      <div>
+        <div class="flex gap-6 flex-wrap"><span class="school-test-badge">🏫 SCHOOL WEEKLY TEST</span><span class="tag ${d<=3?'tag-high':d<=7?'tag-med':'tag-low'}">${d<0?'Completed':d===0?'TODAY':d+' days'}</span></div>
+        <h3 style="margin:6px 0 0;">${esc(t.name)}</h3>
+        <div class="text-xs muted mt-3">${fmtDate(t.date)} · ${subjectNamesIn.join(' + ')}</div>
+      </div>
+      <button class="btn btn-soft btn-sm" onclick="openTestForm('${t.id}')">Edit</button>
+    </div>
+    <div class="text-xs mt-8"><b>Portion:</b> ${(t.chapters||[]).map(x=>`${esc(x.subject)} — ${esc(x.chapter)}`).join(' · ')}</div>
+    <div class="mt-10">
+      <div class="flex-between text-xs"><b>Portion readiness</b><span>${r}%</span></div>
+      <div class="test-readiness-bar mt-5"><i style="width:${r}%"></i></div>
+    </div>
+    <div class="school-prep-note mt-10"><b>📌 ${p.label}</b><br><span class="muted">${p.detail}</span></div>
+  </div>`;
+}
+function schoolWeeklyCommandCenterHTML(){
+  const tests=schoolWeeklyTests().sort((a,b)=>new Date(a.date)-new Date(b.date));
+  return `<div class="final-panel mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div><div class="eyebrow">🏫 SCHOOL WEEKLY TESTS</div><h3 style="margin:3px 0 0;">One subject. One portion. One clear preparation path.</h3>
+      <div class="text-xs muted mt-4">School weekly tests are tracked separately from Aakash/NEET/JEE tests.</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openSchoolWeeklyTestForm()">+ School Test</button>
+    </div>
+    <div class="mt-12">${tests.length?tests.slice(0,8).map(schoolWeeklyTestCardHTML).join(''):`<div class="premium-note text-xs">No school weekly tests added yet.</div>`}</div>
+  </div>`;
+}
+function openSchoolWeeklyTestForm(){
+  openTestForm(null,true);
+}
+
+function openTestForm(testId=null,schoolMode=false){
   const test=testId?(DATA.upcomingTests||[]).find(t=>t.id===testId):null;
   const subs=subjectNames();
   const selected=new Set((test?.chapters||[]).map(c=>c.subject+'::'+c.chapter));
   openModal(`
-    <div class="modal-head"><h3>${test?'Edit Upcoming Test':'Add Upcoming Test'}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-head"><h3>${test?'Edit Upcoming Test':schoolMode?'Add School Weekly Test':'Add Upcoming Test'}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="field-row">
       <div class="field"><label>Test Name</label><input id="t_name" value="${esc(test?.name||'')}" placeholder="e.g. School Test / AIATS-5"></div>
       <div class="field"><label>Date</label><input type="date" id="t_date" value="${test?.date||todayStr()}"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Source</label><select id="t_source">${['School','Aakash','Vedantu'].map(x=>`<option ${x===(test?.source||'School')?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Source</label><select id="t_source">${['School','Aakash','Vedantu'].map(x=>`<option ${x===(test?.source||(schoolMode?'School':'School'))?'selected':''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label>Exam</label><select id="t_exam">${['CBSE','NEET','JEE','Mixed'].map(x=>`<option ${x===(test?.examType||'NEET')?'selected':''}>${x}</option>`).join('')}</select></div>
     </div>
-    <div class="field"><label>Test Type</label><select id="t_type">${TEST_TYPES.map(t=>`<option ${t===(test?.testType||'Other')?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>Test Type</label><select id="t_type">${TEST_TYPES.map(t=>`<option ${t===(test?.testType||(schoolMode?'Weekly Test':'Other'))?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="text-xs faint mb-8">You can edit the date later if the test is postponed/rescheduled. The planner will use the new date immediately.</div>
     <div class="card-sub mb-8">Chapters covered</div>
     ${subs.map(s=>`<div class="card" style="padding:14px 16px;margin-bottom:10px;">
@@ -10555,7 +10752,7 @@ function collectTestForm(){
   }));
   if(!chapters.length)return {error:'Select at least one chapter.'};
   const daysLeft=daysBetween(todayStr(),date);
-  return {name,date,source,testType,examType,chapters,status:daysLeft<=3?'red':daysLeft<=7?'yellow':'green'};
+  return {name,date,source,testType,examType,chapters,status:daysLeft<=3?'red':daysLeft<=7?'yellow':'green',schoolWeekly:(source==='School' && testType.toLowerCase().includes('weekly'))};
 }
 function saveTest(){
   const r=collectTestForm(); if(r.error)return toast(r.error);
@@ -10688,6 +10885,8 @@ function viewTestCalendar(){
       }).join('') || `<tr><td colspan="9"><div class="empty">No upcoming tests scheduled yet.</div></td></tr>`}</tbody>
     </table>
   </div>
+
+  ${schoolWeeklyCommandCenterHTML()}
 
   ${testAnalysisTrackerHTML()}
 
