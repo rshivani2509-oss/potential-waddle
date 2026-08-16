@@ -3663,6 +3663,16 @@ function getFreeSlots(date, extraBusy){
     cursor = Math.max(cursor, b.end);
   });
   if(cursor < dayEnd) free.push({start:cursor, end:dayEnd});
+
+  // Respect the user's generation window for every planner generator, including
+  // the Class 11 backlog workflow. Previously getFreeSlots() ignored the window,
+  // which made capacity and actual schedulable time disagree.
+  if(DATA.generationWindow?.enabled){
+    const gw=getGenerationWindow(date);
+    return free
+      .map(s=>({start:Math.max(s.start,gw.startMin), end:Math.min(s.end,gw.endMin)}))
+      .filter(s=>s.end-s.start >= 15);
+  }
   return free.filter(s=>s.end-s.start >= 15);
 }
 // Smart lecture decision: how many Vedantu slots to attend today
@@ -7074,10 +7084,58 @@ function backlogChapterStatsHTML(c){
 
 function generateWeeklyBacklogWorkflow(){
   const week=ensureBacklogWeek(), dates=backlogWeekDates(week.weekStart), actions=backlogWorkflowRows();
+  // Remove only unfinished backlog blocks from this cycle so manual/locked study
+  // blocks remain protected and can be used as real availability constraints.
   DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>!(b.backlogWorkflow && b.weekStart===week.weekStart && !b.done));
-  let created=0,usedMinutes=0;
-  actions.forEach((a,i)=>{ const date=dates[i]; if(date<todayStr()) return; const budgetLeft=week.targetHours*60-usedMinutes; if(budgetLeft<Math.min(15,a.minMinutes||15)) return; const duration=Math.min(a.minutes,Math.max(a.minMinutes||15,budgetLeft)); const slot=getFreeSlots(date).find(x=>x.end-x.start>=duration); if(!slot) return; const ch=findChapterByName(a.subject,a.chapter); DATA.plannerEvents.push({id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:a.subject,chapter:a.chapter,activity:`Backlog · ${a.label}`,goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:backlogStage(ch).key}); created++; usedMinutes+=duration; });
-  week.workflowGenerated=true; week.generatedAt=todayStr(); save(); render(); toast(created?`🔥 ${created}-day backlog workflow added (${Math.round(usedMinutes/60*10)/10}h).`:'No free slots were available for the backlog workflow.');
+
+  const weeklyBudget=Math.max(0,Math.round((Number(week.targetHours)||0)*60));
+  let created=0,usedMinutes=0,skippedPast=0,skippedBudget=0,skippedNoSlot=0;
+
+  actions.forEach((a,i)=>{
+    const date=dates[i];
+    if(date<todayStr()){ skippedPast++; return; }
+
+    const budgetLeft=weeklyBudget-usedMinutes;
+    if(budgetLeft<15){ skippedBudget++; return; }
+
+    const slots=getFreeSlots(date);
+    if(!slots.length){ skippedNoSlot++; return; }
+
+    // The old generator treated minMinutes as a hard requirement. That caused a
+    // false "no free slots" result when the week had a small protected backlog
+    // budget (for example during school-exam protection), even though usable time
+    // existed. A backlog block can now be compressed down to 15 minutes while
+    // staying within both the free slot and weekly budget.
+    const desired=Math.min(a.minutes,budgetLeft);
+    let slot=slots.find(x=>x.end-x.start>=desired);
+    if(!slot) slot=slots.find(x=>x.end-x.start>=15);
+    if(!slot){ skippedNoSlot++; return; }
+
+    const duration=Math.min(a.minutes,budgetLeft,slot.end-slot.start);
+    if(duration<15){ skippedNoSlot++; return; }
+
+    const ch=findChapterByName(a.subject,a.chapter);
+    DATA.plannerEvents.push({
+      id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),
+      subject:a.subject,chapter:a.chapter,activity:`Backlog · ${a.label}`,
+      goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],
+      done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,
+      backlogStage:backlogStage(ch).key,
+      compressed:duration<a.minutes
+    });
+    created++; usedMinutes+=duration;
+  });
+
+  week.workflowGenerated=true; week.generatedAt=todayStr(); save(); render();
+  if(created){
+    toast(`🔥 ${created}-day backlog workflow added (${Math.round(usedMinutes/60*10)/10}h).${usedMinutes<weeklyBudget?' Some sessions were compressed to fit your free time/budget.':''}`);
+  }else if(skippedBudget && !skippedNoSlot){
+    toast(`⚖️ Backlog budget is too small this week to create a 15-min block. Free slots exist, but school/test protection has reduced the backlog budget.`);
+  }else if(skippedNoSlot){
+    toast(`No schedulable backlog slot found. Check the generation window and fixed commitments.`);
+  }else{
+    toast('No future backlog days are available in this cycle.');
+  }
 }
 function rolloverIncompleteBacklog(){
   const week=ensureBacklogWeek(), pending=(DATA.plannerEvents||[]).filter(b=>b.backlogWorkflow&&b.weekStart===week.weekStart&&!b.done&&b.date<=todayStr());
