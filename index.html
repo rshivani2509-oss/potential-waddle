@@ -742,6 +742,13 @@ body{
 @media(max-width:700px){.pragati-howto-grid{grid-template-columns:1fr}}
 </style>
 
+
+<style id="topic-list-after-task-style">
+.topic-list-after-task{display:grid;gap:7px;max-height:260px;overflow:auto}
+.topic-choice{width:100%;text-align:left;border:1px solid var(--card-border,#e5e7eb);background:var(--card-bg,#fff);border-radius:10px;padding:9px 11px;cursor:pointer;font-size:12px}
+.topic-choice:hover{border-color:var(--accent,#6366f1);transform:translateY(-1px)}
+#new_topic_after_task{flex:1;min-width:0}
+</style>
 </head>
 <body>
 <div id="app">
@@ -2565,27 +2572,124 @@ function toggleTopicExamDone(subject,chapter,topic,exam){
 }
 
 /* The planner always records the exact topic, never the whole chapter. */
+
 function topicCompletionFromPlanner(blockId){
   const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
   if(!b||!b.subject||!b.chapter||!subjectNames().includes(b.subject))return;
 
-  let topic=normalizeTopicName(b.topic||"");
-  const topics=chapterTopicList(b.subject,b.chapter);
-
-  // If the planner block already carries a topic, update that exact topic automatically.
-  if(topic && topics.some(t=>normalizeTopicName(t.name)===topic)){
-    openTopicCompletionDialog(blockId,topic);
+  const ch=findChapterByName(b.subject,b.chapter);
+  if(!ch){
+    toast("⚠️ Chapter not found in the subject tracker.");
     return;
   }
 
-  // If there is no exact topic attached, require one exact topic from the chapter.
-  // This prevents "whole chapter completed" by mistake.
-  if(!topics.length){
-    toast("This chapter has no topic list yet, so the tracker was not auto-marked. Add the topic to the chapter tracker first.");
-    return;
-  }
-  openTopicPicker(blockId,topics);
+  // Topics are shown explicitly after a completed task. The student can
+  // select the exact topic, or add a missing topic without leaving the flow.
+  const topics=Array.isArray(ch.topics)?ch.topics:[];
+  openTopicListAfterTask(blockId,topics);
 }
+
+function openTopicListAfterTask(blockId,topics){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b)return;
+
+  const existingTopic=normalizeTopicName(b.topic||"");
+  openModal(`
+    <div class="modal-head">
+      <h3>📚 What topic did you complete?</h3>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="section-desc">
+      Select the exact topic from this chapter. Only that topic will be updated in the tracker.
+    </div>
+
+    <div class="card mb-12">
+      <div class="eyebrow">${esc(b.subject)} · ${esc(b.chapter)}</div>
+      <b>${esc(b.activity||"Completed study task")}</b>
+    </div>
+
+    <div class="field">
+      <label>Topics in this chapter</label>
+      <select id="completed_topic_select">
+        <option value="">— Select the completed topic —</option>
+        ${topics.map(t=>{
+          const name=normalizeTopicName(typeof t==="string"?t:t.name);
+          return `<option value="${esc(name)}" ${name===existingTopic?"selected":""}>${esc(name)}</option>`;
+        }).join("")}
+      </select>
+    </div>
+
+    ${topics.length ? `
+      <div class="card mb-12">
+        <div class="eyebrow">TOPICS</div>
+        <div class="topic-list-after-task">
+          ${topics.map(t=>{
+            const name=normalizeTopicName(typeof t==="string"?t:t.name);
+            return `<button class="topic-choice" type="button"
+              onclick="document.getElementById('completed_topic_select').value='${String(name).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'">
+              ${esc(name)}
+            </button>`;
+          }).join("")}
+        </div>
+      </div>` : `
+      <div class="premium-note text-xs mb-12">
+        No topics have been added to this chapter yet.
+      </div>`}
+
+    <div class="card mb-12">
+      <div class="eyebrow">ADD A MISSING TOPIC</div>
+      <div class="flex gap-8">
+        <input id="new_topic_after_task" placeholder="e.g. Electric field due to point charge">
+        <button class="btn btn-outline" type="button" onclick="addTopicAfterCompletedTask('${String(blockId).replace(/'/g,"\\'")}')">+ Add Topic</button>
+      </div>
+      <div class="faint text-xs mt-6">The new topic is added to this chapter and becomes selectable immediately.</div>
+    </div>
+
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-primary" onclick="continueTopicCompletion('${String(blockId).replace(/'/g,"\\'")}')">Continue</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+
+function addTopicAfterCompletedTask(blockId){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b)return;
+
+  const input=document.getElementById("new_topic_after_task");
+  const name=normalizeTopicName(input&&input.value);
+  if(!name){
+    toast("Enter a topic name first.");
+    return;
+  }
+
+  const ch=findChapterByName(b.subject,b.chapter);
+  if(!ch)return;
+  if(!Array.isArray(ch.topics))ch.topics=[];
+
+  const exists=ch.topics.some(t=>normalizeTopicName(typeof t==="string"?t:t.name).toLowerCase()===name.toLowerCase());
+  if(!exists) ch.topics.push({name, addedManually:true, addedAt:todayStr()});
+
+  save();
+  openTopicListAfterTask(blockId,ch.topics);
+  setTimeout(()=>{
+    const select=document.getElementById("completed_topic_select");
+    if(select)select.value=name;
+  },0);
+  toast(`➕ Added topic: ${name}`);
+}
+
+function continueTopicCompletion(blockId){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  const select=document.getElementById("completed_topic_select");
+  const topic=normalizeTopicName(select&&select.value);
+  if(!b||!topic){
+    toast("Select the exact topic you completed.");
+    return;
+  }
+  openTopicCompletionDialog(blockId,topic);
+}
+
 function openTopicPicker(blockId,topics){
   const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
   if(!b)return;
