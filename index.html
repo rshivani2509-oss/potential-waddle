@@ -729,12 +729,29 @@ body{
 .topic-tracker-compact label{padding:10px!important}
 @media(max-width:700px){.topic-tracker-compact{grid-template-columns:1fr}}
 </style>
+
+<style id="pragati-howto-style">
+.pragati-howto-modal{position:fixed;inset:0;background:rgba(15,23,42,.52);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px}
+.pragati-howto-card{width:min(920px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 24px 80px rgba(0,0,0,.25);padding:24px}
+.pragati-howto-card h2{margin:0 0 6px}
+.pragati-howto-card h3{margin:20px 0 7px}
+.pragati-howto-card p,.pragati-howto-card li{line-height:1.55}
+.pragati-howto-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pragati-howto-box{border:1px solid #e5e7eb;border-radius:14px;padding:13px;background:#fafafa}
+.pragati-howto-close{float:right;border:0;background:transparent;font-size:24px;cursor:pointer}
+@media(max-width:700px){.pragati-howto-grid{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 <div id="app">
   <aside id="sidebar"></aside>
   <div id="sidebarScrim" class="hidden" onclick="closeSidebar()"></div>
-  <main id="main"></main>
+  
+<button id="pragatiHelpBtn" class="btn btn-outline" type="button" onclick="showPragatiHowToUse()" title="How to use Pragati">
+  ❓ How to Use
+</button>
+<main id="main"></main>
 </div>
 <nav id="bottomNav"></nav>
 <div id="modalHost"></div>
@@ -2480,7 +2497,18 @@ function ensureTopicTracker(ch){ if(!ch)return; if(!ch.topicProgress||typeof ch.
 function topicKey(subject,chapter,topic){ return [subject||"",chapter||"",topic||""].join("::"); }
 function getTopicProgress(subject,chapter,topic){ const ch=findChapterByName(subject,chapter); if(!ch)return {}; ensureTopicTracker(ch); const key=topicKey(subject,chapter,topic), out={}; TOPIC_TRACKER_EXAMS.forEach(e=>out[e]=ch.topicProgress[e].includes(key)); return out; }
 function setTopicProgress(subject,chapter,topic,exam,done){ if(!TOPIC_TRACKER_EXAMS.includes(exam))return; const ch=findChapterByName(subject,chapter); if(!ch)return; ensureTopicTracker(ch); const arr=ch.topicProgress[exam], key=topicKey(subject,chapter,topic), i=arr.indexOf(key); if(done&&i<0)arr.push(key); if(!done&&i>=0)arr.splice(i,1); }
-function topicTrackerModal(blockId){ const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId); if(!b||!b.subject||!b.chapter)return; const topic=b.topic||b.activity||b.chapter, p=getTopicProgress(b.subject,b.chapter,topic); openModal("📚 Mark Topic Completion", `<div class="section-desc">Choose separately which exam trackers this study session should update.</div><div class="card mb-12"><div class="eyebrow">${esc(b.subject)} · ${esc(b.chapter)}</div><h3>${esc(topic)}</h3></div><div class="grid grid-3">${TOPIC_TRACKER_EXAMS.map(e=>`<label class="card" style="cursor:pointer"><div class="flex gap-8" style="align-items:center"><input type="checkbox" id="topic_${e}_${blockId}" ${p[e]?"checked":""}><b>${e==="CBSE"?"📘 CBSE":e==="NEET"?"🧬 NEET":"⚡ JEE"}</b></div><div class="faint text-xs mt-8">${p[e]?"Already marked complete":"Mark this topic complete for "+e}</div></label>`).join("")}</div><div class="flex gap-8 mt-16"><button class="btn btn-primary" onclick="saveTopicTrackerSelection('${blockId}')">Save Tracker Status</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button></div>`); }
+function topicTrackerModal(blockId){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b||!b.subject||!b.chapter)return;
+  const topic=b.topic||b.activity||b.chapter;
+  const p=getTopicProgress(b.subject,b.chapter,topic);
+  const body=`<div class="modal-head"><h3>📚 Mark Topic Completion</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="section-desc">Choose separately which exam trackers this study session should update.</div>
+    <div class="card mb-12"><div class="eyebrow">${esc(b.subject)} · ${esc(b.chapter)}</div><h3>${esc(topic)}</h3></div>
+    <div class="grid grid-3">${TOPIC_TRACKER_EXAMS.map(e=>`<label class="card" style="cursor:pointer"><div class="flex gap-8" style="align-items:center"><input type="checkbox" id="topic_${e}_${blockId}" ${p[e]?"checked":""}><b>${e==="CBSE"?"📘 CBSE":e==="NEET"?"🧬 NEET":"⚡ JEE"}</b></div><div class="faint text-xs mt-8">${p[e]?"Already marked complete":"Mark this topic complete for "+e}</div></label>`).join("")}</div>
+    <div class="flex gap-8 mt-16"><button class="btn btn-primary" onclick="saveTopicTrackerSelection('${blockId}')">Save Tracker Status</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button></div>`;
+  openModal(body,true);
+}
 function saveTopicTrackerSelection(blockId){ const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId); if(!b)return; const topic=b.topic||b.activity||b.chapter; TOPIC_TRACKER_EXAMS.forEach(e=>{const el=document.getElementById(`topic_${e}_${blockId}`); setTopicProgress(b.subject,b.chapter,topic,e,!!el?.checked);}); save(); render(); closeModal(); toast("✅ Topic tracker updated separately for CBSE / NEET / JEE."); }
 function topicTrackerSummary(ch){ ensureTopicTracker(ch); return TOPIC_TRACKER_EXAMS.map(e=>`${e}: ${ch.topicProgress[e].length}`).join(" · "); }
 
@@ -4622,7 +4650,14 @@ function smartTodayPressure(date){
 }
 function smartTodayAllocation(date){
   date = date || todayStr();
-  const free = Math.max(0, estimateFreePlanningMinutes(date));
+  // Smart Plan must be grounded in the *actual* planner, not just raw clock time.
+  // Existing unfinished blocks already consume capacity; only genuinely open study time
+  // may receive a new recommendation. This prevents the card from saying "100% planned"
+  // while the real planner is already overloaded.
+  const snap = todayTimeSnapshot(date);
+  const free = Math.max(0, snap.remainingFree);
+  const remainingPlanned = Math.max(0, snap.remainingPlanned);
+  const overload = Math.max(0, remainingPlanned - free);
   const pressure = smartTodayPressure(date);
   const mandatory = todaysMandatoryTopics(date);
   const testShare = pressure.testShare;
@@ -4638,12 +4673,12 @@ function smartTodayAllocation(date){
     mandatory.map(x=>({subject:x.subject,chapter:x.chapter}))
   );
   return {
-    free, pressure, mandatory, backlogPick,
+    free, remainingPlanned, overload, pressure, mandatory, backlogPick,
     testMin, currentMin, backlogMin, revisionMin,
-    testPct:Math.round(testShare*100),
-    currentPct:Math.round(currentShare*100),
-    backlogPct:Math.round(backlogShare*100),
-    revisionPct:Math.round((revisionMin/Math.max(1,free))*100)
+    testPct:free ? Math.round(testMin/free*100) : 0,
+    currentPct:free ? Math.round(currentMin/free*100) : 0,
+    backlogPct:free ? Math.round(backlogMin/free*100) : 0,
+    revisionPct:free ? Math.round(revisionMin/free*100) : 0
   };
 }
 function smartBreakMinutes(duration, type, subject){
@@ -4674,13 +4709,18 @@ function todayStrategyHTML(date){
     ? a.mandatory.slice(0,2).map(x=>`${esc(x.subject)}: ${esc(x.chapter)}`).join(' · ')
     : 'Use highest-priority current chapters';
   const backlogText = a.backlogPick ? `${esc(a.backlogPick.subject)}: ${esc(a.backlogPick.chapter)}` : 'No Class 11 chapter due';
-  const overload = a.free>0 ? Math.max(0, Math.round((a.testMin+a.currentMin+a.backlogMin+a.revisionMin-a.free))) : 0;
+  const plannedTotal = a.testMin+a.currentMin+a.backlogMin+a.revisionMin;
+  const planPct = a.free ? Math.min(100, Math.round(plannedTotal/a.free*100)) : 0;
+  const status = a.overload > 0 ? `⚠️ Existing plan is ${minsLabel(a.overload)} over today's open capacity.`
+    : a.free === 0 ? '⏸ No open study capacity left — protect the blocks already on your planner.'
+    : '🟢 Open capacity is available — recommendations below fit only inside those free minutes.';
   return `
   <div class="card mb-16 smart-today-card">
     <div class="smart-content">
       <div class="flex-between flex-wrap gap-10">
         <div>
-          <div class="eyebrow">🌿 TODAY'S SMART PLAN</div>
+          <div class="eyebrow">🌿 TODAY'S SMART PLAN
+        <span style="font-size:.72em;font-weight:600;float:right;cursor:pointer;text-decoration:underline" onclick="showPragatiHowToUse()">Need a quick guide?</span></div>
           <div style="font-size:20px;font-weight:850;margin-top:4px;">${esc(a.pressure.label)} · no last-minute pile-up</div>
           <div class="text-xs muted mt-4">The planner protects the nearest test first, keeps current work moving, gives Class 11 a daily lane, and leaves recovery space.</div>
         </div>
@@ -4688,10 +4728,10 @@ function todayStrategyHTML(date){
       </div>
 
       <div class="grid grid-4 mt-12" style="gap:8px;">
-        <div class="smart-kpi"><div class="k">Available</div><div class="v">${minsLabel(a.free)}</div></div>
-        <div class="smart-kpi"><div class="k">Test prep</div><div class="v">${minsLabel(a.testMin)}</div></div>
-        <div class="smart-kpi"><div class="k">Current</div><div class="v">${minsLabel(a.currentMin)}</div></div>
-        <div class="smart-kpi"><div class="k">Backlog</div><div class="v">${minsLabel(a.backlogMin)}</div></div>
+        <div class="smart-kpi"><div class="k">Open capacity</div><div class="v">${minsLabel(a.free)}</div><div class="text-xs faint">unbooked study time</div></div>
+        <div class="smart-kpi"><div class="k">Already planned</div><div class="v">${minsLabel(a.remainingPlanned)}</div><div class="text-xs faint">unfinished blocks</div></div>
+        <div class="smart-kpi"><div class="k">Extra test</div><div class="v">${minsLabel(a.testMin)}</div><div class="text-xs faint">only if capacity exists</div></div>
+        <div class="smart-kpi"><div class="k">Extra backlog</div><div class="v">${minsLabel(a.backlogMin)}</div><div class="text-xs faint">protected small lane</div></div>
       </div>
 
       <div class="grid grid-2 mt-10" style="gap:8px;">
@@ -4715,10 +4755,10 @@ function todayStrategyHTML(date){
 
       <div class="smart-progress-wrap">
   <div class="flex-between text-xs">
-    <b>Today's time balance</b>
-    <span class="faint">${a.free ? Math.round((a.testMin+a.currentMin+a.backlogMin+a.revisionMin)/a.free*100) : 0}% planned</span>
+    <b>Today's capacity check</b>
+    <span class="faint">${a.overload>0 ? `${minsLabel(a.overload)} overloaded` : `${planPct}% of open capacity allocated`}</span>
   </div>
-  <div class="smart-progress mt-6"><i style="width:${Math.min(100,a.free ? Math.round((a.testMin+a.currentMin+a.backlogMin+a.revisionMin)/a.free*100) : 0)}%"></i></div>
+  <div class="smart-progress mt-6"><i style="width:${planPct}%"></i></div>
   <div class="today-flow">
     <span class="node">🔴 Test ${a.testPct}%</span><span class="arrow">→</span>
     <span class="node">🟠 Current ${a.currentPct}%</span><span class="arrow">→</span>
@@ -4726,6 +4766,7 @@ function todayStrategyHTML(date){
     <span class="node">🟢 Recovery ${a.revisionPct}%</span>
   </div>
 </div>
+<div class="mt-10 text-xs" style="background:${a.overload>0?'var(--coral-soft)':'var(--sky-soft)'};padding:9px 11px;border-radius:9px;">${status}${a.overload>0 ? ' Use <b>Optimize Remaining</b> to rebalance unfinished work; it will not erase completed or fixed blocks.' : ''}</div>
 <div class="premium-note text-xs mt-10">💡 ${a.pressure.nearest ? 'Test work ramps up gradually as the date approaches.' : 'Add your upcoming tests to make the allocation fully test-aware.'} Longer/heavier sessions automatically receive longer breaks.</div>
     </div>
   </div>`;
@@ -5263,7 +5304,7 @@ function todayTimeSnapshot(date){
   const remainingFree = isToday ? Math.max(0, free) : free;
   const buffer = remainingFree - remainingPlanned;
   const overdue = isToday ? studyBlocks.filter(b=>!b.done && (toMin(b.endTime)||0)<nowMin) : [];
-  const availableUntilBed = isToday ? Math.max(0,toMin(DATA.routine.bedtime)-nowMin) : free;
+  const availableUntilBed = isToday ? Math.max(0, free) : free;
   return {nowMin,isToday,active,next,plannedStudyMin,completedStudyMin,remainingPlanned,remainingFree,buffer,overdue,availableUntilBed,studyBlocks,taskBlocks};
 }
 function minsLabel(mins){
@@ -5361,7 +5402,7 @@ function todayCommandCenterHTML(date){
       </div>
     </div>
     <div class="grid grid-4 mt-12" style="gap:8px;">
-      <div class="card" style="padding:10px;background:var(--card-bg);border:none;"><div class="eyebrow">Available</div><div class="mono" style="font-size:20px;font-weight:800;">${minsLabel(available)}</div><div class="text-xs faint">until bedtime</div></div>
+      <div class="card" style="padding:10px;background:var(--card-bg);border:none;"><div class="eyebrow">Available</div><div class="mono" style="font-size:20px;font-weight:800;">${minsLabel(available)}</div><div class="text-xs faint">open study time</div></div>
       <div class="card" style="padding:10px;background:var(--card-bg);border:none;"><div class="eyebrow">Planned</div><div class="mono" style="font-size:20px;font-weight:800;">${minsLabel(planned)}</div><div class="text-xs faint">unfinished study</div></div>
       <div class="card" style="padding:10px;background:var(--card-bg);border:none;"><div class="eyebrow">Buffer</div><div class="mono" style="font-size:20px;font-weight:800;">${buffer>=0?'+':''}${minsLabel(buffer)}</div><div class="text-xs faint">recovery time</div></div>
       <div class="card" style="padding:10px;background:var(--card-bg);border:none;"><div class="eyebrow">Load</div><div class="mono" style="font-size:20px;font-weight:800;">${load}%</div><div class="text-xs faint">of available time</div></div>
@@ -11145,5 +11186,75 @@ setupPWA();
 if(getFirebaseConfig()) setTimeout(()=>initFirebaseCloud(false), 0);
 
 </script>
+
+<script id="pragati-howto-js">
+function showPragatiHowToUse(){
+  const old=document.getElementById('pragatiHowToModal');
+  if(old) old.remove();
+  const modal=document.createElement('div');
+  modal.id='pragatiHowToModal';
+  modal.className='pragati-howto-modal';
+  modal.innerHTML=`
+    <div class="pragati-howto-card" role="dialog" aria-modal="true" aria-label="How to use Pragati">
+      <button class="pragati-howto-close" onclick="closePragatiHowToUse()" aria-label="Close">×</button>
+      <h2>📘 How to Use Pragati</h2>
+      <p>Your NEET + JEE + CBSE Command Center. Set your real commitments first, then let Pragati plan the remaining study time.</p>
+
+      <div class="pragati-howto-grid">
+        <div class="pragati-howto-box"><b>1. Today's Planner</b><br>
+          Add or review today's fixed and flexible study blocks. Use exact start/end times when you already know when you will study.</div>
+        <div class="pragati-howto-box"><b>2. Generate Plan</b><br>
+          Give Pragati your available time window. Generated slots stay inside that window and respect fixed commitments.</div>
+        <div class="pragati-howto-box"><b>3. Smart Plan</b><br>
+          Check the Test Prep, Current Portion, Backlog and Recovery balance. If the existing plan is overloaded, use Optimize Remaining instead of adding more work.</div>
+        <div class="pragati-howto-box"><b>4. Backlog</b><br>
+          Add Class 11 backlog manually or use the automatic workflow. The weekly workflow follows the Sunday-to-Saturday learning sequence.</div>
+        <div class="pragati-howto-box"><b>5. Subject Trackers</b><br>
+          Track Physics, Chemistry and Biology separately. When you complete a planner topic, choose independently whether it is completed for CBSE, NEET and/or JEE.</div>
+        <div class="pragati-howto-box"><b>6. Tests</b><br>
+          Enter each test as its own event/date and keep the relevant chapters attached. Update the date if school/coaching changes it.</div>
+        <div class="pragati-howto-box"><b>7. Test Analysis</b><br>
+          After a test, record marks, accuracy, weak chapters and mistakes. Use the result to decide what should enter revision/backlog priority.</div>
+        <div class="pragati-howto-box"><b>8. Notes & Formulas</b><br>
+          Keep quick revision material here. Flashcard-style material belongs in Notes/Formulas rather than cluttering Today's Planner.</div>
+        <div class="pragati-howto-box"><b>9. Prashn Connection</b><br>
+          Use Prashn for question practice, wrong attempts, mistakes and PYQs. Sync the performance data so Pragati can use the information for planning and revision.</div>
+        <div class="pragati-howto-box"><b>10. Cloud Sync</b><br>
+          Sign in with the same Google account on your devices. Firebase stores your user-specific Pragati data so the planner can be continued across devices.</div>
+      </div>
+
+      <h3>⭐ Recommended daily routine</h3>
+      <ol>
+        <li>Open <b>Today's Planner</b> and check the generated slots.</li>
+        <li>Complete the highest-priority/test-linked block first.</li>
+        <li>Mark a finished academic topic as done.</li>
+        <li>Choose <b>CBSE / NEET / JEE</b> completion separately when asked.</li>
+        <li>Do your Prashn questions and record mistakes.</li>
+        <li>Use the evening/review time for error correction and active recall.</li>
+        <li>Before ending the day, check unfinished blocks and avoid carrying unrealistic workload forward.</li>
+      </ol>
+
+      <h3>⚠️ Important planning rule</h3>
+      <p>Do not treat a completely free calendar as unlimited study capacity. Pragati also accounts for fixed commitments, existing planner blocks, tests, breaks and recovery time. If the Smart Plan shows an overload, reduce or move work rather than forcing every task into one day.</p>
+
+      <h3>🔄 When something changes</h3>
+      <p>If a school/coaching test date changes, edit the saved test event rather than creating a duplicate. Regenerate/optimize the affected day after the change.</p>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:18px">
+        <button class="btn btn-primary" onclick="closePragatiHowToUse()">Got it</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal) closePragatiHowToUse();});
+  document.body.appendChild(modal);
+}
+function closePragatiHowToUse(){
+  const m=document.getElementById('pragatiHowToModal');
+  if(m) m.remove();
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closePragatiHowToUse();
+});
+</script>
+
 </body>
 </html>
