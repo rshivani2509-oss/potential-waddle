@@ -4910,6 +4910,94 @@ function smartTodayPressure(date){
   }
   return {nearest, testShare, label};
 }
+
+function topicMasteredForAnyExam(subject, chapter, topic){
+  const ch=findChapterByName(subject,chapter);
+  if(!ch || !topic)return false;
+  const t=topicObject(subject,chapter,topic);
+  if(!t)return false;
+  ensureTopicExamProgress(t);
+  return TOPIC_TRACKER_EXAMS.some(e=>t.examProgress[e]==="mastered");
+}
+function topicExamSummary(subject,chapter,topic){
+  const ch=findChapterByName(subject,chapter);
+  if(!ch||!topic)return "";
+  const t=topicObject(subject,chapter,topic);
+  if(!t)return "";
+  ensureTopicExamProgress(t);
+  return TOPIC_TRACKER_EXAMS.map(e=>{
+    const ok=t.examProgress[e]==="mastered";
+    return `${e} ${ok?"✓":"○"}`;
+  }).join(" · ");
+}
+function nextIncompleteTopic(subject,chapter){
+  const topics=chapterTopicList(subject,chapter);
+  if(!topics.length)return null;
+  // Prefer topics not globally mastered; this means Smart Plan keeps moving
+  // through the chapter instead of repeatedly showing the same completed topic.
+  const t=topics.find(x=>topicStatusOf(x)!=="mastered");
+  if(!t)return null;
+  return {
+    name:normalizeTopicName(t.name),
+    status:topicStatusOf(t),
+    summary:topicExamSummary(subject,chapter,t.name)
+  };
+}
+function topicAwareChapterLabel(subject,chapter,doneLabel){
+  const t=nextIncompleteTopic(subject,chapter);
+  if(t)return `${chapter} → ${t.name}`;
+  return `${chapter} → ${doneLabel||"✓ Topics covered"}`;
+}
+function smartCurrentPicks(date){
+  const mandatory=todaysMandatoryTopics(date||todayStr());
+  const out=[];
+  const seen=new Set();
+  mandatory.forEach(p=>{
+    const key=p.subject+"::"+p.chapter;
+    if(seen.has(key))return;
+    seen.add(key);
+    const topic=nextIncompleteTopic(p.subject,p.chapter);
+    out.push({...p,topic});
+  });
+  // If all test-linked chapters are already covered, move to the highest-priority
+  // unfinished current chapters instead of leaving the lane blank.
+  if(!out.length || out.every(x=>!x.topic)){
+    const priorities=computeChapterPriorities(date||todayStr());
+    priorities.forEach(p=>{
+      const key=p.subject+"::"+p.chapter;
+      if(seen.has(key))return;
+      const topic=nextIncompleteTopic(p.subject,p.chapter);
+      if(topic){
+        seen.add(key);
+        out.push({...p,topic});
+      }
+    });
+  }
+  return out.slice(0,2);
+}
+function smartBacklogPick(date){
+  const active=DATA.activeClass11Backlog || DATA.settings?.activeClass11Backlog;
+  if(active && active.subject && active.chapter){
+    const topic=nextIncompleteTopic(active.subject,active.chapter);
+    if(topic) return {...active,topic,active:true};
+  }
+  const auto=nearestClass11RecapChapter(date,new Set(),[]);
+  if(!auto)return null;
+  const topic=nextIncompleteTopic(auto.subject,auto.chapter);
+  return {...auto,topic,active:false};
+}
+function smartRevisionPick(date){
+  const due=getDueRevisions();
+  if(!due.length)return null;
+  const sorted=due.slice().sort((a,b)=>{
+    const ad=daysBetween(date,a.dueDate||date), bd=daysBetween(date,b.dueDate||date);
+    return ad-bd;
+  });
+  const r=sorted[0];
+  const topic=nextIncompleteTopic(r.subject,r.chapter);
+  return {...r,topic};
+}
+
 function smartTodayAllocation(date){
   date = date || todayStr();
   // Smart Plan must be grounded in the *actual* planner, not just raw clock time.
@@ -4922,6 +5010,9 @@ function smartTodayAllocation(date){
   const overload = Math.max(0, remainingPlanned - free);
   const pressure = smartTodayPressure(date);
   const mandatory = todaysMandatoryTopics(date);
+  const currentPicks = smartCurrentPicks(date);
+  const backlogPick = smartBacklogPick(date);
+  const revisionPick = smartRevisionPick(date);
   const testShare = pressure.testShare;
   const backlogShare = free >= 180 ? 0.18 : free >= 120 ? 0.12 : 0.08;
   const revisionShare = free >= 240 ? 0.10 : 0.07;
@@ -4935,12 +5026,9 @@ function smartTodayAllocation(date){
   const currentMin = Math.round(studyBudget*currentShare);
   const backlogMin = Math.round(studyBudget*backlogShare);
   const revisionMin = Math.max(0, studyBudget-testMin-currentMin-backlogMin);
-  const backlogPick = nearestClass11RecapChapter(
-    date, new Set(),
-    mandatory.map(x=>({subject:x.subject,chapter:x.chapter}))
-  );
   return {
-    free, remainingPlanned, overload, pressure, mandatory, backlogPick,
+    free, remainingPlanned, overload, pressure, mandatory, currentPicks,
+    backlogPick, revisionPick,
     testMin, currentMin, backlogMin, revisionMin,
     testPct:free ? Math.round(testMin/free*100) : 0,
     currentPct:free ? Math.round(currentMin/free*100) : 0,
@@ -4992,16 +5080,176 @@ function buildSmartPlanToday(date){
   toast(`✨ Smart Plan built: ${minsLabel(a.studyBudget)} study + ${minsLabel(a.recoveryReserve)} protected recovery.`);
 }
 
+
+function changeActiveBacklogFromSmartPlan(date){
+  const choices=[];
+  const seen=new Set();
+
+  // Prefer the existing Class 11 backlog data structure used by Smart Plan.
+  const candidates = [
+    ...(Array.isArray(DATA.class11Backlog)?DATA.class11Backlog:[]),
+    ...(Array.isArray(DATA.backlog)?DATA.backlog:[]),
+    ...(Array.isArray(DATA.class11Lessons)?DATA.class11Lessons:[])
+  ];
+
+  candidates.forEach(x=>{
+    if(!x)return;
+    const subject=x.subject||x.sub||"";
+    const chapter=x.chapter||x.name||x.title||x.lesson||"";
+    if(!subject||!chapter)return;
+    const key=`${subject}::${chapter}`;
+    if(seen.has(key))return;
+    seen.add(key);
+    choices.push({subject,chapter,raw:x});
+  });
+
+  // If there are no saved backlog lessons, allow direct manual selection.
+  const current = (typeof nearestClass11RecapChapter==="function")
+    ? nearestClass11RecapChapter(date||todayStr()) : null;
+
+  openModal(`
+    <div class="modal-head">
+      <h3>🟡 Change Active Class 11 Backlog</h3>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="section-desc">
+      Choose the Class 11 chapter Pragati should use for the Smart Plan. This changes the
+      <b>active backlog target</b>; it does not delete your other backlog lessons.
+    </div>
+
+    ${current ? `<div class="card mb-12">
+      <div class="eyebrow">CURRENT SMART-PLAN BACKLOG</div>
+      <b>${esc(current.subject||"")} · ${esc(current.chapter||current.name||"")}</b>
+    </div>` : ""}
+
+    <div class="field">
+      <label>Subject</label>
+      <select id="smart_backlog_subject" onchange="filterSmartBacklogChoices()">
+        <option value="">All subjects</option>
+        ${[...new Set(choices.map(x=>x.subject))].map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("")}
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Active backlog chapter</label>
+      <select id="smart_backlog_chapter">
+        <option value="">— Select chapter —</option>
+        ${choices.map((x,i)=>`<option data-subject="${esc(x.subject)}" value="${i}">
+          ${esc(x.subject)} · ${esc(x.chapter)}
+        </option>`).join("")}
+      </select>
+    </div>
+
+    <div class="card mb-12">
+      <div class="eyebrow">OR ADD A CHAPTER NOW</div>
+      <div class="grid grid-2">
+        <input id="smart_backlog_new_subject" placeholder="Subject e.g. Physics">
+        <input id="smart_backlog_new_chapter" placeholder="Chapter e.g. Rotational Motion">
+      </div>
+      <button class="btn btn-outline mt-8" onclick="addActiveBacklogFromSmartPlan('${String(date||todayStr()).replace(/'/g,"\\'")}')">
+        + Add & Make Active
+      </button>
+    </div>
+
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-primary" onclick="saveActiveBacklogFromSmartPlan('${String(date||todayStr()).replace(/'/g,"\\'")}')">
+        Set Active Backlog
+      </button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+
+  window.__smartBacklogChoices = choices;
+}
+
+function filterSmartBacklogChoices(){
+  const subject=document.getElementById("smart_backlog_subject")?.value||"";
+  const select=document.getElementById("smart_backlog_chapter");
+  if(!select)return;
+  [...select.options].forEach((opt,i)=>{
+    if(i===0){opt.hidden=false;return;}
+    opt.hidden=!!subject && opt.dataset.subject!==subject;
+  });
+  if(select.selectedOptions[0]?.hidden)select.value="";
+}
+
+function saveActiveBacklogFromSmartPlan(date){
+  const select=document.getElementById("smart_backlog_chapter");
+  const idx=select?.value;
+  const choices=window.__smartBacklogChoices||[];
+  if(idx==="" || !choices[idx]){
+    toast("Select a backlog chapter first.");
+    return;
+  }
+  const pick=choices[idx];
+
+  DATA.activeClass11Backlog = {
+    subject: pick.subject,
+    chapter: pick.chapter,
+    updatedAt: todayStr()
+  };
+
+  // Keep compatibility with common existing settings/state names.
+  if(!DATA.settings) DATA.settings={};
+  DATA.settings.activeClass11Backlog = {...DATA.activeClass11Backlog};
+
+  save();
+  closeModal();
+  render();
+  toast(`🟡 Active backlog changed to ${pick.subject} · ${pick.chapter}`);
+}
+
+function addActiveBacklogFromSmartPlan(date){
+  const subject=normalizeTopicName(document.getElementById("smart_backlog_new_subject")?.value);
+  const chapter=normalizeTopicName(document.getElementById("smart_backlog_new_chapter")?.value);
+  if(!subject||!chapter){
+    toast("Enter both subject and chapter.");
+    return;
+  }
+
+  if(!Array.isArray(DATA.class11Backlog))DATA.class11Backlog=[];
+
+  const exists=DATA.class11Backlog.some(x=>
+    normalizeTopicName(x.subject)===subject &&
+    normalizeTopicName(x.chapter||x.name||"")===chapter
+  );
+
+  if(!exists){
+    DATA.class11Backlog.push({
+      id:uid(),
+      subject,
+      chapter,
+      stage:"build",
+      status:"active",
+      addedAt:todayStr()
+    });
+  }
+
+  DATA.activeClass11Backlog={subject,chapter,updatedAt:todayStr()};
+  if(!DATA.settings)DATA.settings={};
+  DATA.settings.activeClass11Backlog={...DATA.activeClass11Backlog};
+
+  save();
+  closeModal();
+  render();
+  toast(`➕ ${subject} · ${chapter} added and made active.`);
+}
+
 function todayStrategyHTML(date){
   date = date || todayStr();
   const a = smartTodayAllocation(date);
   const testText = a.pressure.nearest
     ? `${esc(a.pressure.nearest.t.name)} · ${a.pressure.nearest.d===0?'today':a.pressure.nearest.d+'d left'}`
     : 'No upcoming test entered';
-  const currentText = a.mandatory.length
-    ? a.mandatory.slice(0,2).map(x=>`${esc(x.subject)}: ${esc(x.chapter)}`).join(' · ')
-    : 'Use highest-priority current chapters';
-  const backlogText = a.backlogPick ? `${esc(a.backlogPick.subject)}: ${esc(a.backlogPick.chapter)}` : 'No Class 11 chapter due';
+  const currentText = a.currentPicks.length
+    ? a.currentPicks.map(x=>{
+        const topic=x.topic ? ` → ${esc(x.topic.name)}` : ' → ✓ Covered';
+        return `${esc(x.subject)}: ${esc(x.chapter)}${topic}`;
+      }).join(' · ')
+    : '✓ Current portion covered — choose the next unfinished chapter';
+  const backlogText = a.backlogPick
+    ? `${esc(a.backlogPick.subject)}: ${esc(a.backlogPick.chapter)}${a.backlogPick.topic ? ` → ${esc(a.backlogPick.topic.name)}` : ' → ✓ Covered'}`
+    : '✓ Class 11 backlog covered';
   const plannedTotal = a.testMin+a.currentMin+a.backlogMin+a.revisionMin;
   const planPct = a.free ? Math.min(100, Math.round(plannedTotal/a.free*100)) : 0;
   const recoveryPct = a.free ? Math.round(a.recoveryReserve/a.free*100) : 0;
@@ -5046,7 +5294,9 @@ function todayStrategyHTML(date){
         </div>
         <div class="smart-lane">
           <div class="lane-title">🟢 Recovery / revision</div>
-          <div class="lane-desc">${minsLabel(a.revisionMin)} protected — not every minute gets filled.</div>
+          <div class="lane-desc">${a.revisionPick && a.revisionPick.topic
+            ? `Revision → ${esc(a.revisionPick.subject)}: ${esc(a.revisionPick.chapter)} → ${esc(a.revisionPick.topic.name)}`
+            : `${minsLabel(a.revisionMin)} protected — not every minute gets filled.`}</div>
         </div>
       </div>
 
@@ -5065,6 +5315,7 @@ function todayStrategyHTML(date){
 </div>
 <div class="mt-10 text-xs" style="background:${a.overload>0?'var(--coral-soft)':'var(--sky-soft)'};padding:9px 11px;border-radius:9px;">${status}${a.overload>0 ? ' Use <b>Optimize Remaining</b> to rebalance unfinished work; it will not erase completed or fixed blocks.' : ''}</div>
 <div class="premium-note text-xs mt-10">💡 ${a.pressure.nearest ? 'Test work ramps up gradually as the date approaches.' : 'Add your upcoming tests to make the allocation fully test-aware.'} ${minsLabel(a.recoveryReserve)} is deliberately protected for recovery; longer/heavier sessions receive longer breaks.</div>
+<div class="text-xs faint mt-8">📌 Smart Plan is topic-aware: when you finish a topic, it moves to the next unfinished topic instead of continuing to display the completed one. If a whole chapter is covered, it moves to the next chapter.</div>
     </div>
   </div>`;
 }
@@ -11519,7 +11770,7 @@ function showPragatiHowToUse(){
           Check the Test Prep, Current Portion, Backlog and Recovery balance. If the existing plan is overloaded, use Optimize Remaining instead of adding more work.</div>
         <div class="pragati-howto-box"><b>4. Backlog</b><br>
           Add Class 11 backlog manually or use the automatic workflow. The weekly workflow follows the Sunday-to-Saturday learning sequence.</div>
-        <div class="pragati-howto-box"><b>5. Subject Trackers</b><br>
+        <div class="pragati-howto-box"><b>5. Active Class 11 Backlog<br>Use <b>Change</b> inside Today's Smart Plan to switch the chapter being planned as your active backlog. Your other backlog chapters are not deleted.</div><div class="pragati-howto-box"><b>7. Subject Trackers</b></b><br>
           Track Physics, Chemistry and Biology separately. When you complete a planner topic, choose independently whether it is completed for CBSE, NEET and/or JEE.</div>
         <div class="pragati-howto-box"><b>6. Tests</b><br>
           Enter each test as its own event/date and keep the relevant chapters attached. Update the date if school/coaching changes it.</div>
