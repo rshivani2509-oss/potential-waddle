@@ -724,6 +724,10 @@ body{
 .prashn-bridge-card{border:1px solid var(--card-border);background:linear-gradient(135deg,var(--sky-soft),var(--card-bg));}
 .prashn-stat{border:1px solid var(--card-border);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.45)}
 .prashn-mini-q{border:1px solid var(--card-border);border-radius:12px;padding:10px 12px;background:var(--card-bg)}
+/* Clean topic tracker */
+.topic-tracker-compact{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.topic-tracker-compact label{padding:10px!important}
+@media(max-width:700px){.topic-tracker-compact{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2470,6 +2474,16 @@ function allChapters(){
   });
   return out;
 }
+
+const TOPIC_TRACKER_EXAMS = ["CBSE","NEET","JEE"];
+function ensureTopicTracker(ch){ if(!ch)return; if(!ch.topicProgress||typeof ch.topicProgress!=="object") ch.topicProgress={}; TOPIC_TRACKER_EXAMS.forEach(e=>{if(!Array.isArray(ch.topicProgress[e]))ch.topicProgress[e]=[];}); }
+function topicKey(subject,chapter,topic){ return [subject||"",chapter||"",topic||""].join("::"); }
+function getTopicProgress(subject,chapter,topic){ const ch=findChapterByName(subject,chapter); if(!ch)return {}; ensureTopicTracker(ch); const key=topicKey(subject,chapter,topic), out={}; TOPIC_TRACKER_EXAMS.forEach(e=>out[e]=ch.topicProgress[e].includes(key)); return out; }
+function setTopicProgress(subject,chapter,topic,exam,done){ if(!TOPIC_TRACKER_EXAMS.includes(exam))return; const ch=findChapterByName(subject,chapter); if(!ch)return; ensureTopicTracker(ch); const arr=ch.topicProgress[exam], key=topicKey(subject,chapter,topic), i=arr.indexOf(key); if(done&&i<0)arr.push(key); if(!done&&i>=0)arr.splice(i,1); }
+function topicTrackerModal(blockId){ const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId); if(!b||!b.subject||!b.chapter)return; const topic=b.topic||b.activity||b.chapter, p=getTopicProgress(b.subject,b.chapter,topic); openModal("📚 Mark Topic Completion", `<div class="section-desc">Choose separately which exam trackers this study session should update.</div><div class="card mb-12"><div class="eyebrow">${esc(b.subject)} · ${esc(b.chapter)}</div><h3>${esc(topic)}</h3></div><div class="grid grid-3">${TOPIC_TRACKER_EXAMS.map(e=>`<label class="card" style="cursor:pointer"><div class="flex gap-8" style="align-items:center"><input type="checkbox" id="topic_${e}_${blockId}" ${p[e]?"checked":""}><b>${e==="CBSE"?"📘 CBSE":e==="NEET"?"🧬 NEET":"⚡ JEE"}</b></div><div class="faint text-xs mt-8">${p[e]?"Already marked complete":"Mark this topic complete for "+e}</div></label>`).join("")}</div><div class="flex gap-8 mt-16"><button class="btn btn-primary" onclick="saveTopicTrackerSelection('${blockId}')">Save Tracker Status</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button></div>`); }
+function saveTopicTrackerSelection(blockId){ const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId); if(!b)return; const topic=b.topic||b.activity||b.chapter; TOPIC_TRACKER_EXAMS.forEach(e=>{const el=document.getElementById(`topic_${e}_${blockId}`); setTopicProgress(b.subject,b.chapter,topic,e,!!el?.checked);}); save(); render(); closeModal(); toast("✅ Topic tracker updated separately for CBSE / NEET / JEE."); }
+function topicTrackerSummary(ch){ ensureTopicTracker(ch); return TOPIC_TRACKER_EXAMS.map(e=>`${e}: ${ch.topicProgress[e].length}`).join(" · "); }
+
 function chapterCompletion(ch){
   const flags = [ch.ncert, ch.lecture, ch.notes, ch.mockTested, ch.revision1, ch.revision2, ch.revision3];
   const done = flags.filter(Boolean).length;
@@ -3663,16 +3677,6 @@ function getFreeSlots(date, extraBusy){
     cursor = Math.max(cursor, b.end);
   });
   if(cursor < dayEnd) free.push({start:cursor, end:dayEnd});
-
-  // Respect the user's generation window for every planner generator, including
-  // the Class 11 backlog workflow. Previously getFreeSlots() ignored the window,
-  // which made capacity and actual schedulable time disagree.
-  if(DATA.generationWindow?.enabled){
-    const gw=getGenerationWindow(date);
-    return free
-      .map(s=>({start:Math.max(s.start,gw.startMin), end:Math.min(s.end,gw.endMin)}))
-      .filter(s=>s.end-s.start >= 15);
-  }
   return free.filter(s=>s.end-s.start >= 15);
 }
 // Smart lecture decision: how many Vedantu slots to attend today
@@ -5909,6 +5913,7 @@ function togglePlannerBlockDone(id){
     }
   }
   save(); render();
+  if(turningOn && subjectNames().includes(b.subject) && b.chapter){ setTimeout(()=>topicTrackerModal(id),0); }
 }
 /* ---------------- Study-block subtasks: NCERT reading / Lecture / Question solving ----------------
    Each academic study block can carry its own little checklist so the three natural steps of
@@ -7084,58 +7089,10 @@ function backlogChapterStatsHTML(c){
 
 function generateWeeklyBacklogWorkflow(){
   const week=ensureBacklogWeek(), dates=backlogWeekDates(week.weekStart), actions=backlogWorkflowRows();
-  // Remove only unfinished backlog blocks from this cycle so manual/locked study
-  // blocks remain protected and can be used as real availability constraints.
   DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>!(b.backlogWorkflow && b.weekStart===week.weekStart && !b.done));
-
-  const weeklyBudget=Math.max(0,Math.round((Number(week.targetHours)||0)*60));
-  let created=0,usedMinutes=0,skippedPast=0,skippedBudget=0,skippedNoSlot=0;
-
-  actions.forEach((a,i)=>{
-    const date=dates[i];
-    if(date<todayStr()){ skippedPast++; return; }
-
-    const budgetLeft=weeklyBudget-usedMinutes;
-    if(budgetLeft<15){ skippedBudget++; return; }
-
-    const slots=getFreeSlots(date);
-    if(!slots.length){ skippedNoSlot++; return; }
-
-    // The old generator treated minMinutes as a hard requirement. That caused a
-    // false "no free slots" result when the week had a small protected backlog
-    // budget (for example during school-exam protection), even though usable time
-    // existed. A backlog block can now be compressed down to 15 minutes while
-    // staying within both the free slot and weekly budget.
-    const desired=Math.min(a.minutes,budgetLeft);
-    let slot=slots.find(x=>x.end-x.start>=desired);
-    if(!slot) slot=slots.find(x=>x.end-x.start>=15);
-    if(!slot){ skippedNoSlot++; return; }
-
-    const duration=Math.min(a.minutes,budgetLeft,slot.end-slot.start);
-    if(duration<15){ skippedNoSlot++; return; }
-
-    const ch=findChapterByName(a.subject,a.chapter);
-    DATA.plannerEvents.push({
-      id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),
-      subject:a.subject,chapter:a.chapter,activity:`Backlog · ${a.label}`,
-      goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],
-      done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,
-      backlogStage:backlogStage(ch).key,
-      compressed:duration<a.minutes
-    });
-    created++; usedMinutes+=duration;
-  });
-
-  week.workflowGenerated=true; week.generatedAt=todayStr(); save(); render();
-  if(created){
-    toast(`🔥 ${created}-day backlog workflow added (${Math.round(usedMinutes/60*10)/10}h).${usedMinutes<weeklyBudget?' Some sessions were compressed to fit your free time/budget.':''}`);
-  }else if(skippedBudget && !skippedNoSlot){
-    toast(`⚖️ Backlog budget is too small this week to create a 15-min block. Free slots exist, but school/test protection has reduced the backlog budget.`);
-  }else if(skippedNoSlot){
-    toast(`No schedulable backlog slot found. Check the generation window and fixed commitments.`);
-  }else{
-    toast('No future backlog days are available in this cycle.');
-  }
+  let created=0,usedMinutes=0;
+  actions.forEach((a,i)=>{ const date=dates[i]; if(date<todayStr()) return; const budgetLeft=week.targetHours*60-usedMinutes; if(budgetLeft<Math.min(15,a.minMinutes||15)) return; const duration=Math.min(a.minutes,Math.max(a.minMinutes||15,budgetLeft)); const slot=getFreeSlots(date).find(x=>x.end-x.start>=duration); if(!slot) return; const ch=findChapterByName(a.subject,a.chapter); DATA.plannerEvents.push({id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:a.subject,chapter:a.chapter,activity:`Backlog · ${a.label}`,goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:backlogStage(ch).key}); created++; usedMinutes+=duration; });
+  week.workflowGenerated=true; week.generatedAt=todayStr(); save(); render(); toast(created?`🔥 ${created}-day backlog workflow added (${Math.round(usedMinutes/60*10)/10}h).`:'No free slots were available for the backlog workflow.');
 }
 function rolloverIncompleteBacklog(){
   const week=ensureBacklogWeek(), pending=(DATA.plannerEvents||[]).filter(b=>b.backlogWorkflow&&b.weekStart===week.weekStart&&!b.done&&b.date<=todayStr());
