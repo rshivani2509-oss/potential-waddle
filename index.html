@@ -2492,25 +2492,145 @@ function allChapters(){
   return out;
 }
 
+
 const TOPIC_TRACKER_EXAMS = ["CBSE","NEET","JEE"];
-function ensureTopicTracker(ch){ if(!ch)return; if(!ch.topicProgress||typeof ch.topicProgress!=="object") ch.topicProgress={}; TOPIC_TRACKER_EXAMS.forEach(e=>{if(!Array.isArray(ch.topicProgress[e]))ch.topicProgress[e]=[];}); }
-function topicKey(subject,chapter,topic){ return [subject||"",chapter||"",topic||""].join("::"); }
-function getTopicProgress(subject,chapter,topic){ const ch=findChapterByName(subject,chapter); if(!ch)return {}; ensureTopicTracker(ch); const key=topicKey(subject,chapter,topic), out={}; TOPIC_TRACKER_EXAMS.forEach(e=>out[e]=ch.topicProgress[e].includes(key)); return out; }
-function setTopicProgress(subject,chapter,topic,exam,done){ if(!TOPIC_TRACKER_EXAMS.includes(exam))return; const ch=findChapterByName(subject,chapter); if(!ch)return; ensureTopicTracker(ch); const arr=ch.topicProgress[exam], key=topicKey(subject,chapter,topic), i=arr.indexOf(key); if(done&&i<0)arr.push(key); if(!done&&i>=0)arr.splice(i,1); }
-function topicTrackerModal(blockId){
-  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
-  if(!b||!b.subject||!b.chapter)return;
-  const topic=b.topic||b.activity||b.chapter;
-  const p=getTopicProgress(b.subject,b.chapter,topic);
-  const body=`<div class="modal-head"><h3>📚 Mark Topic Completion</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
-    <div class="section-desc">Choose separately which exam trackers this study session should update.</div>
-    <div class="card mb-12"><div class="eyebrow">${esc(b.subject)} · ${esc(b.chapter)}</div><h3>${esc(topic)}</h3></div>
-    <div class="grid grid-3">${TOPIC_TRACKER_EXAMS.map(e=>`<label class="card" style="cursor:pointer"><div class="flex gap-8" style="align-items:center"><input type="checkbox" id="topic_${e}_${blockId}" ${p[e]?"checked":""}><b>${e==="CBSE"?"📘 CBSE":e==="NEET"?"🧬 NEET":"⚡ JEE"}</b></div><div class="faint text-xs mt-8">${p[e]?"Already marked complete":"Mark this topic complete for "+e}</div></label>`).join("")}</div>
-    <div class="flex gap-8 mt-16"><button class="btn btn-primary" onclick="saveTopicTrackerSelection('${blockId}')">Save Tracker Status</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button></div>`;
-  openModal(body,true);
+
+function normalizeTopicName(v){ return String(v||"").replace(/\s+/g," ").trim(); }
+function topicKey(subject,chapter,topic){
+  return [subject||"",chapter||"",normalizeTopicName(topic)].join("::");
 }
-function saveTopicTrackerSelection(blockId){ const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId); if(!b)return; const topic=b.topic||b.activity||b.chapter; TOPIC_TRACKER_EXAMS.forEach(e=>{const el=document.getElementById(`topic_${e}_${blockId}`); setTopicProgress(b.subject,b.chapter,topic,e,!!el?.checked);}); save(); render(); closeModal(); toast("✅ Topic tracker updated separately for CBSE / NEET / JEE."); }
-function topicTrackerSummary(ch){ ensureTopicTracker(ch); return TOPIC_TRACKER_EXAMS.map(e=>`${e}: ${ch.topicProgress[e].length}`).join(" · "); }
+function ensureTopicTracker(ch){
+  if(!ch)return;
+  if(!ch.topicProgress||typeof ch.topicProgress!=="object")ch.topicProgress={};
+  TOPIC_TRACKER_EXAMS.forEach(e=>{
+    if(!Array.isArray(ch.topicProgress[e]))ch.topicProgress[e]=[];
+  });
+}
+function chapterTopicList(subject,chapter){
+  const ch=findChapterByName(subject,chapter);
+  return ch && Array.isArray(ch.topics) ? ch.topics : [];
+}
+function findBestPlannerTopic(subject,chapter){
+  const topics=chapterTopicList(subject,chapter);
+  if(!topics.length)return "";
+  // Prefer topics that have not been mastered in the existing topic tracker.
+  const preferred=topics.find(t=>topicStatusOf(t)!=="mastered");
+  return normalizeTopicName((preferred||topics[0]).name);
+}
+function isTopicComplete(subject,chapter,topic,exam){
+  const ch=findChapterByName(subject,chapter);
+  if(!ch || !topic)return false;
+  ensureTopicTracker(ch);
+  return ch.topicProgress[exam].includes(topicKey(subject,chapter,topic));
+}
+function setTopicProgress(subject,chapter,topic,exam,done){
+  if(!TOPIC_TRACKER_EXAMS.includes(exam)||!topic)return;
+  const ch=findChapterByName(subject,chapter);
+  if(!ch)return;
+  ensureTopicTracker(ch);
+  const key=topicKey(subject,chapter,topic), arr=ch.topicProgress[exam], i=arr.indexOf(key);
+  if(done&&i<0)arr.push(key);
+  if(!done&&i>=0)arr.splice(i,1);
+}
+
+/* The planner always records the exact topic, never the whole chapter. */
+function topicCompletionFromPlanner(blockId){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b||!b.subject||!b.chapter||!subjectNames().includes(b.subject))return;
+
+  let topic=normalizeTopicName(b.topic||"");
+  const topics=chapterTopicList(b.subject,b.chapter);
+
+  // If the planner block already carries a topic, update that exact topic automatically.
+  if(topic && topics.some(t=>normalizeTopicName(t.name)===topic)){
+    openTopicCompletionDialog(blockId,topic);
+    return;
+  }
+
+  // If there is no exact topic attached, require one exact topic from the chapter.
+  // This prevents "whole chapter completed" by mistake.
+  if(!topics.length){
+    toast("This chapter has no topic list yet, so the tracker was not auto-marked.");
+    return;
+  }
+  openTopicPicker(blockId,topics);
+}
+function openTopicPicker(blockId,topics){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b)return;
+  const guess=normalizeTopicName(b.topic||"");
+  openModal(`
+    <div class="modal-head"><h3>📚 Which exact topic did you complete?</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="section-desc">Choose the topic you actually completed. Only that topic will be updated — the rest of the chapter remains unchanged.</div>
+    <div class="card mb-12"><div class="eyebrow">${esc(b.subject)} · ${esc(b.chapter)}</div><b>${esc(b.activity||"Study block")}</b></div>
+    <div class="field">
+      <label>Completed topic</label>
+      <select id="planner_exact_topic">
+        ${topics.map(t=>`<option value="${esc(t.name)}" ${normalizeTopicName(t.name)===guess?"selected":""}>${esc(t.name)}</option>`).join("")}
+      </select>
+    </div>
+    <button class="btn btn-primary w-full" onclick="openTopicCompletionDialog('${String(blockId).replace(/'/g,"\\'")}',document.getElementById('planner_exact_topic').value)">Continue</button>
+  `);
+}
+function openTopicCompletionDialog(blockId,topic){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b||!topic)return;
+  const current={};
+  TOPIC_TRACKER_EXAMS.forEach(e=>current[e]=isTopicComplete(b.subject,b.chapter,topic,e));
+  openModal(`
+    <div class="modal-head"><h3>✅ Update Exact Topic</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="section-desc">Mark this topic separately for each exam. One topic does not complete the whole chapter.</div>
+    <div class="card mb-12"><div class="eyebrow">${esc(b.subject)} · ${esc(b.chapter)}</div><h3>${esc(topic)}</h3></div>
+    <div class="grid grid-3">
+      ${TOPIC_TRACKER_EXAMS.map(e=>`
+        <label class="card" style="cursor:pointer">
+          <div class="flex gap-8" style="align-items:center">
+            <input type="checkbox" id="planner_topic_${e}_${blockId}" ${current[e]?"checked":""}>
+            <b>${e==="CBSE"?"📘 CBSE":e==="NEET"?"🧬 NEET":"⚡ JEE"}</b>
+          </div>
+          <div class="faint text-xs mt-8">${current[e]?"Completed":"Not completed"}</div>
+        </label>`).join("")}
+    </div>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-primary" onclick="saveExactTopicCompletion('${String(blockId).replace(/'/g,"\\'")}','${String(topic).replace(/\\/g,"\\\\").replace(/'/g,"\\'")}')">Save Topic Status</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+function saveExactTopicCompletion(blockId,topic){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId);
+  if(!b)return;
+  b.topic=normalizeTopicName(topic);
+  TOPIC_TRACKER_EXAMS.forEach(e=>{
+    const el=document.getElementById(`planner_topic_${e}_${blockId}`);
+    setTopicProgress(b.subject,b.chapter,b.topic,e,!!(el&&el.checked));
+  });
+  save();render();closeModal();
+  toast(`✅ ${b.topic} updated topic-wise for CBSE / NEET / JEE.`);
+}
+function topicTrackerSummary(ch){
+  ensureTopicTracker(ch);
+  return TOPIC_TRACKER_EXAMS.map(e=>`${e}: ${ch.topicProgress[e].length} topic${ch.topicProgress[e].length===1?"":"s"}`).join(" · ");
+}
+
+
+function showTopicWiseProgress(subject,chapter){
+  const ch=findChapterByName(subject,chapter);
+  if(!ch)return;
+  ensureTopicTracker(ch);
+  const topics=Array.isArray(ch.topics)?ch.topics:[];
+  openModal(`
+    <div class="modal-head"><h3>📖 Topic-wise Progress</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="section-desc">${esc(subject)} · ${esc(chapter)} — each topic is tracked independently.</div>
+    ${topics.length?topics.map(t=>{
+      const n=normalizeTopicName(t.name);
+      return `<div class="card mb-8"><b>${esc(n)}</b><div class="flex gap-8 mt-8" style="flex-wrap:wrap">
+        ${TOPIC_TRACKER_EXAMS.map(e=>`<span class="tag ${isTopicComplete(subject,chapter,n,e)?'tag-low':'tag-med'}">${e}: ${isTopicComplete(subject,chapter,n,e)?'✓ Done':'Pending'}</span>`).join('')}
+      </div></div>`;
+    }).join(''):'<div class="empty">No topics are defined for this chapter.</div>'}
+    <button class="btn btn-outline mt-12" onclick="closeModal()">Close</button>
+  `);
+}
 
 function chapterCompletion(ch){
   const flags = [ch.ncert, ch.lecture, ch.notes, ch.mockTested, ch.revision1, ch.revision2, ch.revision3];
@@ -4838,7 +4958,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
     const pick = recapBlockPick(date);
     const range = consumeFromSlots(free, RECAP_BLOCK_MIN);
     if(range){
-      events.push({id:uid(), date, startTime:toTimeStr(range.start), endTime:toTimeStr(range.end), subject:pick.subject, activity: pick.label + ` (ramp-down · ${recap.key} in ${recap.days}d)`, done:false, generated:true, chapter:pick.chapter, subtasks:pick.chapter?undefined:[makeSubtask('qns')]});
+      events.push({id:uid(), date, startTime:toTimeStr(range.start), endTime:toTimeStr(range.end), subject:pick.subject, activity: pick.label + ` (ramp-down · ${recap.key} in ${recap.days}d)`, done:false, generated:true, chapter:pick.chapter, topic:findBestPlannerTopic(pick.subject,pick.chapter), subtasks:pick.chapter?undefined:[makeSubtask('qns')]});
     }
   }
   const priorities = taper ? filterPrioritiesForTaper(priorities0) : priorities0;
@@ -4854,7 +4974,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
     const range = consumeFromSlots(free, wantDur ? clamp(wantDur, 20, 60) : 35);
     if(!range) return;
     used.add(pick.subject+'::'+pick.chapter);
-    events.push({id:uid(), date, startTime:toTimeStr(range.start), endTime:toTimeStr(range.end), subject:pick.subject, activity:`🎯 ${src} Exam Prep — ${pick.chapter} (${pick.testName})`, done:false, generated:true, chapter:pick.chapter, subtasks:defaultStudySubtasks()});
+    events.push({id:uid(), date, startTime:toTimeStr(range.start), endTime:toTimeStr(range.end), subject:pick.subject, activity:`🎯 ${src} Exam Prep — ${pick.chapter} (${pick.testName})`, done:false, generated:true, chapter:pick.chapter, topic:findBestPlannerTopic(pick.subject,pick.chapter), subtasks:defaultStudySubtasks()});
   });
   // Class 11 recap — either the student's explicit pick/skip from the plan modal (class11Override),
   // or, for calls that bypass the modal (e.g. schedule-override regeneration), the automatic
@@ -4886,7 +5006,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       if(range){
         used.add(c11pick.subject+'::'+c11pick.chapter);
         const label = c11pick.linkedTo ? `📘 Class 11 Recap — ${c11pick.chapter} (basics for ${c11pick.linkedTo})` : `📘 Class 11 Recap — ${c11pick.chapter}`;
-        events.push({id:uid(), date, startTime:toTimeStr(range.start), endTime:toTimeStr(range.end), subject:c11pick.subject, activity:label, done:false, generated:true, chapter:c11pick.chapter, subtasks:[makeSubtask('ncert'), makeSubtask('qns')]});
+        events.push({id:uid(), date, startTime:toTimeStr(range.start), endTime:toTimeStr(range.end), subject:c11pick.subject, activity:label, done:false, generated:true, chapter:c11pick.chapter, topic:findBestPlannerTopic(c11pick.subject,c11pick.chapter), subtasks:[makeSubtask('ncert'), makeSubtask('qns')]});
       }
     }
   }
@@ -4943,7 +5063,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       // A block that already IS one specific step (Lecture/NCERT/Qns, from the plan modal's split)
       // doesn't need its own checklist — but an undifferentiated "Study" chunk (no split given,
       // e.g. surplus free time or a simple add) gets the full lecture/NCERT/questions checklist.
-      const boundedEvent = clampGeneratedEventToWindow({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+chunk), subject:pick.subject, activity:label, done:false, generated:true, chapter:pick.chapter, taskType:pick.type||undefined, subtasks: pick.type ? undefined : defaultStudySubtasks()});
+      const boundedEvent = clampGeneratedEventToWindow({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+chunk), subject:pick.subject, activity:label, done:false, generated:true, chapter:pick.chapter, topic:findBestPlannerTopic(pick.subject,pick.chapter), taskType:pick.type||undefined, subtasks: pick.type ? undefined : defaultStudySubtasks()});
       if(boundedEvent) events.push(boundedEvent);
       remainingMin.set(pick.key, want-chunk);
       if(remainingMin.get(pick.key) <= 5) used.add(pick.key); // tiny leftovers count as done, no 3-minute crumbs later
@@ -5874,6 +5994,7 @@ function openPlannerForm(date, editId){
     </div>
     <div class="field"><label>Subject / Category</label><select id="f_subject">${subjectOptions.map(s=>`<option ${existing&&existing.subject===s?'selected':''}>${s}</option>`).join('')}</select></div>
     <div class="field"><label>Activity / notes</label><input id="f_activity" placeholder="e.g. Revise Electrostatics + DPP" value="${existing?esc(existing.activity||''):''}"></div>
+    <div class="field"><label>Exact topic (for topic-wise tracker)</label><input id="f_topic" placeholder="e.g. Electric field due to point charge" value="${existing?esc(existing.topic||''):''}"><div class="text-xs faint mt-4">For Physics/Chemistry/Biology/Maths, enter the exact topic you plan to complete. When you mark the block done, Pragati updates only this topic.</div></div>
     <div class="field"><label>Goals (one per line, optional)</label><textarea id="f_goals" rows="3" placeholder="Formula Revision&#10;15 PYQs" style="width:100%; border:1px solid var(--card-border); border-radius:10px; padding:8px 10px; resize:vertical;">${existing && Array.isArray(existing.goals) ? esc(existing.goals.join('\n')) : ''}</textarea></div>
     <div class="field">
       <label>Subtasks for this block</label>
@@ -5896,6 +6017,7 @@ function savePlannerBlock(editId){
   if(endTime <= startTime) return toast('End time must be after start time.');
   const subject = document.getElementById('f_subject').value;
   const activity = document.getElementById('f_activity').value.trim();
+  const topic = (document.getElementById('f_topic')?.value || '').trim();
   const goals = document.getElementById('f_goals').value.split('\n').map(s=>s.trim()).filter(Boolean);
   if(!DATA.plannerEvents) DATA.plannerEvents = [];
   // Build the subtask checklist from whichever of the three step-checkboxes are ticked,
@@ -5911,12 +6033,12 @@ function savePlannerBlock(editId){
   });
   if(editId){
     const b = DATA.plannerEvents.find(x=>x.id===editId);
-    Object.assign(b, {date, startTime, endTime, subject, activity, goals, subtasks});
+    Object.assign(b, {date, startTime, endTime, subject, activity, topic, goals, subtasks});
     // The moment you hand-edit an auto-generated block, it becomes yours — Generate Plan
     // will never silently overwrite it again unless you delete it yourself.
     if(b.generated && b.subject!=='Fixed') b.generated = false;
   } else {
-    DATA.plannerEvents.push({id:uid(), date, startTime, endTime, subject, activity, goals, subtasks, done:false});
+    DATA.plannerEvents.push({id:uid(), date, startTime, endTime, subject, activity, topic, goals, subtasks, done:false});
   }
   plannerViewDate = date;
   save(); closeModal(); render(); toast('Time block saved.');
@@ -5954,7 +6076,7 @@ function togglePlannerBlockDone(id){
     }
   }
   save(); render();
-  if(turningOn && subjectNames().includes(b.subject) && b.chapter){ setTimeout(()=>topicTrackerModal(id),0); }
+  if(turningOn && subjectNames().includes(b.subject) && b.chapter){ setTimeout(()=>topicCompletionFromPlanner(id),0); }
 }
 /* ---------------- Study-block subtasks: NCERT reading / Lecture / Question solving ----------------
    Each academic study block can carry its own little checklist so the three natural steps of
@@ -6162,7 +6284,7 @@ function copyPlanToDate(fromDate){
   const toDate = to.toISOString().slice(0,10);
   const blocks = (DATA.plannerEvents||[]).filter(b=>b.date===fromDate);
   if(!blocks.length) return toast('No time blocks on this day to copy.');
-  blocks.forEach(b => DATA.plannerEvents.push({id:uid(), date:toDate, startTime:b.startTime, endTime:b.endTime, subject:b.subject, activity:b.activity, done:false}));
+  blocks.forEach(b => DATA.plannerEvents.push({id:uid(), date:toDate, startTime:b.startTime, endTime:b.endTime, subject:b.subject, chapter:b.chapter, topic:b.topic, activity:b.activity, goals:b.goals||[], subtasks:b.subtasks||[], done:false}));
   plannerViewDate = toDate;
   save(); render();
   toast(`Copied ${blocks.length} block${blocks.length===1?'':'s'} to ${fmtDate(toDate)}.`);
@@ -7132,7 +7254,7 @@ function generateWeeklyBacklogWorkflow(){
   const week=ensureBacklogWeek(), dates=backlogWeekDates(week.weekStart), actions=backlogWorkflowRows();
   DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>!(b.backlogWorkflow && b.weekStart===week.weekStart && !b.done));
   let created=0,usedMinutes=0;
-  actions.forEach((a,i)=>{ const date=dates[i]; if(date<todayStr()) return; const budgetLeft=week.targetHours*60-usedMinutes; if(budgetLeft<Math.min(15,a.minMinutes||15)) return; const duration=Math.min(a.minutes,Math.max(a.minMinutes||15,budgetLeft)); const slot=getFreeSlots(date).find(x=>x.end-x.start>=duration); if(!slot) return; const ch=findChapterByName(a.subject,a.chapter); DATA.plannerEvents.push({id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:a.subject,chapter:a.chapter,activity:`Backlog · ${a.label}`,goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:backlogStage(ch).key}); created++; usedMinutes+=duration; });
+  actions.forEach((a,i)=>{ const date=dates[i]; if(date<todayStr()) return; const budgetLeft=week.targetHours*60-usedMinutes; if(budgetLeft<Math.min(15,a.minMinutes||15)) return; const duration=Math.min(a.minutes,Math.max(a.minMinutes||15,budgetLeft)); const slot=getFreeSlots(date).find(x=>x.end-x.start>=duration); if(!slot) return; const ch=findChapterByName(a.subject,a.chapter); DATA.plannerEvents.push({id:uid(),date,startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:a.subject,chapter:a.chapter,topic:findBestPlannerTopic(a.subject,a.chapter),activity:`Backlog · ${a.label}`,goals:[a.label,'Reduce Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:backlogStage(ch).key}); created++; usedMinutes+=duration; });
   week.workflowGenerated=true; week.generatedAt=todayStr(); save(); render(); toast(created?`🔥 ${created}-day backlog workflow added (${Math.round(usedMinutes/60*10)/10}h).`:'No free slots were available for the backlog workflow.');
 }
 function rolloverIncompleteBacklog(){
@@ -7148,7 +7270,7 @@ function rolloverIncompleteBacklog(){
 function addBacklogBlockToday(){
   const week=ensureBacklogWeek(), top=backlogSelectedChapter(); if(!top) return toast('🎉 No Class 11 backlog detected.');
   const duration=Math.min(45,Math.max(15,Math.round(week.targetHours*60/5))), slot=getFreeSlots(todayStr()).find(x=>x.end-x.start>=duration); if(!slot) return toast('No free slot left today for backlog.');
-  DATA.plannerEvents.push({id:uid(),date:todayStr(),startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:top.subject,chapter:top.name,activity:`Backlog · ${top.stage.label}`,goals:['Clear Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:top.stage.key}); save(); render(); toast(`🔥 Added ${duration}-min backlog block for ${top.name}.`);
+  DATA.plannerEvents.push({id:uid(),date:todayStr(),startTime:toTimeStr(slot.start),endTime:toTimeStr(slot.start+duration),subject:top.subject,chapter:top.name,topic:findBestPlannerTopic(top.subject,top.name),activity:`Backlog · ${top.stage.label}`,goals:['Clear Class 11 backlog'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,locked:false,backlogWorkflow:true,weekStart:week.weekStart,backlogStage:top.stage.key}); save(); render(); toast(`🔥 Added ${duration}-min backlog block for ${top.name}.`);
 }
 function backlogTodayHTML(){
   const week=ensureBacklogWeek(), top=backlogSelectedChapter(); if(!top) return '';
@@ -8767,7 +8889,7 @@ function generateTestPrepPlan(testId){
     const picks=relevant.slice(0,Math.min(2,relevant.length));
     picks.forEach((c,i)=>{ if(!free.length) return; const slot=consumeFromSlots(free,45); if(!slot) return;
       const start=toTimeStr(slot.start),end=toTimeStr(slot.end);
-      DATA.plannerEvents.push({id:uid(),date,startTime:start,endTime:end,subject:c.subject,chapter:c.chapter,activity:`Test Prep · ${test.name}`,goals:['Revise concepts','Solve exam questions'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,testPrep:true,locked:true}); created.push(date);
+      DATA.plannerEvents.push({id:uid(),date,startTime:start,endTime:end,subject:c.subject,chapter:c.chapter,topic:findBestPlannerTopic(c.subject,c.chapter),activity:`Test Prep · ${test.name}`,goals:['Revise concepts','Solve exam questions'],subtasks:[makeSubtask('ncert'),makeSubtask('qns')],done:false,generated:true,testPrep:true,locked:true}); created.push(date);
     });
   }
   save(); render(); toast(created.length?`Generated ${created.length} test-prep block${created.length===1?'':'s'} for ${test.name}.`:'No free study slots were available.');
