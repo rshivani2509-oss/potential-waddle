@@ -1071,6 +1071,24 @@ html[data-theme="dark"] .modal .icon-btn{color:#4c463d!important;background:#f6f
 .pr-feedback-action strong{color:#80672d}
 @media(max-width:700px){.pr-feedback-grid{grid-template-columns:1fr}}
 </style>
+
+
+
+<style id="pragati-class-separation-css">
+.pr-class-group{margin:0 0 18px}
+.pr-class-group-head{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;margin-bottom:9px;border-radius:11px;background:#f7f1df;border:1px solid #e6dcc2;color:#665225;font-weight:800}
+.pr-class-group-head span:last-child{font-size:10px;font-weight:600;color:#8b7a50}
+.pr-class-group .chapter-card{margin-bottom:9px}
+</style>
+<style id="pragati-generator-topic-hint">.pr-topic-pick{color:var(--ink)!important}.pr-topic-pick label{color:var(--ink)!important}.pr-topic-pick input{accent-color:var(--sage)}.pr-gen-class-group>div:first-child{color:var(--ink)!important}</style>
+
+
+<style id="pragati-selector-v2-css">
+#genPlanList,#genPlanList *{box-sizing:border-box}
+#genPlanList{color:var(--ink)!important}
+#genPlanList input{color:var(--ink)!important}
+#genPlanList input::placeholder{color:var(--ink-soft)!important;opacity:1}
+</style>
 </head>
 <body>
 <div id="app">
@@ -3754,6 +3772,12 @@ function chapterStudyTechnique(subject, ch){
   return {method:'Recall → questions → PYQs → error review',why:'A balanced cycle keeps the chapter moving toward exam readiness.'};
 }
 function studyStrategistPick(){
+  const ov=DATA.strategistOverride;
+  if(ov && ov.date===todayStr()){
+    const ch=findChapterByName(ov.subject,ov.chapter);
+    if(ch) return {subject:ov.subject,chapter:ov.chapter,ch,score:99999,completion:chapterCompletion(ch),acc:Number(ch.accuracy)||0,readiness:chapterReadinessScore(ch,ov.subject),tech:chapterStudyTechnique(ov.subject,ch),highYield:highYieldTags(ov.subject,ch.name).length};
+  }
+
   const rows=[];
   subjectNames().forEach(subject=>{
     (DATA.subjects[subject]?.chapters||[]).forEach(ch=>{
@@ -3790,10 +3814,39 @@ function studyStrategistHTML(){
         <div class="text-sm mt-8"><b>Use:</b> ${esc(pick.tech.method)}</div>
         <div class="text-xs faint mt-6">${esc(pick.tech.why)}</div>
       </div>
-      <button class="btn btn-primary" onclick="startFocusSession('${esc(pick.subject)}','${esc(pick.chapter)}',null,'${esc(pick.tech.method)}')">🎯 Start</button>
+      <div class="flex gap-8 flex-wrap">
+        <button class="btn btn-outline" onclick="openStrategistChangeTopicModal()">🔄 Change Topic</button>
+        <button class="btn btn-primary" onclick="startFocusSession('${esc(pick.subject)}','${esc(pick.chapter)}',null,'${esc(pick.tech.method)}')">🎯 Start</button>
+      </div>
     </div>
   </div>`;
 }
+
+function openStrategistChangeTopicModal(){
+  const rows=allChapterSwapCandidates('');
+  openModal(`
+    <div class="modal-head"><h3>🔄 Change Today's Recommended Topic</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs muted mb-10">Pragati's recommendation is only a suggestion. Choose any Class 11 or Class 12 chapter you actually want to study today.</div>
+    <div class="field"><label>Choose lesson</label>
+      <select id="f_strategistTopic" style="width:100%;">
+        ${groupedSwapOptions(rows)}
+      </select>
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="useStrategistTopic()">Use This Topic</button>
+    </div>
+  `);
+}
+function useStrategistTopic(){
+  const sel=document.getElementById('f_strategistTopic');
+  if(!sel||!sel.value)return;
+  const [subject,chapter]=sel.value.split('::');
+  DATA.strategistOverride={date:todayStr(),subject,chapter};
+  save();closeModal();render();
+  toast(`🎯 Today's topic changed to ${chapter}.`);
+}
+
 function mistakeDigestHTML(){
   const ms=Array.isArray(DATA.mistakes)?DATA.mistakes:[];
   if(!ms.length) return `<div class="card"><div class="card-head"><h3>🧯 Mistake Intelligence</h3></div><div class="empty text-sm">Log mistakes to see your recurring error pattern.</div></div>`;
@@ -4981,182 +5034,262 @@ function realisticChapterCapacity(freeMin, date){
 // Step 1 of plan generation: show the sorted priority list and let the student pick which
 // chapters actually go into today's plan, with a realistic default selection pre-checked.
 function openGeneratePlanModal(date){
+  // Robust chapter/topic selector. It deliberately renders from the real DATA store,
+  // with DEFAULT_CHAPTERS as a safe fallback, so a priority/analytics error can never
+  // make the selector appear blank.
   date = date || plannerViewDate || todayStr();
-  const taper = isTaperWindow(date);
-  let priorities = computeChapterPriorities(date);
-  if(taper) priorities = filterPrioritiesForTaper(priorities);
-  const mandatoryKeys = new Set(todaysMandatoryTopics(date).map(m=>m.subject+'::'+m.chapter));
-  const freeMin = estimateFreePlanningMinutes(date);
-  const energy = todaysEnergy(date);
-  const energyMeta = ENERGY_LEVELS[energy];
-  const capacity = Math.max(1, Math.round(realisticChapterCapacity(freeMin, date) * energyMeta.mult));
-  const completionRate = recentPlanCompletionRate(14);
-  const freeH = Math.floor(freeMin/60), freeM = Math.round(freeMin%60);
-  const energySelectorHtml = `
-    <div class="mb-16" style="border:1px solid var(--card-border); border-radius:10px; padding:10px 12px;">
-      <div class="text-xs" style="font-weight:600; margin-bottom:8px;">How's your energy today?</div>
-      <div class="flex gap-8 flex-wrap">
-        ${Object.entries(ENERGY_LEVELS).map(([key,e])=>`<button class="btn ${energy===key?'btn-primary':'btn-outline'} btn-sm" onclick="setGenPlanEnergy('${date}','${key}')">${e.icon} ${e.label}</button>`).join('')}
-      </div>
-      <div class="text-xs faint mt-8">${energyMeta.hint}</div>
-    </div>`;
-  if(!priorities.length){
-    openModal(`
-      <div class="modal-head"><h3>🎯 Choose Today's Chapters</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
-      ${energySelectorHtml}
-      <div class="empty"><p>No prioritized chapters yet — add subjects/chapters, upcoming tests, or accuracy data first.</p></div>
-      <button class="btn btn-primary w-full" onclick="closeModal(); generateTodaysPlan('${date}', null);">Generate a basic plan anyway</button>
-    `);
-    return;
+
+  const selectedToday = new Set(Array.isArray(DATA?.smartPlanSelection) ? DATA.smartPlanSelection : []);
+  const topicMemory = (DATA && DATA.smartPlanTopics) || {};
+  let freePlanningMinutes = 0;
+  try { freePlanningMinutes = Math.max(0, Number(estimateFreePlanningMinutes(date)) || 0); } catch(e) { freePlanningMinutes = 0; }
+
+  const subjectOrder = ['Physics','Chemistry','Biology','Maths'];
+  const chapterRows = [];
+
+  subjectOrder.forEach(subject=>{
+    const stored = DATA?.subjects?.[subject]?.chapters;
+    const names = Array.isArray(stored) && stored.length
+      ? stored.map(ch=>ch.name).filter(Boolean)
+      : (DEFAULT_CHAPTERS[subject] || []);
+
+    names.forEach((name, idx)=>{
+      const ch = Array.isArray(stored) ? stored.find(x=>x.name===name) : null;
+      let level = 12;
+      try {
+        level = typeof chapterClassLevel==='function' && ch ? chapterClassLevel(subject,ch) : autoClassLevel(subject,name);
+      } catch(e) {
+        level = autoClassLevel(subject,name);
+      }
+      const topics = Array.isArray(ch?.topics)
+        ? ch.topics.filter(t=>String(t?.name||'').trim())
+        : [];
+      chapterRows.push({
+        subject,
+        chapter:name,
+        classLevel: level===11 ? 11 : 12,
+        topics,
+        key: subject+'::'+name
+      });
+    });
+  });
+
+  // If a custom subject somehow has chapters but isn't in the normal order, retain it too.
+  Object.entries(DATA?.subjects || {}).forEach(([subject,obj])=>{
+    if(subjectOrder.includes(subject)) return;
+    (obj?.chapters || []).forEach(ch=>{
+      if(!ch?.name) return;
+      chapterRows.push({
+        subject, chapter:ch.name, classLevel:12,
+        topics:Array.isArray(ch.topics)?ch.topics.filter(t=>String(t?.name||'').trim()):[],
+        key:subject+'::'+ch.name
+      });
+    });
+  });
+
+  const unique = [];
+  const seen = new Set();
+  chapterRows.forEach(r=>{ if(!seen.has(r.key)){seen.add(r.key);unique.push(r);} });
+
+  function safeTopics(row){
+    const remembered = Array.isArray(topicMemory[row.key]) ? topicMemory[row.key] : [];
+    return row.topics.length ? row.topics : remembered.map(name=>({name}));
   }
-  const rows = priorities.map((p,i)=>{
-    const key = p.subject+'::'+p.chapter;
-    const isMandatory = mandatoryKeys.has(key);
-    const checked = isMandatory || i < capacity;
-    const split = suggestedChapterTaskSplit(p, date);
-    const taskField = (type, label, val)=>`<label class="text-xs faint" style="display:inline-flex; align-items:center; gap:3px;" title="${label} minutes">${label[0]}<input type="number" class="genplan-task" data-key="${esc(key)}" data-type="${type}" value="${val}" min="0" max="90" step="5" onchange="updateGenPlanCount()" style="width:40px; padding:2px 3px; border:1px solid var(--card-border); border-radius:6px; font-size:11.5px;"></label>`;
-    return `<div class="flex gap-8" style="align-items:flex-start; padding:8px 6px; border-bottom:1px solid var(--card-border);">
-      <input type="checkbox" class="genplan-chk" value="${esc(key)}" ${checked?'checked':''} onchange="updateGenPlanCount()" style="margin-top:5px; width:16px; height:16px; accent-color:var(--sage); flex-shrink:0;">
-      <div style="flex:1;">
-        <div><span class="text-sm" style="font-weight:600;">${esc(p.chapter)}</span> <span class="faint text-xs">(${esc(p.subject)})</span>
-        ${isMandatory ? `<span class="tag tag-high" style="font-size:9.5px; margin-left:4px;">Exam soon</span>` : ''}
-        ${p.examTypeBoost>0 ? `<span class="tag tag-high" style="font-size:9.5px; margin-left:4px;" title="Covered by a Periodic Test or Month-end Exam">📌 ${esc(p.priorityTestName||'')}</span>` : ''}
-        ${p.revisionScore>0 ? `<span class="tag tag-med" style="font-size:9.5px; margin-left:4px;">Revision due</span>` : ''}
-        ${p.mockFixScore>0 ? `<span class="tag tag-high" style="font-size:9.5px; margin-left:4px;">🛠️ Mock fix</span>` : ''}
-        <span class="mono text-xs faint" style="float:right;">${p.total}pt</span></div>
-        <div class="flex gap-10 mt-4 flex-wrap">
-          ${taskField('Lecture','🎥Lec', split.lecture)}
-          ${taskField('NCERT','📖NCERT', split.ncert)}
-          ${taskField('Qns','✍️Qns', split.qns)}
+
+  function renderRow(row){
+    const remembered = new Set(Array.isArray(topicMemory[row.key]) ? topicMemory[row.key] : []);
+    const checked = selectedToday.has(row.key);
+    const topics = safeTopics(row);
+
+    return `<div class="genplan-chapter-row" data-search="${esc((row.subject+' '+row.chapter).toLowerCase())}"
+      style="padding:12px 6px;border-bottom:1px solid var(--card-border);display:block!important;">
+      <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;">
+        <input type="checkbox" class="genplan-chk" value="${esc(row.key)}" ${checked?'checked':''}
+          onchange="updateGenPlanCount()"
+          style="margin-top:4px;width:18px;height:18px;accent-color:var(--sage);flex:0 0 auto;">
+        <span style="flex:1;min-width:0;">
+          <span style="display:block;font-size:14px;font-weight:750;color:var(--ink);">
+            ${esc(row.chapter)}
+          </span>
+          <span style="display:inline-block;margin-top:3px;font-size:11px;color:var(--ink-soft);">
+            ${esc(row.subject)} · Class ${row.classLevel}
+          </span>
+        </span>
+      </label>
+      <div class="genplan-details" style="margin:8px 0 0 27px;">
+        <div style="display:flex;gap:7px;flex-wrap:wrap;">
+          <label style="font-size:11px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px;">
+            🎥 <input type="number" class="genplan-task" data-key="${esc(row.key)}" data-type="Lecture"
+              value="20" min="0" max="180" step="5" onchange="updateGenPlanCount()"
+              style="width:48px;padding:4px;border:1px solid var(--card-border);border-radius:6px;background:var(--card);color:var(--ink);"> min
+          </label>
+          <label style="font-size:11px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px;">
+            📖 <input type="number" class="genplan-task" data-key="${esc(row.key)}" data-type="NCERT"
+              value="15" min="0" max="180" step="5" onchange="updateGenPlanCount()"
+              style="width:48px;padding:4px;border:1px solid var(--card-border);border-radius:6px;background:var(--card);color:var(--ink);"> min
+          </label>
+          <label style="font-size:11px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px;">
+            ✍️ <input type="number" class="genplan-task" data-key="${esc(row.key)}" data-type="Qns"
+              value="20" min="0" max="180" step="5" onchange="updateGenPlanCount()"
+              style="width:48px;padding:4px;border:1px solid var(--card-border);border-radius:6px;background:var(--card);color:var(--ink);"> min
+          </label>
         </div>
+        ${topics.length ? `
+          <div style="margin-top:9px;padding:8px;border:1px solid var(--card-border);border-radius:8px;background:var(--bg-soft);">
+            <div style="font-size:11px;font-weight:700;color:var(--ink);margin-bottom:6px;">
+              📌 Select specific topics (optional)
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              ${topics.map(t=>{
+                const n=String(t.name||'').trim();
+                return `<label style="display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border:1px solid var(--card-border);border-radius:7px;background:var(--card);color:var(--ink);font-size:11px;cursor:pointer;">
+                  <input type="checkbox" class="genplan-topic" data-key="${esc(row.key)}" value="${esc(n)}"
+                    ${remembered.has(n)?'checked':''} onchange="updateGenPlanCount()"
+                    style="width:14px;height:14px;accent-color:var(--sage);">
+                  ${esc(n)}
+                </label>`;
+              }).join('')}
+            </div>
+          </div>` : `
+          <div style="margin-top:7px;font-size:10.5px;color:var(--ink-soft);">
+            No topic breakdown added yet — selecting this chapter plans the whole chapter.
+          </div>`}
       </div>
     </div>`;
-  }).join('');
-  const c11 = class11RecapOptionsForModal(date);
-  const c11Enabled = DATA.routine.class11Enabled !== false;
-  const c11OptionsHtml = c11.options.map(o=>`<option value="${esc(o.subject+'::'+o.chapter)}">${o.linked?'🔗 ':''}${esc(o.chapter)} (${esc(o.subject)})</option>`).join('');
-  const ved = vedantuModalInfo(date);
-  const vedHtml = ved ? `
-    <div class="mb-16" style="border:1px solid var(--card-border); border-radius:10px; padding:10px 12px;">
-      <div class="text-xs" style="font-weight:600; margin-bottom:6px;">🟣 Today's Vedantu Lecture${ved.slots.length>1?'s':''}</div>
-      <div class="text-xs faint mb-8">${esc(ved.reason)}</div>
-      ${ved.slots.map(s=>`
-        <div class="flex gap-8 mb-8 flex-wrap" style="align-items:center;">
-          <span class="text-xs faint" style="min-width:96px;">Slot ${s.n} · ${fmtTime(s.start)}–${fmtTime(s.end)}</span>
-          <select id="ved_subj_${s.n}" style="padding:6px 8px; border:1px solid var(--card-border); border-radius:8px; font-size:12.5px; background:var(--card); color:var(--ink);">
-            ${subjectNames().map(sub=>`<option value="${esc(sub)}" ${sub===s.defaultSubject?'selected':''}>${esc(sub)}</option>`).join('')}
-          </select>
-          <input type="text" id="ved_name_${s.n}" placeholder="Lesson/lecture name (e.g. Rotational Motion — Torque L3)" style="flex:1; min-width:160px; padding:6px 8px; border:1px solid var(--card-border); border-radius:8px; font-size:12.5px;">
-        </div>`).join('')}
-      <div class="text-xs faint">Type the actual lesson name so the block (and your Vedantu completion tracker) shows exactly what you attended — leave blank to keep the generic label.</div>
-    </div>` : '';
+  }
+
+  const buildGroup=(level)=>{
+    const rows=unique.filter(r=>r.classLevel===level);
+    return `<section class="pr-gen-class-group" data-class="${level}" style="display:block!important;margin-bottom:12px;">
+      <div style="position:sticky;top:0;z-index:3;padding:10px 9px;background:var(--card);color:var(--ink);border-bottom:1px solid var(--card-border);font-weight:800;">
+        ${level===11?'📘':'📕'} Class ${level}
+      </div>
+      ${subjectOrder.map(subject=>{
+        const rs=rows.filter(r=>r.subject===subject);
+        if(!rs.length)return '';
+        return `<div class="genplan-subject-group" data-subject="${esc(subject)}" style="display:block!important;">
+          <div style="padding:9px 6px 5px;color:var(--gold,#8a6a2f);font-size:12px;font-weight:800;">
+            ${esc(subject)}
+          </div>
+          ${rs.map(renderRow).join('')}
+        </div>`;
+      }).join('')}
+    </section>`;
+  };
+
+  const allGroups = [buildGroup(11),buildGroup(12)].join('');
+  const count = unique.length;
+
   openModal(`
-    <div class="modal-head"><h3>🎯 Choose Today's Chapters</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
-    ${taper ? `<div class="mb-16" style="background:var(--coral-soft); border-radius:10px; padding:10px 12px;"><div class="text-sm" style="font-weight:700;">⏳ Taper Mode — ${taper.key} in ${taper.days} day${taper.days===1?'':'s'}</div><div class="text-xs muted mt-4">Only revision-due, mock-flagged, and clearly weak chapters are shown — brand-new content is held back so these last days go into consolidation, not cramming.</div></div>` : ''}
-    ${energySelectorHtml}
-    <div class="text-xs muted mb-12">Sorted by the priority engine (exam nearness, weak areas, revision due, homework, yesterday's misses). You have about <strong>${freeH}h ${freeM}m</strong> free today${energy!=='normal' ? ` — at ${energyMeta.icon} <strong>${energyMeta.label}</strong> energy, that's realistically around <strong>${capacity} chapter${capacity===1?'':'s'}</strong>, kept shorter than usual` : `; realistically that's around <strong>${capacity} chapters</strong> at solid depth`}, so that's what's pre-selected. Each chapter is pre-split into steps — 🎥 watch the lecture, 📖 read NCERT, ✍️ solve questions — as separate blocks. Edit any number (zero it out to skip a step, e.g. already watched the lecture); the total below updates live so you can keep the day realistic.</div>
-    ${completionRate!==null ? `<div class="text-xs faint mb-12">📊 You've completed <strong>${Math.round(completionRate*100)}%</strong> of planned study blocks over the last 2 weeks${completionRate<0.75 ? ' — today\'s capacity above is scaled down a bit to match, so the plan is something you can actually finish' : ' — that\'s a solid follow-through rate, so today\'s capacity uses the full time-based estimate'}.</div>` : ''}
-    ${vedHtml}
-    <div class="flex gap-8 mb-12 flex-wrap">
-      <button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(${capacity})">Realistic top ${capacity}</button>
+    <div class="modal-head">
+      <h3>📚 Choose Today's Study</h3>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+
+    <div style="padding:10px 12px;border:1px solid var(--card-border);border-radius:10px;background:var(--bg-soft);margin-bottom:12px;color:var(--ink);">
+      <div style="font-weight:750;font-size:13px;">You choose the lesson. Pragati plans the time.</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">
+        ${count} chapters available. Choose a whole chapter or select specific topics inside it.
+        Class 11 and Class 12 are separated.
+      </div>
+    </div>
+
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;">
+      <input id="genPlanSearch" type="search" placeholder="🔎 Search chapter or topic"
+        oninput="filterGenPlanList(this.value)"
+        style="flex:1;min-width:180px;padding:9px 10px;border:1px solid var(--card-border);border-radius:9px;background:var(--card);color:var(--ink);">
       <button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(9999)">Select all</button>
       <button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(0)">Clear all</button>
     </div>
-    <div style="max-height:340px; overflow-y:auto; border:1px solid var(--card-border); border-radius:10px; padding:2px 8px;">
-      ${rows}
-    </div>
-    <div class="text-xs mt-8" id="genPlanCount" data-free-min="${freeMin}"></div>
 
-    <div class="mt-16" style="border-top:1px solid var(--card-border); padding-top:12px;">
-      <label class="flex" style="align-items:center; gap:6px; font-size:12.5px; font-weight:600; margin-bottom:8px;">
-        <input type="checkbox" id="c11_on" ${c11Enabled?'checked':''} onchange="document.getElementById('c11_fields').style.display=this.checked?'flex':'none'; updateGenPlanCount();"> 📘 Include today's Class 11 recap
-      </label>
-      <div id="c11_fields" class="flex gap-8 flex-wrap" style="display:${c11Enabled?'flex':'none'}; align-items:center;">
-        <select id="c11_select" onchange="updateGenPlanCount()" style="flex:1; min-width:180px; padding:6px 8px; border:1px solid var(--card-border); border-radius:8px; font-size:12.5px; background:var(--card); color:var(--ink);">
-          ${c11.suggestion ? `<option value="${esc(c11.suggestion.subject+'::'+c11.suggestion.chapter)}">✨ Suggested: ${esc(c11.suggestion.chapter)} (${esc(c11.suggestion.subject)})${c11.suggestion.linkedTo?' — basics for '+esc(c11.suggestion.linkedTo):''}</option>` : ''}
-          ${c11OptionsHtml}
-          ${!c11.suggestion && !c11.options.length ? `<option value="">No Class 11 chapters left to recap 🎉</option>` : ''}
-        </select>
-        <input type="number" id="c11_dur" value="${DATA.routine.class11DailyMin||15}" min="5" max="60" step="5" onchange="updateGenPlanCount()" style="width:60px; padding:6px 5px; border:1px solid var(--card-border); border-radius:8px; font-size:12.5px;"> min
-      </div>
-      <div class="text-xs faint mt-4">Suggestion is linked to the Class 12 chapters you're focused on today — pick any other chapter from the dropdown, or untick to skip it just for today.</div>
+    <div style="display:flex;gap:7px;margin-bottom:10px;">
+      <button class="btn btn-outline btn-sm" onclick="showGenPlanClass(11)">Class 11</button>
+      <button class="btn btn-outline btn-sm" onclick="showGenPlanClass(12)">Class 12</button>
+      <button class="btn btn-outline btn-sm" onclick="showGenPlanClass('all')">All</button>
     </div>
 
-    <button class="btn btn-primary w-full mt-12" onclick="confirmGeneratePlan('${date}')">✨ Generate Plan with Selected Chapters</button>
+    <div id="genPlanList" style="display:block!important;visibility:visible!important;max-height:55vh;overflow-y:auto;border:1px solid var(--card-border);border-radius:10px;padding:2px 8px;background:var(--card);">
+      ${allGroups}
+    </div>
+
+    <div class="text-xs mt-8" id="genPlanCount" data-free-min="${freePlanningMinutes}">
+      No chapters selected.
+    </div>
+
+    <button class="btn btn-primary w-full mt-12" onclick="confirmGeneratePlan('${date}')">
+      ✨ Generate Today's Study Plan
+    </button>
   `);
   updateGenPlanCount();
 }
+
+function filterGenPlanList(query){
+  const q=String(query||'').trim().toLowerCase();
+  document.querySelectorAll('#genPlanList .genplan-chapter-row').forEach(row=>{
+    row.style.display=(!q || String(row.dataset.search||'').includes(q) ||
+      [...row.querySelectorAll('.genplan-topic')].some(t=>String(t.value||'').toLowerCase().includes(q)))?'block':'none';
+  });
+  document.querySelectorAll('#genPlanList .genplan-subject-group').forEach(group=>{
+    const visible=[...group.querySelectorAll('.genplan-chapter-row')].some(r=>r.style.display!=='none');
+    group.style.display=visible?'block':'none';
+  });
+  document.querySelectorAll('#genPlanList .pr-gen-class-group').forEach(group=>{
+    const visible=[...group.querySelectorAll('.genplan-subject-group')].some(s=>s.style.display!=='none');
+    group.style.display=visible?'block':'none';
+  });
+}
+
+function showGenPlanClass(level){
+  document.querySelectorAll('#genPlanList .pr-gen-class-group').forEach(group=>{
+    group.style.display=(level==='all' || group.dataset.class===String(level))?'block':'none';
+  });
+}
+
 function setGenPlanEnergy(date, level){
   setEnergy(date, level);
   openGeneratePlanModal(date); // rebuild the modal so capacity/durations reflect the new energy level
 }
 function setGenPlanSelection(n){
-  document.querySelectorAll('.genplan-chk').forEach((el,i)=>{ el.checked = i<n; });
+  const chapters=[...document.querySelectorAll('.genplan-chk')];
+  chapters.forEach((el,i)=>{ el.checked = i<n; });
+  // Selecting a chapter does not automatically select every topic: no topic selection means
+  // "whole chapter", which keeps the UI fast for large chapters.
+  document.querySelectorAll('.genplan-topic').forEach(el=>el.checked=false);
   updateGenPlanCount();
 }
 function updateGenPlanCount(){
-  const boxes = Array.from(document.querySelectorAll('.genplan-chk:checked'));
-  const n = boxes.length;
-  let total = 0;
+  const boxes=[...document.querySelectorAll('.genplan-chk:checked')];
+  const n=boxes.length;
+  let total=0, topicCount=0;
   boxes.forEach(b=>{
-    document.querySelectorAll(`.genplan-task[data-key="${CSS.escape(b.value)}"]`).forEach(inp=>{
-      total += parseInt(inp.value)||0;
-    });
+    document.querySelectorAll(`.genplan-task[data-key="${CSS.escape(b.value)}"]`).forEach(inp=>total+=parseInt(inp.value)||0);
+    topicCount += document.querySelectorAll(`.genplan-topic[data-key="${CSS.escape(b.value)}"]:checked`).length;
   });
-  const c11On = document.getElementById('c11_on');
-  if(c11On && c11On.checked){
-    const c11Dur = document.getElementById('c11_dur');
-    total += c11Dur ? (parseInt(c11Dur.value)||0) : 0;
-  }
-  const el = document.getElementById('genPlanCount');
-  if(!el) return;
-  const freeMin = parseInt(el.dataset.freeMin)||0;
-  const freeH = Math.floor(freeMin/60), freeM = freeMin%60;
-  const diff = freeMin - total;
-  const baseText = n===0 ? 'No chapters selected — ' : `${n} chapter${n===1?'':'s'} selected, ~${Math.floor(total/60)}h ${total%60}m of study — `;
-  if(diff < -15){
-    el.innerHTML = `${baseText}<strong style="color:var(--coral);">${Math.abs(diff)} min over your ~${freeH}h ${freeM}m free today.</strong> Trim a step or uncheck a chapter to keep it realistic.`;
-  } else if(diff > 60){
-    el.innerHTML = `${baseText}<strong style="color:var(--sky);">${diff} min of free time left over.</strong> Room to add another chapter if you like.`;
-  } else {
-    el.innerHTML = `${baseText}<strong style="color:var(--sage);">fits comfortably</strong> within your ~${freeH}h ${freeM}m free today.`;
-  }
+  const c11On=document.getElementById('c11_on');
+  if(c11On&&c11On.checked) total += parseInt(document.getElementById('c11_dur')?.value)||0;
+  const el=document.getElementById('genPlanCount'); if(!el)return;
+  const freeMin=parseInt(el.dataset.freeMin)||0, diff=freeMin-total, freeH=Math.floor(freeMin/60),freeM=freeMin%60;
+  const base=n===0?'No chapters selected — ':`${n} chapter${n===1?'':'s'} selected${topicCount?` · ${topicCount} topic${topicCount===1?'':'s'} focused`:''}, ~${Math.floor(total/60)}h ${total%60}m — `;
+  if(diff<-15) el.innerHTML=`${base}<strong style="color:var(--coral);">${Math.abs(diff)} min over your ~${freeH}h ${freeM}m free today.</strong> Trim a step or uncheck a chapter.`;
+  else if(diff>60) el.innerHTML=`${base}<strong style="color:var(--sky);">${diff} min free.</strong> You can add another chapter/topic.`;
+  else el.innerHTML=`${base}<strong style="color:var(--sage);">fits comfortably</strong> within your ~${freeH}h ${freeM}m free today.`;
 }
 function confirmGeneratePlan(date){
-  const TASK_LABEL = {Lecture:'🎥 Lecture', NCERT:'📖 NCERT Reading', Qns:'✍️ Questions'};
-  const selected = Array.from(document.querySelectorAll('.genplan-chk:checked')).map(el=>{
-    const [subject, chapter] = el.value.split('::');
-    const tasks = [];
-    document.querySelectorAll(`.genplan-task[data-key="${CSS.escape(el.value)}"]`).forEach(inp=>{
-      const dur = parseInt(inp.value)||0;
-      if(dur > 0) tasks.push({type: TASK_LABEL[inp.dataset.type] || inp.dataset.type, duration: dur});
-    });
-    return {subject, chapter, tasks};
-  }).filter(c => c.tasks.length); // chapters with every step zeroed out just don't get scheduled
-  const c11On = document.getElementById('c11_on');
-  let class11Override = {mode:'skip', duration: 15};
-  if(c11On && c11On.checked){
-    const sel = document.getElementById('c11_select');
-    const dur = Math.max(5, parseInt(document.getElementById('c11_dur').value)||15);
-    if(sel && sel.value){
-      const [subject, chapter] = sel.value.split('::');
-      class11Override = {mode:'manual', subject, chapter, duration: dur};
-    } else {
-      class11Override = {mode:'skip', duration: dur};
-    }
-  }
-  let vedantuOverride = null;
-  if(document.getElementById('ved_name_1')){
-    vedantuOverride = [];
-    [1,2].forEach(n=>{
-      const nameEl = document.getElementById('ved_name_'+n);
-      const subjEl = document.getElementById('ved_subj_'+n);
-      if(!nameEl) return;
-      vedantuOverride.push({slot:n, subject: subjEl ? subjEl.value : subjectNames()[0], lessonName: nameEl.value.trim()});
-    });
-  }
-  closeModal();
-  generateTodaysPlan(date, selected, class11Override, vedantuOverride);
+  const TASK_LABEL={Lecture:'🎥 Lecture',NCERT:'📖 NCERT Reading',Qns:'✍️ Questions'};
+  const selected=Array.from(document.querySelectorAll('.genplan-chk:checked')).map(el=>{
+    const [subject,chapter]=el.value.split('::');
+    const tasks=[];
+    document.querySelectorAll(`.genplan-task[data-key="${CSS.escape(el.value)}"]`).forEach(inp=>{const dur=parseInt(inp.value)||0;if(dur>0)tasks.push({type:TASK_LABEL[inp.dataset.type]||inp.dataset.type,duration:dur});});
+    const topics=[...document.querySelectorAll(`.genplan-topic[data-key="${CSS.escape(el.value)}"]:checked`)].map(x=>x.value);
+    return {subject,chapter,tasks,topics};
+  }).filter(c=>c.tasks.length);
+  if(!selected.length){toast('Select at least one chapter and keep at least one study step above 0 minutes.');return;}
+  DATA.smartPlanSelection=selected.map(x=>x.subject+'::'+x.chapter); DATA.smartPlanTopics=selected.reduce((a,x)=>{a[x.subject+'::'+x.chapter]=x.topics||[];return a;},{});
+  const c11On=document.getElementById('c11_on'); let class11Override={mode:'skip',duration:15};
+  if(c11On&&c11On.checked){const sel=document.getElementById('c11_select'),dur=Math.max(5,parseInt(document.getElementById('c11_dur').value)||15);if(sel&&sel.value){const [subject,chapter]=sel.value.split('::');class11Override={mode:'manual',subject,chapter,duration:dur};}else class11Override={mode:'skip',duration:dur};}
+  let vedantuOverride=null;
+  if(document.getElementById('ved_name_1')){vedantuOverride=[];[1,2].forEach(n=>{const nameEl=document.getElementById('ved_name_'+n);const subjEl=document.getElementById('ved_subj_'+n);if(!nameEl)return;vedantuOverride.push({slot:n,subject:subjEl?subjEl.value:subjectNames()[0],lessonName:nameEl.value.trim()});});}
+  closeModal(); generateTodaysPlan(date,selected,class11Override,vedantuOverride); toast('✨ Today’s plan generated from your selected chapters/topics.');
 }
 // The button the whole feature revolves around: reads routine + syllabus + exams + revisions + homework + yesterday, and lays out the whole day
 
@@ -5301,6 +5434,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
   date = date || plannerViewDate || todayStr();
   let selectedSet = null;
   const durationMap = new Map(); // chapter key -> array of {type, duration} steps
+  const selectedTopicMap = new Map(); // chapter key -> exact topics chosen in the plan generator
   if(Array.isArray(selectedChapters)){
     selectedSet = new Set();
     selectedChapters.forEach(item=>{
@@ -5308,6 +5442,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       else if(item && item.subject && item.chapter){
         const key = item.subject+'::'+item.chapter;
         selectedSet.add(key);
+        if(Array.isArray(item.topics) && item.topics.length) selectedTopicMap.set(key, item.topics.slice());
         if(Array.isArray(item.tasks) && item.tasks.length){
           durationMap.set(key, item.tasks.map(t=>({type:t.type||null, duration:Math.max(5, t.duration)})));
         } else if(item.duration){ // backward-compat: a plain single duration, no step split
@@ -5458,7 +5593,9 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       // Cap a single sitting at 60 min for realistic focus — anything longer continues later in
       // the day (or after a break) rather than one unbroken marathon block.
       const chunk = Math.max(15, Math.min(want, slot.end-cursor, 60));
+      const chosenTopics = selectedTopicMap.get(pick.subject+'::'+pick.chapter) || [];
       let label = pick.slipScore>0 ? `${pick.chapter} — slip test focus` : (pick.revisionScore>0 ? `Revision (Stage ${pick.revisionStage}): ${pick.chapter}` : (pick.examScore>=30 ? `${pick.chapter} — exam prep` : pick.chapter));
+      if(chosenTopics.length) label += ` — ${chosenTopics.join(', ')}`;
       if(pick.type) label += ` — ${pick.type}`;
       const urgency = pick.examScore>=30 ? 3 : pick.examScore>=15 ? 7 : 14;
       const qt = smartQuestionTarget(pick.subject, pick.chapter, Math.max(25,chunk), urgency);
@@ -6716,13 +6853,13 @@ function openSwapChapterModal(blockId){
   const b = (DATA.plannerEvents||[]).find(x=>x.id===blockId);
   if(!b) return;
   const usedToday = new Set((DATA.plannerEvents||[]).filter(e=>e.date===b.date && e.chapter && e.id!==blockId).map(e=>e.subject+'::'+e.chapter));
-  const candidates = computeChapterPriorities(b.date).filter(p=>!usedToday.has(p.subject+'::'+p.chapter)).slice(0,25);
+  const candidates = allChapterSwapCandidates(b.subject+'::'+(b.chapter||'')).filter(x=>!usedToday.has(x.subject+'::'+x.chapter));
   openModal(`
     <div class="modal-head"><h3>🔄 Swap Chapter</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="text-xs muted mb-10">Currently: <strong>${esc(b.chapter||'')}</strong> (${esc(b.subject)}), ${fmtTime(b.startTime)}–${fmtTime(b.endTime)}. Picking a new one keeps the same time slot.</div>
     <div class="field"><label>New chapter</label>
       <select id="f_swapPick">
-        ${candidates.map(c=>`<option value="${esc(c.subject)}::${esc(c.chapter)}">${esc(c.subject)} — ${esc(c.chapter)}</option>`).join('') || '<option disabled>No other pending chapters found</option>'}
+        ${candidates.length ? groupedSwapOptions(candidates) : '<option disabled>No other chapters found</option>'}
       </select>
     </div>
     <button class="btn btn-primary w-full" onclick="swapBlockChapter('${blockId}')">Swap</button>
@@ -7969,6 +8106,39 @@ function deleteCalendarEvent(id){
 /* ============================================================
    VIEW: SUBJECT PAGE (Chapter Command Center)
    ============================================================ */
+
+function chapterClassBuckets(subj, chapters){
+  const b11=[],b12=[];
+  (chapters||[]).forEach(ch=>(chapterClassLevel(subj,ch)===11?b11:b12).push(ch));
+  return {b11,b12};
+}
+function classGroupedChapterCards(subj, chapters){
+  const {b11,b12}=chapterClassBuckets(subj,chapters);
+  const block=(title,icon,list)=>`
+    <div class="pr-class-group">
+      <div class="pr-class-group-head"><span>${icon} ${title}</span><span>${list.length} chapters</span></div>
+      <div>${list.length?list.map(ch=>chapterCardHTML(subj,ch)).join(''):`<div class="empty text-sm">No ${title} chapters yet. Add a chapter above.</div>`}</div>
+    </div>`;
+  return block('Class 11','📘',b11)+block('Class 12','📕',b12);
+}
+function allChapterSwapCandidates(excludeKey){
+  const rows=[];
+  subjectNames().forEach(subj=>{
+    (DATA.subjects[subj]?.chapters||[]).forEach(ch=>{
+      const key=subj+'::'+ch.name;
+      if(key!==excludeKey) rows.push({subject:subj,chapter:ch.name,classLevel:chapterClassLevel(subj,ch)});
+    });
+  });
+  return rows.sort((a,b)=>a.classLevel-b.classLevel||a.subject.localeCompare(b.subject)||a.chapter.localeCompare(b.chapter));
+}
+function groupedSwapOptions(rows){
+  const groups={11:[],12:[]};
+  rows.forEach(x=>groups[x.classLevel].push(x));
+  return [11,12].map(level=>`<optgroup label="Class ${level}">
+    ${groups[level].length?groups[level].map(x=>`<option value="${esc(x.subject)}::${esc(x.chapter)}">${esc(x.subject)} — ${esc(x.chapter)}</option>`).join(''):`<option disabled>No Class ${level} chapters</option>`}
+  </optgroup>`).join('');
+}
+
 function renderSubjectPage(subj){
   const chapters = DATA.subjects[subj].chapters;
   const completion = subjectCompletion(subj);
@@ -8000,7 +8170,7 @@ function renderSubjectPage(subj){
     <div class="text-xs muted mb-8">Each chapter below contains its exact topic list. Study State is tracked separately for CBSE, NEET and JEE.</div>
     <div class="flex gap-10 flex-wrap text-xs">${STUDY_STATE_META ? Object.values(STUDY_STATE_META).map(s=>`<span>${s.icon} ${s.label}</span>`).join('') : ''}</div>
   </div>
-  ${sortedChapters(subj, chapters).map(ch => chapterCardHTML(subj, ch)).join('')}
+  ${classGroupedChapterCards(subj, chapters)}
   `;
 }
 function timeDistributionHTML(subj){
@@ -11204,24 +11374,28 @@ function viewSyllabusSync(){
   </div>
 
   <div class="card">
-    <div class="card-head"><h3>📚 Syllabus Sync Dashboard</h3></div>
+    <div class="card-head"><h3>📚 Syllabus Sync Dashboard</h3><span class="text-xs muted">Class 11 and Class 12 tracked separately</span></div>
     <div style="overflow-x:auto;">
     <table>
-      <thead><tr><th>Subject</th><th>Chapter</th>${cols.map(c=>`<th>${c[1]}</th>`).join('')}<th>Understanding</th><th>Mastery</th></tr></thead>
-      <tbody>
-      ${chapters.map(ch=>`
-        <tr>
-          <td class="text-xs">${ch.subject}</td>
-          <td>${esc(ch.name)}</td>
-          ${cols.map(c=>`<td style="text-align:center; cursor:pointer; font-size:16px;" title="Click to cycle" onclick="cycleSync('${ch.id}','${c[0]}')">${SYNC_ICON[ch.sync[c[0]]||'none']}</td>`).join('')}
-          <td style="font-size:12px; letter-spacing:1px; cursor:pointer;">${[1,2,3,4,5].map(n=>`<span onclick="setUnderstanding('${ch.id}',${n})">${n<=(ch.understanding||0)?'⭐':'☆'}</span>`).join('')}</td>
-          <td class="mono">${chapterMastery(ch)}%</td>
-        </tr>`).join('')}
-      </tbody>
+      <thead><tr><th>Class</th><th>Subject</th><th>Chapter</th>${cols.map(c=>`<th>${c[1]}</th>`).join('')}<th>Understanding</th><th>Mastery</th></tr></thead>
+      ${[11,12].map(level=>{
+        const levelRows=chapters.filter(ch=>chapterClassLevel(ch.subject,ch)===level);
+        return `<tbody>
+          <tr><td colspan="${5+cols.length}" style="padding:12px 8px;background:var(--bg-soft);font-weight:800;color:var(--ink);">📚 Class ${level} · ${levelRows.length} chapters</td></tr>
+          ${levelRows.map(ch=>`
+            <tr>
+              <td class="text-xs"><span class="tag ${level===11?'tag-med':'tag-info'}">Class ${level}</span></td>
+              <td class="text-xs">${ch.subject}</td>
+              <td>${esc(ch.name)}</td>
+              ${cols.map(c=>`<td style="text-align:center;cursor:pointer;font-size:16px;" title="Click to cycle" onclick="cycleSync('${ch.id}','${c[0]}')">${SYNC_ICON[ch.sync[c[0]]||'none']}</td>`).join('')}
+              <td style="font-size:12px;letter-spacing:1px;cursor:pointer;">${[1,2,3,4,5].map(n=>`<span onclick="setUnderstanding('${ch.id}',${n})">${n<=(ch.understanding||0)?'⭐':'☆'}</span>`).join('')}</td>
+              <td class="mono">${chapterMastery(ch)}%</td>
+            </tr>`).join('')}
+        </tbody>`;
+      }).join('')}
     </table>
     </div>
-  </div>
-  `;
+  </div>  `;
 }
 
 /* ============================================================
@@ -11704,59 +11878,7 @@ if(getFirebaseConfig()) setTimeout(()=>initFirebaseCloud(false), 0);
 
 </script>
 
-<script id="pragati-direct-smart-plan">
-(function(){
-"use strict";
-window.openGeneratePlanModal=function(date){
-  date=date||window.plannerViewDate||todayStr();
-  let priorities=computeChapterPriorities(date);
-  if(window.pragatiFeedbackBoost) priorities=window.pragatiFeedbackBoost(priorities);
-  if(isTaperWindow(date)) priorities=filterPrioritiesForTaper(priorities);
 
-  if(!priorities.length){
-    generateTodaysPlan(date,null,null,null);
-    return;
-  }
-
-  const freeMin=estimateFreePlanningMinutes(date);
-  const energy=todaysEnergy(date);
-  const meta=ENERGY_LEVELS[energy]||ENERGY_LEVELS.normal;
-  const capacity=Math.max(1,Math.round(realisticChapterCapacity(freeMin,date)*meta.mult));
-
-  const mandatory=new Set(todaysMandatoryTopics(date).map(x=>x.subject+"::"+x.chapter));
-  const selected=[];
-  const selectedKeys=new Set();
-
-  // Protect imminent-test chapters first, then fill the remaining realistic capacity
-  // from the same priority engine used by the old generator.
-  priorities.forEach(p=>{
-    const key=p.subject+"::"+p.chapter;
-    if(mandatory.has(key)&&!selectedKeys.has(key)){
-      selectedKeys.add(key); selected.push(p);
-    }
-  });
-  for(const p of priorities){
-    if(selected.length>=capacity) break;
-    const key=p.subject+"::"+p.chapter;
-    if(!selectedKeys.has(key)){
-      selectedKeys.add(key); selected.push(p);
-    }
-  }
-
-  const plan=selected.map(p=>{
-    const split=suggestedChapterTaskSplit(p,date);
-    const tasks=[];
-    if(split.lecture>0) tasks.push({type:"🎥 Lecture",duration:split.lecture});
-    if(split.ncert>0) tasks.push({type:"📖 NCERT Reading",duration:split.ncert});
-    if(split.qns>0) tasks.push({type:"✍️ Questions",duration:split.qns});
-    return {subject:p.subject,chapter:p.chapter,tasks};
-  });
-
-  // class11Override=null deliberately keeps the existing automatic Class 11 recap logic.
-  generateTodaysPlan(date,plan,null,null);
-};
-})();
-</script>
 
 <script id="pragati-feedback-engine-js">
 (function(){
@@ -11890,5 +12012,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 })();
 </script>
+
 </body>
 </html>
