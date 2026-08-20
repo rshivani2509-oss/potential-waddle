@@ -647,7 +647,7 @@ body{
 .reward-badge .name{font-size:10px;font-weight:850;margin-top:5px}
 
 
-/* ===== GENERATION WINDOW ===== */
+/* ===== Smart Plan ===== */
 .generation-window-card{
   border:1px solid var(--card-border);border-radius:20px;padding:16px;
   background:
@@ -992,6 +992,84 @@ body,.card,.final-panel,.analysis-tracker,.school-test-card,.smart-today-card,.u
 @media(max-width:600px){
  .topic-completion-head,.topic-completion-row{grid-template-columns:minmax(180px,1fr) 65px 65px 65px;min-width:375px}
 }
+</style>
+
+<style id="pragati-inline-topic-state-css">
+.planner-topic-state-panel{
+  margin-top:10px;padding:12px;border:1px solid var(--card-border,#e5e0d5);
+  border-radius:12px;background:var(--bg-soft,#faf8f2);
+}
+.planner-topic-state-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.planner-topic-state-head b{display:block;font-size:12px}.planner-topic-state-head span{display:block;font-size:10px;color:var(--ink-faint,#777);margin-top:3px}
+.planner-topic-state-list{margin-top:9px;display:flex;flex-direction:column;gap:7px}
+.planner-topic-state-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 9px;border-radius:9px;background:var(--card,#fff);border:1px solid var(--card-border,#e5e0d5)}
+.planner-topic-state-name{font-size:11px;min-width:145px}
+.planner-topic-state-controls{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.planner-topic-state-select{display:grid;gap:3px;font-size:9px;color:var(--ink-faint,#777)}
+.planner-topic-state-select select{font-size:10px;padding:5px 7px;border:1px solid var(--card-border,#ddd8cd);border-radius:8px;background:var(--card,#fff);color:var(--ink,#252525);max-width:180px}
+.planner-topic-state-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:650px){
+ .planner-topic-state-row{align-items:flex-start;flex-direction:column}
+ .planner-topic-state-controls{width:100%;justify-content:flex-start}
+ .planner-topic-state-select select{max-width:100%}
+}
+</style>
+
+<style id="pragati-final-readable-ui">
+/* FINAL CONTRAST FIX — never allow dark-theme leftovers to create black text on dark panels. */
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .modal *{
+  color:#302d28!important;
+}
+html[data-theme="dark"] .modal{
+  background:#fffdfa!important;
+  border:1px solid #e4dfd4!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.28)!important;
+}
+html[data-theme="dark"] .modal .btn-primary{
+  color:#fff!important;background:#b08a3e!important;border-color:#c7a45a!important;
+}
+html[data-theme="dark"] .modal .btn-outline{
+  color:#6f5a2c!important;background:#fff!important;border-color:#d8d1c2!important;
+}
+html[data-theme="dark"] .modal input,
+html[data-theme="dark"] .modal select,
+html[data-theme="dark"] .modal textarea{
+  background:#fff!important;color:#302d28!important;border-color:#ddd7ca!important;
+}
+html[data-theme="dark"] .modal .tag,
+html[data-theme="dark"] .modal .faint,
+html[data-theme="dark"] .modal .muted{
+  color:#6f6a61!important;
+}
+html[data-theme="dark"] .modal strong{color:#3d372f!important}
+html[data-theme="dark"] .modal .tag-high{background:#f8e9e5!important;color:#8a4037!important}
+html[data-theme="dark"] .modal .tag-med{background:#f7f0df!important;color:#725a27!important}
+html[data-theme="dark"] .modal-head{border-bottom:1px solid #e4dfd4!important}
+html[data-theme="dark"] .modal .icon-btn{color:#4c463d!important;background:#f6f3ec!important;border-color:#ddd7ca!important}
+
+/* Also protect planner/generator cards from inherited dark text. */
+.smart-today-card,.smart-today-card *,.smart-kpi,.smart-kpi *,.smart-lane,.smart-lane *,
+.ultimate-panel,.ultimate-panel *,.generation-window-card,.generation-window-card *,
+.analysis-tracker,.analysis-tracker *{
+  color:var(--ink,#302d28)!important;
+}
+.smart-today-card .muted,.smart-kpi .muted,.smart-lane .muted,.faint{color:#77736a!important}
+.smart-today-card .eyebrow{color:#8d6d31!important}
+</style>
+
+<style id="pragati-feedback-engine-css">
+.pr-feedback{margin-top:14px;padding:18px;border:1px solid #e5dfd3;border-radius:16px;background:#fffdfa}
+.pr-feedback h2{margin:0;font-size:20px}.pr-feedback-sub{margin:5px 0 13px;color:#77736a;font-size:12px}
+.pr-feedback-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.pr-feedback-card{border:1px solid #e7e1d6;border-radius:11px;padding:11px;background:#fff}
+.pr-feedback-card b{display:block;font-size:12px}.pr-feedback-card span{font-size:10px;color:#77736a}
+.pr-feedback-list{margin-top:12px}.pr-feedback-item{border:1px solid #e7e1d6;border-radius:11px;padding:11px;margin:7px 0;background:#fff}
+.pr-feedback-item-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.pr-feedback-state{font-size:10px;padding:4px 7px;border-radius:999px;background:#f5efdf;color:#725d28}
+.pr-feedback-action{margin-top:7px;font-size:11px;color:#4f4a42}
+.pr-feedback-action strong{color:#80672d}
+@media(max-width:700px){.pr-feedback-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -6222,6 +6300,69 @@ function plannerTimelineHTML(blocks, isToday){
   if(!inserted) parts.push(nowMarker);
   return parts.join('');
 }
+
+function plannerCompletionTopicPickerHTML(b){
+  if(!b.done || b.completionPickerClosed || b.subject==='Fixed' || !b.chapter) return '';
+  const ch=DATA.subjects?.[b.subject]?.chapters?.find(c=>c.name===b.chapter);
+  const topics=Array.isArray(ch?.topics)?ch.topics.filter(t=>(t.name||'').trim()):[];
+  if(!topics.length){
+    return `<div class="planner-topic-state-panel">
+      <div class="planner-topic-state-head"><b>📚 No topic list yet</b><span>Add topics in the subject tracker first.</span></div>
+      <button class="btn btn-outline btn-sm" onclick="closePlannerCompletionPicker('${b.id}')">Done</button>
+    </div>`;
+  }
+  return `<div class="planner-topic-state-panel">
+    <div class="planner-topic-state-head">
+      <div><b>📚 Select what you completed</b><span>Choose the exact topic and its current Study State. Completion does not automatically mean Mastered.</span></div>
+      <button class="btn btn-outline btn-sm" onclick="closePlannerCompletionPicker('${b.id}')">Skip</button>
+    </div>
+    <div class="planner-topic-state-list">
+      ${topics.map((t,i)=>{
+        ensureTopicStudyState(t);
+        const relevant=STUDY_EXAMS.filter(ex=>ex==='CBSE'||t[ex.toLowerCase()]>0||t.studyState?.[ex]!==undefined);
+        return `<div class="planner-topic-state-row">
+          <div class="planner-topic-state-name"><b>${esc(t.name)}</b></div>
+          <div class="planner-topic-state-controls">
+            ${relevant.map(ex=>{
+              const state=t.studyState?.[ex]||'notstarted';
+              return `<label class="planner-topic-state-select">
+                <span>${ex}</span>
+                <select id="pcs_${b.id}_${i}_${ex}">
+                  ${STUDY_STATE_ORDER.map(s=>`<option value="${s}" ${s===state?'selected':''}>${STUDY_STATE_META[s].icon} ${STUDY_STATE_META[s].label}</option>`).join('')}
+                </select>
+              </label>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="planner-topic-state-actions">
+      <button class="btn btn-primary btn-sm" onclick="savePlannerCompletionStates('${b.id}')">Save Topic States</button>
+      <button class="btn btn-outline btn-sm" onclick="closePlannerCompletionPicker('${b.id}')">Done</button>
+    </div>
+  </div>`;
+}
+function savePlannerCompletionStates(blockId){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId); if(!b) return;
+  const ch=DATA.subjects?.[b.subject]?.chapters?.find(c=>c.name===b.chapter);
+  const topics=Array.isArray(ch?.topics)?ch.topics.filter(t=>(t.name||'').trim()):[];
+  topics.forEach((t,i)=>{
+    ensureTopicStudyState(t);
+    STUDY_EXAMS.forEach(ex=>{
+      const el=document.getElementById(`pcs_${b.id}_${i}_${ex}`);
+      if(el) setTopicStudyState(t,ex,el.value);
+    });
+  });
+  b.completionPickerClosed=true;
+  save(); render(); checkAchievements?.();
+  toast('✅ Topic Study States updated separately for CBSE, NEET and JEE.');
+}
+function closePlannerCompletionPicker(blockId){
+  const b=(DATA.plannerEvents||[]).find(x=>x.id===blockId); if(!b) return;
+  b.completionPickerClosed=true;
+  save(); render();
+}
+
 function plannerBlockHTML(b){
   const isFixed = b.subject==='Fixed';
   const colorVar = b.done ? '--sage' : (PLANNER_CATEGORY_COLORS[b.subject] || '--sage');
@@ -6266,6 +6407,7 @@ function plannerBlockHTML(b){
             </div>`;
           }).join('')}
         </div>` : ''}
+        ${plannerCompletionTopicPickerHTML(b)}
         ${blockTimeControlsHTML(b)}
         ${isOverdue ? `
         <div class="mt-8" style="background:var(--coral-soft); border-radius:8px; padding:8px 10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -6401,7 +6543,6 @@ function togglePlannerBlockDone(id){
     }
   }
   save(); render();
-  if(turningOn && subjectNames().includes(b.subject) && b.chapter){ setTimeout(()=>topicTrackerModal(id),0); }
 }
 /* ---------------- Study-block subtasks: NCERT reading / Lecture / Question solving ----------------
    Each academic study block can carry its own little checklist so the three natural steps of
@@ -6894,7 +7035,7 @@ function smartCatchUpHTML(){
    ============================================================ */
 
 /* ============================================================
-   DAILY GENERATION WINDOW
+   DAILY Smart Plan
    User chooses the period in which Pragati is allowed to
    generate Today's Planner. Generated study slots never
    start before the window or end after it.
@@ -7002,104 +7143,22 @@ function finalWeeklyReviewHTML(){
 }
 
 function ensureGenerationWindow(){
-  if(!DATA.generationWindow) DATA.generationWindow={enabled:false,byDay:{},defaultStart:'08:00',defaultEnd:'17:00'};
-  if(!DATA.generationWindow.byDay) DATA.generationWindow.byDay={};
-  if(!DATA.generationWindow.defaultStart) DATA.generationWindow.defaultStart='08:00';
-  if(!DATA.generationWindow.defaultEnd) DATA.generationWindow.defaultEnd='17:00';
+  // Internal default framework only — no user-facing generation-window settings.
+  if(!DATA.generationWindow) DATA.generationWindow={enabled:true,byDay:{},defaultStart:'05:30',defaultEnd:'22:00'};
+  DATA.generationWindow.enabled=true;
+  DATA.generationWindow.defaultStart='05:30';
+  DATA.generationWindow.defaultEnd='22:00';
+  DATA.generationWindow.byDay={};
 }
-function generationDayKey(date){
-  const d=new Date(date+'T00:00:00');
-  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
-}
+function generationDayKey(date){ const d=new Date(date+'T00:00:00'); return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]; }
 function getGenerationWindow(date=todayStr()){
   ensureGenerationWindow();
-  const day=generationDayKey(date);
-  const custom=DATA.generationWindow.byDay[day]||{};
-  const start=custom.start||DATA.generationWindow.defaultStart;
-  const end=custom.end||DATA.generationWindow.defaultEnd;
-  return {date,day,start,end,startMin:toMin(start),endMin:toMin(end),enabled:DATA.generationWindow.enabled!==false};
+  return {date,day:generationDayKey(date),start:'05:30',end:'22:00',startMin:330,endMin:1320,enabled:true};
 }
-function setGenerationWindowDay(day,start,end){
-  ensureGenerationWindow();
-  if(!start||!end||toMin(end)<=toMin(start)){
-    toast('Choose a valid start and end time.');
-    return;
-  }
-  DATA.generationWindow.byDay[day]={start,end};
-  save(); render();
-  toast(`🕐 ${day}: generation window ${fmtTime(start)}–${fmtTime(end)} saved.`);
-}
-function setGenerationWindowDefault(start,end){
-  ensureGenerationWindow();
-  if(!start||!end||toMin(end)<=toMin(start)){
-    toast('Choose a valid default window.');
-    return;
-  }
-  DATA.generationWindow.defaultStart=start;
-  DATA.generationWindow.defaultEnd=end;
-  save(); render();
-  toast(`🕐 Default generation window ${fmtTime(start)}–${fmtTime(end)} saved.`);
-}
-function toggleGenerationWindow(){
-  ensureGenerationWindow();
-  DATA.generationWindow.enabled=!DATA.generationWindow.enabled;
-  save(); render();
-  toast(DATA.generationWindow.enabled?'🟢 Planner is now restricted to your generation windows.':'🔓 Generation-window restriction disabled.');
-}
-function generationWindowHTML(){
-  ensureGenerationWindow();
-  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const today=getGenerationWindow();
-  return `<div class="generation-window-card mb-16">
-    <div class="flex-between flex-wrap gap-10">
-      <div>
-        <div class="eyebrow">🕐 GENERATION WINDOW</div>
-        <h3 style="margin:3px 0 0;">Tell Pragati exactly when it is allowed to plan.</h3>
-        <div class="text-xs muted mt-4">Generated study slots stay completely inside this period. Pragati will not create study blocks before the start or after the end.</div>
-      </div>
-      <button class="btn ${DATA.generationWindow.enabled?'btn-primary':'btn-outline'} btn-sm" onclick="toggleGenerationWindow()">
-        ${DATA.generationWindow.enabled?'🔒 Window ON':'🔓 Window OFF'}
-      </button>
-    </div>
-
-    <div class="grid grid-2 mt-12" style="gap:8px;">
-      <div class="notebook-stat">
-        <div class="eyebrow">Today · ${today.day}</div>
-        <div class="window-time">${fmtTime(today.start)} – ${fmtTime(today.end)}</div>
-        <div class="text-xs muted mt-3">${today.enabled?'Planner generation is restricted to this range.':'Restriction is currently off.'}</div>
-      </div>
-      <div class="notebook-stat">
-        <div class="eyebrow">Default window</div>
-        <div class="field-row" style="margin-top:6px;">
-          <div><input id="genDefaultStart" type="time" value="${DATA.generationWindow.defaultStart}"></div>
-          <div><input id="genDefaultEnd" type="time" value="${DATA.generationWindow.defaultEnd}"></div>
-        </div>
-        <button class="btn btn-soft btn-sm mt-6" onclick="setGenerationWindowDefault(document.getElementById('genDefaultStart').value,document.getElementById('genDefaultEnd').value)">Save default</button>
-      </div>
-    </div>
-
-    <div class="mt-12">
-      <div class="eyebrow mb-6">DAY-SPECIFIC WINDOWS</div>
-      <div class="grid grid-2" style="gap:8px;">
-      ${days.map(day=>{
-        const w=DATA.generationWindow.byDay[day]||{start:DATA.generationWindow.defaultStart,end:DATA.generationWindow.defaultEnd};
-        return `<div class="notebook-stat">
-          <div class="flex-between"><b>${day}</b><span class="window-pill">Generated only here</span></div>
-          <div class="field-row mt-6">
-            <input id="gen_${day}_s" type="time" value="${w.start}">
-            <input id="gen_${day}_e" type="time" value="${w.end}">
-          </div>
-          <button class="btn btn-outline btn-sm mt-6" onclick="setGenerationWindowDay('${day}',document.getElementById('gen_${day}_s').value,document.getElementById('gen_${day}_e').value)">Save ${day}</button>
-        </div>`;
-      }).join('')}
-      </div>
-    </div>
-
-    <div class="window-ok mt-10">
-      <b>Example:</b> If you set <b>8:00 AM–5:00 PM</b>, Pragati can generate only inside 8:00 AM–5:00 PM. School, classes, tuition, meals and other locked commitments inside that range are removed from available study time automatically.
-    </div>
-  </div>`;
-}
+function setGenerationWindowDay(){ toast('Pragati uses one fixed daily planning framework.'); }
+function setGenerationWindowDefault(){ toast('Pragati uses one fixed daily planning framework.'); }
+function toggleGenerationWindow(){ toast('Pragati uses one fixed daily planning framework.'); }
+function generationWindowHTML(){ return ''; }
 function generationWindowFreeSlots(date, extraBusy=[]){
   const w=getGenerationWindow(date);
   if(!w.enabled) return null;
@@ -7936,6 +7995,11 @@ function renderSubjectPage(subj){
     </div>
   </div>
   ${timeDistributionHTML(subj)}
+  <div class="card mb-16" style="background:var(--bg-soft);">
+    <div class="card-head"><h3>🎯 Topic Study State</h3></div>
+    <div class="text-xs muted mb-8">Each chapter below contains its exact topic list. Study State is tracked separately for CBSE, NEET and JEE.</div>
+    <div class="flex gap-10 flex-wrap text-xs">${STUDY_STATE_META ? Object.values(STUDY_STATE_META).map(s=>`<span>${s.icon} ${s.label}</span>`).join('') : ''}</div>
+  </div>
   ${sortedChapters(subj, chapters).map(ch => chapterCardHTML(subj, ch)).join('')}
   `;
 }
@@ -11639,1525 +11703,192 @@ setupPWA();
 if(getFirebaseConfig()) setTimeout(()=>initFirebaseCloud(false), 0);
 
 </script>
-<script>
 
-/* PRAGATI FUNCTIONAL CORE v2 */
-(function(){
-  const KEY='pragati_rebuild_data_v2';
-  const defaultData={
-    planner:[], backlog:[], tests:[], reviews:[],
-    goals:[], achievements:[], health:[],
-    settings:{start:'05:30',end:'22:00'},
-    syllabus:{},
-    notifications:[]
-  };
-  function load(){
-    try{return Object.assign({},defaultData,JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){return JSON.parse(JSON.stringify(defaultData));}
-  }
-  window.PRAGATI_DATA=load();
-  function persist(){localStorage.setItem(KEY,JSON.stringify(window.PRAGATI_DATA));}
-  function uid(){return 'p_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
-  function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  function toast(msg){
-    let t=document.getElementById('prToast');
-    if(!t){t=document.createElement('div');t.id='prToast';t.style.cssText='position:fixed;right:18px;bottom:18px;z-index:99999;padding:12px 16px;border-radius:12px;background:#222;color:#fff;box-shadow:0 8px 30px #0002';document.body.appendChild(t);}
-    t.textContent=msg;t.style.display='block';clearTimeout(t._x);t._x=setTimeout(()=>t.style.display='none',2200);
-  }
-  window.prToast=toast;
-
-  function ensureHost(){
-    let h=document.getElementById('modalHost');
-    if(!h){h=document.createElement('div');h.id='modalHost';document.body.appendChild(h);}
-    return h;
-  }
-  window.prOpenModal=function(title,body,actions=''){
-    const h=ensureHost();
-    h.innerHTML=`<div class="pr-modal-overlay" id="prModalOverlay">
-      <div class="pr-modal-card">
-        <div class="pr-modal-head"><b>${esc(title)}</b><button onclick="prCloseModal()">✕</button></div>
-        <div class="pr-modal-body">${body}</div>
-        ${actions?`<div class="pr-modal-actions">${actions}</div>`:''}
-      </div></div>`;
-    document.getElementById('prModalOverlay').onclick=e=>{if(e.target.id==='prModalOverlay')prCloseModal()};
-  };
-  window.prCloseModal=function(){const h=document.getElementById('modalHost');if(h)h.innerHTML='';};
-
-  function renderPlanner(){
- const r=document.getElementById("prv3Planner");if(!r)return;
- const today=new Date().toISOString().slice(0,10);
- const a=D.planner.filter(x=>(x.date||today)===today).slice().sort((x,y)=>(x.start||"").localeCompare(y.start||""));
- const total=a.length, done=a.filter(x=>x.done).length;
- const header=`<div class="prv3-planner-summary"><b>${done}/${total}</b><span>blocks completed today</span><span class="prv3-default-window">Default planning window: 5:30 AM–10:00 PM</span></div>`;
- r.innerHTML=header+(a.length?a.map(b=>`<article class="prv3-plan ${b.done?"done":""}">
-   <div class="time">${esc(b.start||"--")}–${esc(b.end||"--")}</div>
-   <div class="prv3-plan-main">
-    <b>${esc(b.subject||"Study")} · ${esc(b.topic||"Untitled")}</b>
-    <small>${esc(b.type||"Study")} · ${esc(b.exam||"")} ${b.generated?"· Smart":""}</small>
-    ${b.reason?`<small class="prv3-reason">Why: ${esc(b.reason)}</small>`:""}
-   </div>
-   <div class="prv3-actions">
-    <button onclick="prv3Toggle('${b.id}')">${b.done?"↩ Undo":"✓ Done"}</button>
-    <button onclick="prv3Edit('${b.id}')">✎ Edit</button>
-    <button onclick="prv3Delete('${b.id}')">×</button>
-   </div>
-  </article>`).join(""):"<div class='prv3-empty'>No blocks for today. Add a study block or use Smart Plan.</div>");
-}
-  window.prAddPlanner=function(){
-    prOpenModal('Add study block',`
-      <div class="pr-grid2">
-        <label>Start<input id="ppStart" type="time" value="17:00"></label>
-        <label>End<input id="ppEnd" type="time" value="17:45"></label>
-        <label>Subject<input id="ppSub" placeholder="Physics"></label>
-        <label>Topic<input id="ppTopic" placeholder="Current Electricity"></label>
-        <label>Type<select id="ppType"><option>Concept</option><option>NCERT</option><option>Questions</option><option>PYQ</option><option>Revision</option><option>Mini Test</option><option>Analysis</option></select></label>
-        <label>Exam<select id="ppExam"><option>CBSE</option><option>NEET</option><option>JEE</option></select></label>
-      </div>`,
-      `<button class="pr-primary" onclick="prSavePlanner()">Save block</button>`);
-  };
-  window.prSavePlanner=function(){
-    const q=id=>document.getElementById(id).value;
-    const b={id:uid(),date:new Date().toISOString().slice(0,10),start:q('ppStart'),end:q('ppEnd'),subject:q('ppSub'),topic:q('ppTopic'),type:q('ppType'),exam:q('ppExam'),done:false};
-    if(!b.subject||!b.topic){toast('Add subject and topic');return;}
-    window.PRAGATI_DATA.planner.push(b);persist();prCloseModal();renderPlanner();toast('Study block added');
-  };
-  window.prTogglePlanner=function(id){
-    const b=window.PRAGATI_DATA.planner.find(x=>x.id===id);if(!b)return;
-    b.done=!b.done;persist();renderPlanner();
-    if(b.done) prOpenModal('Update topic tracker',`<p><b>${esc(b.subject)} → ${esc(b.topic)}</b></p><p>Mark this topic separately for:</p>
-      <label><input type="checkbox" id="tcCBSE"> CBSE</label><br><label><input type="checkbox" id="tcNEET"> NEET</label><br><label><input type="checkbox" id="tcJEE"> JEE</label>`,
-      `<button class="pr-primary" onclick="prSaveTopicTrack('${id}')">Save tracker</button>`);
-  };
-  window.prSaveTopicTrack=function(id){
-    const b=window.PRAGATI_DATA.planner.find(x=>x.id===id);if(!b)return;
-    b.tracker=b.tracker||{};b.tracker.CBSE=!!document.getElementById('tcCBSE')?.checked;b.tracker.NEET=!!document.getElementById('tcNEET')?.checked;b.tracker.JEE=!!document.getElementById('tcJEE')?.checked;
-    persist();prCloseModal();toast('Topic tracker updated');
-  };
-  window.prDeletePlanner=function(id){window.PRAGATI_DATA.planner=window.PRAGATI_DATA.planner.filter(x=>x.id!==id);persist();renderPlanner();toast('Block removed');};
-  window.prEditPlanner=function(id){
-    const b=window.PRAGATI_DATA.planner.find(x=>x.id===id);if(!b)return;
-    prOpenModal('Edit study block',`<div class="pr-grid2">
-      <label>Start<input id="eeS" type="time" value="${b.start}"></label><label>End<input id="eeE" type="time" value="${b.end}"></label>
-      <label>Subject<input id="eeSub" value="${esc(b.subject)}"></label><label>Topic<input id="eeT" value="${esc(b.topic)}"></label>
-      <label>Type<select id="eeTy">${['Concept','NCERT','Questions','PYQ','Revision','Mini Test','Analysis'].map(v=>`<option ${v===b.type?'selected':''}>${v}</option>`).join('')}</select></label>
-      <label>Exam<select id="eeEx">${['CBSE','NEET','JEE'].map(v=>`<option ${v===b.exam?'selected':''}>${v}</option>`).join('')}</select></label>
-    </div>`,`<button class="pr-primary" onclick="prSaveEdit('${id}')">Save changes</button>`);
-  };
-  window.prSaveEdit=function(id){
-    const b=window.PRAGATI_DATA.planner.find(x=>x.id===id);if(!b)return;
-    const q=id=>document.getElementById(id).value;
-    b.start=q('eeS');b.end=q('eeE');b.subject=q('eeSub');b.topic=q('eeT');b.type=q('eeTy');b.exam=q('eeEx');
-    persist();prCloseModal();renderPlanner();toast('Block updated');
-  };
-
-  function renderBacklog(){
- const r=document.getElementById("prv3Backlog");if(!r)return;
- const arr=Array.isArray(D.backlog)?D.backlog:[];
- const order={High:0,Medium:1,Low:2};
- arr.sort((a,b)=>(order[a.priority]??9)-(order[b.priority]??9));
- r.innerHTML=arr.length?arr.map(b=>{
-   const t=(D.topics||[]).find(x=>x.subject===b.subject&&x.chapter===b.chapter&&x.topic===b.topic);
-   const state=t?stateObj(stateFor(t,b.exam||"NEET")):STATES[0];
-   return `<article class="prv3-topic">
-    <div>
-      <small>${esc(b.subject||"")} · ${esc(b.chapter||"")} · ${esc(b.exam||"NEET")} · ${esc(b.priority||"Medium")}</small>
-      <h3>${esc(b.topic||"Untitled")}</h3>
-      <small>${esc(b.reason||"No reason added")}</small>
-      <div class="prv3-backlog-state">${state.i} ${state.n} · Next: ${esc(state.a)}</div>
-    </div>
-    <div class="prv3-actions">
-      <button onclick="prv3Flow('${b.id}')">7-Day Flow</button>
-      <button onclick="prv3EditBacklog('${b.id}')">✎ Edit</button>
-      <button onclick="prv3SendBacklogToPlanner('${b.id}')">＋ Planner</button>
-      <button onclick="prv3DeleteBacklog('${b.id}')">×</button>
-    </div>
-   </article>`;
- }).join(""):"<div class='prv3-empty'>No backlog topics. Add one to start the 7-day workflow.</div>";
-}
-  window.prAddBacklog=function(){
-    prOpenModal('Add backlog',`<div class="pr-grid2"><label>Subject<input id="bbS" placeholder="Physics"></label><label>Exam<select id="bbE"><option>CBSE</option><option>NEET</option><option>JEE</option></select></label><label>Topic<input id="bbT" placeholder="Current Electricity"></label><label>Priority<select id="bbP"><option>High</option><option>Medium</option><option>Low</option></select></label><label>Reason<input id="bbR" placeholder="Weak / unfinished / test"></label></div>`,`<button class="pr-primary" onclick="prSaveBacklog()">Add backlog</button>`);
-  };
-  window.prSaveBacklog=function(){
-    const q=id=>document.getElementById(id).value;if(!q('bbS')||!q('bbT')){toast('Add subject and topic');return;}
-    window.PRAGATI_DATA.backlog.push({id:uid(),subject:q('bbS'),exam:q('bbE'),topic:q('bbT'),priority:q('bbP'),reason:q('bbR')});persist();prCloseModal();renderBacklog();toast('Backlog added');
-  };
-  window.prDeleteBacklog=function(id){window.PRAGATI_DATA.backlog=window.PRAGATI_DATA.backlog.filter(x=>x.id!==id);persist();renderBacklog();};
-  window.prStartSevenDay=function(id){
-    const b=window.PRAGATI_DATA.backlog.find(x=>x.id===id);if(!b)return;
-    const days=[['Sunday','Concept Build',60],['Monday','NCERT + Active Recall',45],['Tuesday','Question Bank',45],['Wednesday','Timed 2-markers',45],['Thursday','Error Review + Reattempt',40],['Friday','Mini Test + Analysis',45],['Saturday','Active Recall + Checkpoint',35]];
-    prOpenModal('7-Day Backlog Flow',`<p><b>${esc(b.subject)} → ${esc(b.topic)}</b></p>${days.map((d,i)=>`<div class="pr-flow"><span>${d[0]}</span><strong>${d[1]}</strong><em>${d[2]} min</em></div>`).join('')}<p class="muted">Sunday starts the workflow. The same chapter stays active all week.</p>`,`<button class="pr-primary" onclick="prGenerateSevenDay('${id}')">Add to planner</button>`);
-  };
-  window.prGenerateSevenDay=function(id){
-    const b=window.PRAGATI_DATA.backlog.find(x=>x.id===id);if(!b)return;
-    const days=[['Sunday','Concept Build',60],['Monday','NCERT + Active Recall',45],['Tuesday','Question Bank',45],['Wednesday','Timed 2-markers',45],['Thursday','Error Review + Reattempt',40],['Friday','Mini Test + Analysis',45],['Saturday','Active Recall + Checkpoint',35]];
-    days.forEach(d=>window.PRAGATI_DATA.planner.push({id:uid(),date:d[0],start:'17:00',end:'17:45',subject:b.subject,topic:b.topic,type:d[1],exam:b.exam,duration:d[2],done:false,workflow:b.id}));
-    persist();prCloseModal();renderPlanner();toast('7-day workflow added');
-  };
-
-  window.prDayReview=function(){
-    const today=new Date().toISOString().slice(0,10), p=window.PRAGATI_DATA.planner.filter(x=>x.date===today);
-    const done=p.filter(x=>x.done).length;
-    prOpenModal('Day Review',`<div class="pr-review-grid"><div><b>${done}/${p.length}</b><small>blocks completed</small></div><div><b>${p.filter(x=>x.type==='PYQ').length}</b><small>PYQ blocks</small></div></div>
-      <label>Energy<select id="drE"><option>High</option><option>Normal</option><option>Low</option></select></label>
-      <label>Mood<select id="drM"><option>Great</option><option>Good</option><option>Okay</option><option>Low</option></select></label>
-      <label>What worked?<textarea id="drW" placeholder="One thing that helped today"></textarea></label>
-      <label>What needs fixing?<textarea id="drF" placeholder="One thing to improve tomorrow"></textarea></label>
-      <label>Sleep target<input id="drS" type="number" min="0" max="14" step=".5" placeholder="hours"></label>`,
-      `<button class="pr-primary" onclick="prSaveReview()">Save review</button>`);
-  };
-  window.prSaveReview=function(){
-    window.PRAGATI_DATA.reviews.push({date:new Date().toISOString().slice(0,10),energy:document.getElementById('drE').value,mood:document.getElementById('drM').value,worked:document.getElementById('drW').value,fix:document.getElementById('drF').value,sleep:document.getElementById('drS').value});
-    persist();prCloseModal();toast('Day review saved');
-  };
-
-  window.prAddTest=function(){
-    prOpenModal('Add test',`<div class="pr-grid2"><label>Name<input id="ttN" placeholder="Physics Slip Test"></label><label>Date<input id="ttD" type="date"></label><label>Exam<select id="ttE"><option>CBSE</option><option>NEET</option><option>JEE</option><option>Aakash</option></select></label><label>Portion<input id="ttP" placeholder="Ch 1–3"></label></div>`,`<button class="pr-primary" onclick="prSaveTest()">Save test</button>`);
-  };
-  window.prSaveTest=function(){
-    const q=id=>document.getElementById(id).value;if(!q('ttN')||!q('ttD')){toast('Add test name and date');return;}
-    window.PRAGATI_DATA.tests.push({id:uid(),name:q('ttN'),date:q('ttD'),exam:q('ttE'),portion:q('ttP'),marks:null,total:null});persist();prCloseModal();renderTests();toast('Test added');
-  };
-  function renderTests(){
-    const r=document.getElementById('prTestsList');if(!r)return;
-    r.innerHTML=window.PRAGATI_DATA.tests.length?window.PRAGATI_DATA.tests.sort((a,b)=>a.date.localeCompare(b.date)).map(t=>`<div class="pr-item"><b>${esc(t.name)}</b><span>${esc(t.date)} · ${esc(t.exam)}</span><small>${esc(t.portion||'Portion not set')}</small><div class="pr-actions"><button onclick="prAnalyzeTest('${t.id}')">Analysis</button></div></div>`).join(''):'<div class="pr-empty">No tests added.</div>';
-  }
-  window.prAnalyzeTest=function(id){
-    const t=window.PRAGATI_DATA.tests.find(x=>x.id===id);if(!t)return;
-    prOpenModal('Test Analysis — '+t.name,`<div class="pr-grid2"><label>Marks<input id="taM" type="number"></label><label>Total<input id="taT" type="number"></label><label>Wrong<input id="taW" type="number"></label><label>Skipped<input id="taS" type="number"></label></div><div class="pr-grid2"><label>Concept mistakes<input id="taC" type="number"></label><label>Calculation mistakes<input id="taCalc" type="number"></label><label>Silly mistakes<input id="taSi" type="number"></label><label>Time-management issues<input id="taTi" type="number"></label></div>`,`<button class="pr-primary" onclick="prSaveAnalysis('${id}')">Save analysis</button>`);
-  };
-  window.prSaveAnalysis=function(id){
-    const t=window.PRAGATI_DATA.tests.find(x=>x.id===id);if(!t)return;
-    const q=id=>Number(document.getElementById(id).value||0);t.marks=q('taM');t.total=q('taT');t.wrong=q('taW');t.skipped=q('taS');t.errors={concept:q('taC'),calculation:q('taCalc'),silly:q('taSi'),time:q('taTi')};persist();prCloseModal();renderTests();toast('Test analysis saved');
-  };
-
-  window.prHealth=function(){
-    prOpenModal('Health & Study Readiness',`<div class="pr-grid2"><label>Sleep (hours)<input id="hhS" type="number" step=".5"></label><label>Water (glasses)<input id="hhW" type="number"></label><label>Movement (minutes)<input id="hhM" type="number"></label><label>Energy<select id="hhE"><option>High</option><option>Normal</option><option>Low</option></select></label></div>`,`<button class="pr-primary" onclick="prSaveHealth()">Save</button>`);
-  };
-  window.prSaveHealth=function(){window.PRAGATI_DATA.health.push({date:new Date().toISOString().slice(0,10),sleep:document.getElementById('hhS').value,water:document.getElementById('hhW').value,movement:document.getElementById('hhM').value,energy:document.getElementById('hhE').value});persist();prCloseModal();toast('Health saved');};
-
-  // AI-like deterministic planner: fills the user's available window with prioritized
-  // backlog items without requiring an external AI service.
-  window.prGeneratePlan=function(){
-    const s=window.PRAGATI_DATA.settings;
-    const backlog=window.PRAGATI_DATA.backlog.filter(x=>x.priority==='High').concat(window.PRAGATI_DATA.backlog.filter(x=>x.priority!=='High'));
-    if(!backlog.length){toast('Add a backlog item first');return;}
-    const date=new Date().toISOString().slice(0,10);
-    let start=s.start||'17:00', end=s.end||'21:00';
-    const toMin=t=>{let [h,m]=t.split(':').map(Number);return h*60+m;};
-    const fmt=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
-    let a=toMin(start), z=toMin(end), i=0;
-    while(a+45<=z && i<backlog.length){
-      const b=backlog[i++], dur=Math.min(60,z-a);
-      window.PRAGATI_DATA.planner.push({id:uid(),date,start:fmt(a),end:fmt(a+dur),subject:b.subject,topic:b.topic,type:'Smart Study',exam:b.exam,done:false,reason:b.reason||'Priority backlog'});
-      a+=dur+15;
-    }
-    persist();renderPlanner();toast('Smart plan generated');
-  };
-
-  function wireButtons(){
-    const map=[
-      ['prAddPlanner','prAddPlanner'],['prAddBacklog','prAddBacklog'],['prGeneratePlan','prGeneratePlan'],
-      ['prDayReview','prDayReview'],['prAddTest','prAddTest'],['prHealth','prHealth']
-    ];
-    map.forEach(([id,fn])=>document.querySelectorAll('#'+id+', [data-pr-action="'+id+'"]').forEach(el=>el.onclick=window[fn]));
-    renderPlanner();renderBacklog();renderTests();
-  }
-  // Expose a safe init for the rebuild's dashboard.
-  window.pragatiFunctionalInit=wireButtons;
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(wireButtons,50));
-})();
-
-</script>
-
-<style>
-.pr-modal-overlay{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;z-index:99998;padding:18px}
-.pr-modal-card{width:min(680px,96vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid #e2dcc9;border-radius:18px;box-shadow:0 20px 70px #0003;color:#252525}
-.pr-modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid #eee8d8}
-.pr-modal-head button{border:0;background:transparent;font-size:20px;cursor:pointer}
-.pr-modal-body{padding:18px;display:grid;gap:12px}.pr-modal-actions{padding:14px 18px;border-top:1px solid #eee8d8;display:flex;justify-content:flex-end;gap:8px}
-.pr-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pr-grid2 label,.pr-modal-body label{display:grid;gap:6px;font-size:13px;font-weight:600}
-.pr-grid2 input,.pr-grid2 select,.pr-modal-body input,.pr-modal-body select,.pr-modal-body textarea{padding:10px;border:1px solid #ddd6c5;border-radius:10px;background:#fff}
-.pr-modal-body textarea{min-height:80px;resize:vertical}.pr-primary,.pr-actions button{border:1px solid #c8a83a;background:#c8a83a;color:#191814;border-radius:9px;padding:9px 12px;cursor:pointer}
-.pr-item{display:grid;gap:6px;padding:13px 14px;margin:8px 0;border:1px solid #e5e0d4;border-radius:14px;background:#fff}
-.pr-item.done{opacity:.65}.pr-item small{color:#777}.pr-actions{display:flex;gap:6px;justify-content:flex-end}.pr-empty{padding:24px;text-align:center;color:#777;border:1px dashed #d8d1c0;border-radius:14px}
-.pr-flow{display:grid;grid-template-columns:80px 1fr 70px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eee8d8}.pr-flow em{font-style:normal;color:#8a6d10;text-align:right}
-.pr-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pr-review-grid>div{padding:14px;background:#f8f6ef;border-radius:12px;text-align:center}.pr-review-grid b{display:block;font-size:24px;color:#967b20}.pr-review-grid small{color:#777}
-@media(max-width:600px){.pr-grid2{grid-template-columns:1fr}}
-</style>
-
-<section class="card" style="max-width:1100px;margin:16px auto;padding:18px">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-    <div>
-      <h2 style="margin:0">📚 Subject-wise Topic Tracker</h2>
-      <p class="muted" style="margin:5px 0 0">Planner completion can update CBSE, NEET and JEE independently.</p>
-    </div>
-  </div>
-  <div id="prTopicTrackerList" style="margin-top:12px"></div>
-</section>
-
-
-<section class="card" style="max-width:1100px;margin:16px auto;padding:18px">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-    <div>
-      <h2 style="margin:0">📚 Topic-wise Tracker</h2>
-      <p class="muted" style="margin:5px 0">Add the exact topics you want to track. CBSE, NEET and JEE completion stays separate.</p>
-    </div>
-    <button class="pr-primary" onclick="prAddCustomTopic()">＋ Add Topic</button>
-  </div>
-  <div id="prCustomTopicsList" style="margin-top:14px"></div>
-</section>
-
-<div id="prFunctionalDock" style="position:fixed;right:16px;bottom:16px;z-index:9000;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end">
-<button class="pr-primary" data-pr-action="prAddPlanner">+ Study</button>
-<button class="pr-primary" data-pr-action="prAddBacklog">+ Backlog</button>
-<button class="pr-primary" data-pr-action="prGeneratePlan">⚡ Smart Plan</button>
-<button class="pr-primary" data-pr-action="prDayReview">🌙 Day Review</button>
-</div>
-<div style="max-width:1100px;margin:24px auto;padding:0 16px 110px">
-  <div class="card" style="padding:18px;margin-bottom:16px">
-    <h2 style="margin:0 0 6px">Today's Planner</h2>
-    <div id="prPlannerList"></div>
-  </div>
-  <div class="card" style="padding:18px;margin-bottom:16px">
-    <h2 style="margin:0 0 6px">7-Day Backlog</h2>
-    <div id="prBacklogList"></div>
-  </div>
-  <div class="card" style="padding:18px;margin-bottom:16px">
-    <h2 style="margin:0 0 6px">Tests & Analysis</h2>
-    <button class="pr-primary" onclick="prAddTest()">+ Add Test</button>
-    <div id="prTestsList"></div>
-  </div>
-</div>
-
-<script>
-
-/* TOPIC TRACKER SYNC: Planner -> Subject Tracker, separately for CBSE/NEET/JEE */
-(function(){
-  const EXAMS=['CBSE','NEET','JEE'];
-  const key=(s,c,t)=>[s||'',c||'',t||''].join('::');
-  function trackers(){ window.PRAGATI_DATA.topicTracker = window.PRAGATI_DATA.topicTracker || {}; return window.PRAGATI_DATA.topicTracker; }
-  function get(s,c,t){
-    const k=key(s,c,t), all=trackers();
-    all[k]=all[k]||{};
-    EXAMS.forEach(e=>{ if(typeof all[k][e]!=='boolean') all[k][e]=false; });
-    return all[k];
-  }
-  function set(s,c,t,e,v){ get(s,c,t)[e]=!!v; }
-  window.prTopicTracker=get;
-
-  function trackerRows(){
-    const all=trackers(), rows=Object.entries(all);
-    return rows.length ? rows.map(([k,v])=>{
-      const [s,c,t]=k.split('::');
-      return `<div class="pr-item">
-        <div><b>${esc(s)}</b> · ${esc(c)}</div>
-        <strong>${esc(t)}</strong>
-        <div class="pr-tracker-pills">
-          ${EXAMS.map(e=>`<span class="pr-pill ${v[e]?'complete':''}">${e} ${v[e]?'✓':'○'}</span>`).join('')}
-        </div>
-      </div>`;
-    }).join('') : '<div class="pr-empty">Complete a planner topic and choose its exam track to start your tracker.</div>';
-  }
-  window.prRenderTopicTracker=function(){
-    const r=document.getElementById('prTopicTrackerList'); if(r) r.innerHTML=trackerRows();
-  };
-
-  const oldToggle=window.prTogglePlanner;
-  window.prTogglePlanner=function(id){
-    const b=window.PRAGATI_DATA.planner.find(x=>x.id===id);
-    if(!b){return oldToggle?oldToggle(id):null;}
-    b.done=!b.done;
-    if(window.persist) window.persist();
-    else localStorage.setItem('pragati_rebuild_data_v2',JSON.stringify(window.PRAGATI_DATA));
-    if(window.renderPlanner) window.renderPlanner();
-    if(b.done){
-      const p=get(b.subject,b.chapter||b.topic,b.topic);
-      prOpenModal('Update Subject Tracker',`
-        <p><b>${esc(b.subject||'Subject')} → ${esc(b.topic||'Topic')}</b></p>
-        <p>Mark this topic completed <b>separately</b> for each exam.</p>
-        <label><input type="checkbox" id="syncCBSE" ${p.CBSE?'checked':''}> 📘 CBSE</label>
-        <label><input type="checkbox" id="syncNEET" ${p.NEET?'checked':''}> 🧬 NEET</label>
-        <label><input type="checkbox" id="syncJEE" ${p.JEE?'checked':''}> ⚡ JEE</label>
-      `,`<button class="pr-primary" onclick="prSaveTopicSync('${id}')">Save tracker</button>`);
-    }
-    window.prRenderTopicTracker();
-  };
-  window.prSaveTopicSync=function(id){
-    const b=window.PRAGATI_DATA.planner.find(x=>x.id===id); if(!b)return;
-    const p=get(b.subject,b.chapter||b.topic,b.topic);
-    p.CBSE=!!document.getElementById('syncCBSE')?.checked;
-    p.NEET=!!document.getElementById('syncNEET')?.checked;
-    p.JEE=!!document.getElementById('syncJEE')?.checked;
-    localStorage.setItem('pragati_rebuild_data_v2',JSON.stringify(window.PRAGATI_DATA));
-    prCloseModal(); window.prRenderTopicTracker(); prToast('Subject tracker updated separately for CBSE / NEET / JEE.');
-  };
-
-  // Replace the simple tracker modal in the existing planner completion flow if it calls
-  // the old prSaveTopicTrack.
-  window.prSaveTopicTrack=window.prSaveTopicSync;
-
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(window.prRenderTopicTracker,80));
-})();
-
-</script>
-<script>
-
-/* CUSTOM TOPIC MANAGER */
-(function(){
-  const EXAMS=['CBSE','NEET','JEE'];
-  function save(){localStorage.setItem('pragati_rebuild_data_v2',JSON.stringify(window.PRAGATI_DATA));}
-  function topics(){window.PRAGATI_DATA.customTopics=window.PRAGATI_DATA.customTopics||[];return window.PRAGATI_DATA.customTopics;}
-  window.prAddCustomTopic=function(){
-    prOpenModal('Add Topic',`
-      <div class="pr-grid2">
-        <label>Subject<input id="ctSub" placeholder="Physics"></label>
-        <label>Chapter<input id="ctCh" placeholder="Current Electricity"></label>
-        <label>Topic name<input id="ctTopic" placeholder="Kirchhoff's Laws"></label>
-        <label>Priority<select id="ctPri"><option>High</option><option selected>Medium</option><option>Low</option></select></label>
-      </div>
-      <p style="margin:4px 0;color:#777;font-size:13px">Choose which exam tracks this topic belongs to. Completion remains separate for each track.</p>
-      <label><input type="checkbox" id="ctCBSE" checked> 📘 CBSE</label>
-      <label><input type="checkbox" id="ctNEET" checked> 🧬 NEET</label>
-      <label><input type="checkbox" id="ctJEE"> ⚡ JEE</label>
-    `,`<button class="pr-primary" onclick="prSaveCustomTopic()">Add topic</button>`);
-  };
-  window.prSaveCustomTopic=function(){
-    const q=id=>document.getElementById(id)?.value.trim();
-    if(!q('ctSub')||!q('ctCh')||!q('ctTopic')){prToast('Enter subject, chapter and topic');return;}
-    topics().push({
-      id:'topic_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),
-      subject:q('ctSub'),chapter:q('ctCh'),topic:q('ctTopic'),priority:q('ctPri'),
-      exams:{CBSE:!!document.getElementById('ctCBSE')?.checked,NEET:!!document.getElementById('ctNEET')?.checked,JEE:!!document.getElementById('ctJEE')?.checked},
-      done:{CBSE:false,NEET:false,JEE:false}
-    });
-    save();prCloseModal();prRenderCustomTopics();prToast('Topic added');
-  };
-  window.prToggleCustomTopic=function(id,exam){
-    const t=topics().find(x=>x.id===id);if(!t)return;
-    t.done=t.done||{CBSE:false,NEET:false,JEE:false};
-    t.done[exam]=!t.done[exam];
-    save();prRenderCustomTopics();
-  };
-  window.prDeleteCustomTopic=function(id){
-    window.PRAGATI_DATA.customTopics=topics().filter(x=>x.id!==id);
-    save();prRenderCustomTopics();prToast('Topic removed');
-  };
-  window.prSendCustomTopicToPlanner=function(id){
-    const t=topics().find(x=>x.id===id);if(!t)return;
-    const exam=Object.keys(t.exams).find(e=>t.exams[e] && !t.done[e]) || 'CBSE';
-    window.PRAGATI_DATA.planner.push({
-      id:'p_'+Date.now().toString(36),date:new Date().toISOString().slice(0,10),
-      start:'17:00',end:'17:45',subject:t.subject,chapter:t.chapter,topic:t.topic,
-      type:'Topic Study',exam,done:false,customTopicId:t.id
-    });
-    save();if(window.renderPlanner)window.renderPlanner();prToast('Topic added to today\'s planner');
-  };
-  window.prRenderCustomTopics=function(){
-    const root=document.getElementById('prCustomTopicsList');if(!root)return;
-    const arr=topics();
-    root.innerHTML=arr.length?arr.map(t=>`
-      <div class="pr-topic-card">
-        <div class="pr-topic-main">
-          <div class="pr-topic-meta">${esc(t.subject)} · ${esc(t.chapter)} · ${esc(t.priority)}</div>
-          <h3>${esc(t.topic)}</h3>
-          <div class="pr-topic-exams">
-            ${EXAMS.filter(e=>t.exams[e]).map(e=>`
-              <button class="pr-exam-topic ${t.done[e]?'done':''}" onclick="prToggleCustomTopic('${t.id}','${e}')">
-                ${e==='CBSE'?'📘':e==='NEET'?'🧬':'⚡'} ${e} ${t.done[e]?'✓':'○'}
-              </button>`).join('')}
-          </div>
-        </div>
-        <div class="pr-topic-actions">
-          <button onclick="prSendCustomTopicToPlanner('${t.id}')">+ Planner</button>
-          <button onclick="prDeleteCustomTopic('${t.id}')">×</button>
-        </div>
-      </div>`).join(''):'<div class="pr-empty">No custom topics yet. Add your first topic above.</div>';
-  };
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(prRenderCustomTopics,100));
-})();
-
-
-function openStudyStatePicker(subj,chId,topicId,examOnly){
-  const ch=DATA.subjects?.[subj]?.chapters?.find(c=>c.id===chId);
-  const t=ch?.topics?.find(x=>x.id===topicId);
-  if(!t) return;
-  ensureTopicStudyState(t);
-  const exams=examOnly?[examOnly]:STUDY_EXAMS;
-  openModal('🎯 Study State — '+t.name, `
-    <div class="text-sm faint mb-10">${esc(subj)} · ${esc(ch.name)}</div>
-    ${exams.map(ex=>{
-      const s=t.studyState[ex], m=STUDY_STATE_META[s];
-      return `<div class="study-picker-block">
-        <div class="flex-between mb-6"><b>${ex==='CBSE'?'📘':ex==='NEET'?'🧬':'⚡'} ${ex}</b><span>${m.icon} ${m.label}</span></div>
-        <select onchange="setPickedStudyState('${subj}','${chId}','${topicId}','${ex}',this.value)">
-          ${STUDY_STATE_ORDER.map(k=>`<option value="${k}" ${k===s?'selected':''}>${STUDY_STATE_META[k].icon} ${STUDY_STATE_META[k].label}</option>`).join('')}
-        </select>
-        <div class="text-xs faint mt-6">Next action: ${esc(m.action)}</div>
-      </div>`;
-    }).join('')}
-    <div class="card mt-12" style="background:var(--bg-soft);">
-      <b>How Pragati uses this</b>
-      <div class="text-xs faint mt-6">The selected state determines the recommended type of study block for that exam.</div>
-    </div>
-  `);
-}
-function setPickedStudyState(subj,chId,topicId,exam,state){
-  const ch=DATA.subjects?.[subj]?.chapters?.find(c=>c.id===chId);
-  const t=ch?.topics?.find(x=>x.id===topicId);
-  if(!t)return;
-  setTopicStudyState(t,exam,state);
-  save(); render();
-  prToast?.(`${STUDY_STATE_META[state].icon} ${exam}: ${STUDY_STATE_META[state].label}`);
-  openStudyStatePicker(subj,chId,topicId,exam);
-}
-
-
-function migrateAllTopicsTo7State(){
-  Object.values(DATA.subjects||{}).forEach(s=>{
-    (s.chapters||[]).forEach(ch=>{
-      (ch.topics||[]).forEach(t=>{
-        ensureTopicStudyState(t);
-        if(t.status && t.status!=='notstarted' && t.status!=='practiced' && !t.studyState.CBSE && !t.studyState.NEET && !t.studyState.JEE){
-          const old=normalizeStudyState(t.status);
-          STUDY_EXAMS.forEach(e=>t.studyState[e]=old);
-        }
-      });
-    });
-  });
-}
-
-
-function ensureCustomTopic7State(t){
-  t.studyState=t.studyState||{};
-  t.done=t.done||{};
-  STUDY_EXAMS.forEach(e=>{
-    t.studyState[e]=normalizeStudyState(t.studyState[e] || (t.done[e]?'mastered':'notstarted'));
-    t.done[e]=t.studyState[e]==='mastered';
-  });
-}
-function setCustomTopicStudyState(id,exam,state){
-  const t=(window.PRAGATI_DATA.customTopics||[]).find(x=>x.id===id);
-  if(!t)return;
-  ensureCustomTopic7State(t); t.studyState[exam]=state; t.done[exam]=state==='mastered';
-  localStorage.setItem('pragati_rebuild_data_v2',JSON.stringify(window.PRAGATI_DATA));
-  prRenderCustomTopics?.();
-}
-
-try{if(typeof DATA!=='undefined' && typeof migrateAllTopicsTo7State==='function'){migrateAllTopicsTo7State(); save?.();}}catch(e){console.warn('7-state migration',e);}
-</script>
-
-<script id="pragati-v3-core">
+<script id="pragati-direct-smart-plan">
 (function(){
 "use strict";
-const KEY="pragati_v3_data";
-const EXAMS=["CBSE","NEET","JEE"];
-const STATES=[
- {k:"notstarted",i:"🔴",n:"Not Started",a:"Concept / lecture"},
- {k:"learning",i:"🟠",n:"Learning",a:"Concept building"},
- {k:"understanding",i:"🟡",n:"Understanding",a:"NCERT + active recall"},
- {k:"practicing",i:"🔵",n:"Practicing",a:"Questions + PYQs"},
- {k:"errorfixing",i:"🟣",n:"Error Fixing",a:"Mistakes + reattempt"},
- {k:"examready",i:"🟢",n:"Exam Ready",a:"Timed practice + mini test"},
- {k:"mastered",i:"⭐",n:"Mastered",a:"Spaced revision"}
-];
-const blank=()=>({planner:[],topics:[],backlog:[],tests:[],reviews:[],health:[],goals:[],settings:{start:"05:30",end:"22:00",school:true,tuition:true,vedantu:true,aakash:true}});
-let D;
-try{D=JSON.parse(localStorage.getItem(KEY)||"null")||blank()}catch(e){D=blank()}
-if(!D.settings)D.settings=blank().settings;
-window.PRAGATI_V3=D;
-const save=()=>localStorage.setItem(KEY,JSON.stringify(D));
-const uid=()=>Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);
-const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const toast=m=>{
- let x=document.getElementById("prv3toast"); if(!x){x=document.createElement("div");x.id="prv3toast";document.body.appendChild(x)}
- x.textContent=m;x.className="prv3-toast show";clearTimeout(x._t);x._t=setTimeout(()=>x.className="prv3-toast",2400)
-};
-window.prToast=toast;
-function modal(title,body,buttons=""){
- const h=document.getElementById("prv3modal")||document.body.appendChild(Object.assign(document.createElement("div"),{id:"prv3modal"}));
- h.innerHTML=`<div class="prv3-overlay"><div class="prv3-dialog"><header><b>${esc(title)}</b><button onclick="prv3Close()">×</button></header><main>${body}</main><footer>${buttons}</footer></div></div>`;
-}
-window.prv3Close=()=>{const x=document.getElementById("prv3modal");if(x)x.innerHTML=""};
+window.openGeneratePlanModal=function(date){
+  date=date||window.plannerViewDate||todayStr();
+  let priorities=computeChapterPriorities(date);
+  if(window.pragatiFeedbackBoost) priorities=window.pragatiFeedbackBoost(priorities);
+  if(isTaperWindow(date)) priorities=filterPrioritiesForTaper(priorities);
 
-function stateObj(k){return STATES.find(x=>x.k===k)||STATES[0]}
-function topic(id){return D.topics.find(x=>x.id===id)}
-function stateFor(t,e){t.states=t.states||{};return t.states[e]||"notstarted"}
-function setState(id,e,k){let t=topic(id);if(!t)return;t.states=t.states||{};t.states[e]=k;save();renderTopics();toast(`${stateObj(k).i} ${e}: ${stateObj(k).n}`)}
-function statePicker(id,only){
- const t=topic(id);if(!t)return;
- const es=only?[only]:EXAMS;
- modal("Study State — "+t.topic,`<p class="muted">${esc(t.subject)} · ${esc(t.chapter)}</p>`+
- es.map(e=>`<div class="prv3-statebox"><b>${e}</b><select onchange="prv3SetState('${id}','${e}',this.value)">
- ${STATES.map(s=>`<option value="${s.k}" ${stateFor(t,e)===s.k?"selected":""}>${s.i} ${s.n}</option>`).join("")}
- </select><small>Next action: ${esc(stateObj(stateFor(t,e)).a)}</small></div>`).join(""),
- `<button class="prv3-primary" onclick="prv3Close()">Done</button>`)
-}
-window.prv3StatePicker=statePicker;
-window.prv3SetState=setState;
+  if(!priorities.length){
+    generateTodaysPlan(date,null,null,null);
+    return;
+  }
 
-function renderTopics(){
- const r=document.getElementById("prv3Topics");if(!r)return;
- r.innerHTML=D.topics.length?D.topics.map(t=>`<article class="prv3-topic">
- <div><small>${esc(t.subject)} · ${esc(t.chapter)}</small><h3>${esc(t.topic)}</h3>
- <div class="prv3-pills">${EXAMS.map(e=>{let s=stateObj(stateFor(t,e));return `<button onclick="prv3StatePicker('${t.id}','${e}')" class="prv3-pill ${s.k}">${s.i} ${e}: ${s.n}</button>`}).join("")}</div></div>
- <div class="prv3-actions"><button onclick="prv3ToPlanner('${t.id}')">＋ Planner</button><button onclick="prv3DeleteTopic('${t.id}')">×</button></div>
- </article>`).join(""):"<div class='prv3-empty'>No topics yet.</div>";
-}
-window.prv3AddTopic=()=>{
- modal("Add Topic",`<div class="prv3-grid">
- <label>Subject<input id="v3ts" placeholder="Physics"></label><label>Chapter<input id="v3tc" placeholder="Current Electricity"></label>
- <label>Topic<input id="v3tt" placeholder="Kirchhoff's Laws"></label>
- </div><p class="muted">The topic can have a different Study State for CBSE, NEET and JEE.</p>`,
- `<button class="prv3-primary" onclick="prv3SaveTopic()">Add topic</button>`)
-};
-window.prv3SaveTopic=()=>{
- const v=id=>document.getElementById(id).value.trim();
- if(!v("v3ts")||!v("v3tc")||!v("v3tt"))return toast("Enter subject, chapter and topic");
- D.topics.push({id:uid(),subject:v("v3ts"),chapter:v("v3tc"),topic:v("v3tt"),states:{CBSE:"notstarted",NEET:"notstarted",JEE:"notstarted"}});
- save();prv3Close();renderTopics();toast("Topic added")
-};
-window.prv3DeleteTopic=id=>{D.topics=D.topics.filter(t=>t.id!==id);save();renderTopics();toast("Topic removed")};
-window.prv3ToPlanner=id=>{
- const t=topic(id);if(!t)return;
- const e=EXAMS.find(x=>stateFor(t,x)!=="mastered")||"CBSE";
- D.planner.push({id:uid(),date:new Date().toISOString().slice(0,10),start:"17:00",end:"17:45",subject:t.subject,chapter:t.chapter,topic:t.topic,exam:e,type:stateObj(stateFor(t,e)).a,done:false,topicId:t.id});
- save();renderPlanner();toast("Added to today's planner")
-};
+  const freeMin=estimateFreePlanningMinutes(date);
+  const energy=todaysEnergy(date);
+  const meta=ENERGY_LEVELS[energy]||ENERGY_LEVELS.normal;
+  const capacity=Math.max(1,Math.round(realisticChapterCapacity(freeMin,date)*meta.mult));
 
-function renderPlanner(){
- const r=document.getElementById("prv3Planner");if(!r)return;
- const a=D.planner.slice().sort((x,y)=>(x.start||"").localeCompare(y.start||""));
- r.innerHTML=a.length?a.map(b=>`<article class="prv3-plan ${b.done?"done":""}">
- <div class="time">${esc(b.start)}–${esc(b.end)}</div><div><b>${esc(b.subject)} · ${esc(b.topic)}</b><small>${esc(b.type||"Study")} · ${esc(b.exam||"")}</small></div>
- <div class="prv3-actions"><button onclick="prv3Toggle('${b.id}')">${b.done?"↩ Undo":"✓ Done"}</button><button onclick="prv3Edit('${b.id}')">✎</button><button onclick="prv3Delete('${b.id}')">×</button></div>
- </article>`).join(""):"<div class='prv3-empty'>No time blocks. Add one or generate a plan.</div>";
-}
-function plannerForm(b){
- return `<div class="prv3-grid"><label>Start<input id="v3ps" type="time" value="${b?.start||"17:00"}"></label><label>End<input id="v3pe" type="time" value="${b?.end||"17:45"}"></label>
- <label>Subject<input id="v3psu" value="${esc(b?.subject||"")}" placeholder="Physics"></label><label>Chapter<input id="v3pch" value="${esc(b?.chapter||"")}"></label>
- <label>Topic<input id="v3pto" value="${esc(b?.topic||"")}" placeholder="Topic"></label><label>Exam<select id="v3pex">${EXAMS.map(e=>`<option ${e===(b?.exam||"CBSE")?"selected":""}>${e}</option>`).join("")}</select></label></div>`;
-}
-window.prv3AddPlanner=()=>modal("Add Study Block",plannerForm(null),`<button class="prv3-primary" onclick="prv3SavePlanner()">Save</button>`);
-window.prv3SavePlanner=()=>{
- const q=id=>document.getElementById(id).value;
- if(!q("v3psu")||!q("v3pto"))return toast("Subject and topic are required");
- const b={id:uid(),date:new Date().toISOString().slice(0,10),start:q("v3ps"),end:q("v3pe"),subject:q("v3psu"),chapter:q("v3pch"),topic:q("v3pto"),exam:q("v3pex"),type:"Study",done:false};
- if(!validatePlannerBlock(b,b.id))return;
- D.planner.push(b);save();prv3Close();renderPlanner();toast("Study block saved")
-};
-window.prv3Edit=id=>{
- let b=D.planner.find(x=>x.id===id);if(!b)return;
- modal("Edit Study Block",plannerForm(b)+`
- <div class="prv3-edit-tools">
-  <button onclick="prv3Resize('${id}',-10)">−10 min</button>
-  <button onclick="prv3Resize('${id}',10)">+10 min</button>
-  <button onclick="prv3SwapTopic('${id}')">↔ Swap Topic</button>
- </div>`,
- `<button class="prv3-primary" onclick="prv3SaveEdit('${id}')">Save changes</button>`)
-};
-window.prv3SaveEdit=id=>{
- let b=D.planner.find(x=>x.id===id);if(!b)return;const q=x=>document.getElementById(x).value;
- Object.assign(b,{start:q("v3ps"),end:q("v3pe"),subject:q("v3psu"),chapter:q("v3pch"),topic:q("v3pto"),exam:q("v3pex")});
- if(!validatePlannerBlock(b,id))return;
- save();prv3Close();renderPlanner();toast("Block updated")
-};
-function validatePlannerBlock(b,id){
- const toMin=t=>{let[a,c]=String(t||"").split(":").map(Number);return a*60+c};
- if(toMin(b.end)<=toMin(b.start)){toast("End time must be after start time");return false}
- if(toMin(b.start)<330 || toMin(b.end)>1320){toast("Today's planner stays inside the default 5:30 AM–10:00 PM window");return false}
- const conflict=D.planner.some(x=>x.id!==id&&x.date===b.date&&!x.done&&toMin(b.start)<toMin(x.end)&&toMin(b.end)>toMin(x.start));
- if(conflict){toast("That time overlaps another study block");return false}
- return true
-}
-window.prv3Resize=(id,delta)=>{
- const b=D.planner.find(x=>x.id===id);if(!b)return;
- const toMin=t=>{let[a,c]=String(t).split(":").map(Number);return a*60+c},fmt=n=>String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
- let e=toMin(b.end)+delta;
- if(e<=toMin(b.start)+20||e>1320){toast("Cannot resize beyond the allowed limits");return}
- b.end=fmt(e);save();prv3Close();renderPlanner();toast(delta>0?"+10 minutes added":"10 minutes reduced")
-};
-window.prv3SwapTopic=id=>{
- const b=D.planner.find(x=>x.id===id);if(!b)return;
- const options=D.topics.filter(t=>t.id!==b.topicId && t.subject===b.subject);
- modal("Swap Topic",options.length?options.map(t=>`<button class="prv3-swap-option" onclick="prv3DoSwap('${id}','${t.id}')">${esc(t.chapter)} · ${esc(t.topic)}</button>`).join(""):"<div class='prv3-empty'>No other topics for this subject. Add a topic first.</div>")
-};
-window.prv3DoSwap=(id,tid)=>{
- const b=D.planner.find(x=>x.id===id),t=topic(tid);if(!b||!t)return;
- b.topicId=t.id;b.subject=t.subject;b.chapter=t.chapter;b.topic=t.topic;
- b.type=stateObj(stateFor(t,b.exam)).a;b.reason="Swapped topic · Study State: "+stateObj(stateFor(t,b.exam)).n;
- save();prv3Close();renderPlanner();toast("Topic swapped")
-};
-window.prv3Delete=id=>{D.planner=D.planner.filter(x=>x.id!==id);save();renderPlanner();toast("Block deleted")};
-window.prv3Toggle=id=>{
- const b=D.planner.find(x=>x.id===id);if(!b)return;b.done=!b.done;save();renderPlanner();
- if(b.done && b.topicId){
-   const t=topic(b.topicId);
-   if(t) statePicker(t.id,b.exam);
- } else toast(b.done?"Block completed":"Block reopened")
-};
+  const mandatory=new Set(todaysMandatoryTopics(date).map(x=>x.subject+"::"+x.chapter));
+  const selected=[];
+  const selectedKeys=new Set();
 
-window.prv3Generate=()=>{
-  const toMin=t=>{let[a,b]=String(t||"00:00").split(":").map(Number);return a*60+b};
-  const fmt=n=>String(Math.floor(n/60)%24).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
-  const today=new Date().toISOString().slice(0,10);
-  const start=toMin("05:30"), finish=toMin("22:00");
-  if(finish<=start)return toast("Fix your study window first.");
-
-  // Build occupied intervals from existing planner blocks and fixed master-schedule items.
-  const occupied=D.planner.filter(x=>x.date===today).map(x=>[toMin(x.start),toMin(x.end)]);
-  const fixed=Array.isArray(D.fixedSchedule)?D.fixedSchedule:[];
-  fixed.filter(x=>x.enabled!==false && (!x.date||x.date===today)).forEach(x=>{
-    if(x.start&&x.end) occupied.push([toMin(x.start),toMin(x.end)]);
+  // Protect imminent-test chapters first, then fill the remaining realistic capacity
+  // from the same priority engine used by the old generator.
+  priorities.forEach(p=>{
+    const key=p.subject+"::"+p.chapter;
+    if(mandatory.has(key)&&!selectedKeys.has(key)){
+      selectedKeys.add(key); selected.push(p);
+    }
   });
-  occupied.sort((a,b)=>a[0]-b[0]);
-
-  // Find free intervals inside the user's chosen study window.
-  const free=[];
-  let cursor=start;
-  for(const [a,b] of occupied){
-    const lo=Math.max(start,a), hi=Math.min(finish,b);
-    if(hi<=start||lo>=finish)continue;
-    if(lo>cursor)free.push([cursor,lo]);
-    cursor=Math.max(cursor,hi);
-  }
-  if(cursor<finish)free.push([cursor,finish]);
-
-  // Convert each topic's Study State into the kind of work it needs.
-  const stateRank={notstarted:0,learning:1,understanding:2,practicing:3,errorfixing:4,examready:5,mastered:6};
-  const action={
-    notstarted:"Concept Building",learning:"Concept Building",
-    understanding:"NCERT + Active Recall",practicing:"Question Bank / PYQ",
-    errorfixing:"Error Review + Reattempt",examready:"Timed Practice / Mini Test",
-    mastered:"Spaced Revision"
-  };
-
-  // Score work by urgency, weakness/state, and upcoming tests.
-  const now=new Date();
-  const daysUntil=date=>{
-    if(!date)return 999;
-    const d=new Date(date+"T23:59:59");
-    return Math.ceil((d-now)/86400000);
-  };
-  const candidates=(D.backlog||[]).map(b=>{
-    const t=(D.topics||[]).find(t=>t.subject===b.subject&&t.chapter===b.chapter&&t.topic===b.topic);
-    const exam=b.exam||"NEET";
-    const state=t?.states?.[exam]||"notstarted";
-    const testDays=Math.min(...(D.tests||[]).filter(x=>x.date>=today && (!x.exam||x.exam===exam)).map(x=>daysUntil(x.date)),999);
-    let score=(b.priority==="High"?60:b.priority==="Medium"?35:15);
-    score+=(6-stateRank[state])*8;
-    if(testDays<=7)score+=(8-Math.max(0,testDays))*8;
-    if((b.reason||"").toLowerCase().match(/weak|mistake|wrong|overdue/))score+=18;
-    return {...b,state,score,testDays};
-  }).sort((a,b)=>b.score-a.score);
-
-  // Add overdue/weak topics that are already in the topic tracker but not in backlog.
-  for(const t of (D.topics||[])){
-    for(const exam of ["CBSE","NEET","JEE"]){
-      const state=t.states?.[exam]||"notstarted";
-      if(state==="mastered")continue;
-      if(!candidates.some(c=>c.subject===t.subject&&c.chapter===t.chapter&&c.topic===t.topic&&c.exam===exam)){
-        candidates.push({id:"auto_"+t.id+"_"+exam,subject:t.subject,chapter:t.chapter,topic:t.topic,exam,state,priority:"Auto",reason:"Study State: "+state,score:(6-stateRank[state])*7+10,testDays:999,auto:true});
-      }
-    }
-  }
-  candidates.sort((a,b)=>b.score-a.score);
-  if(!candidates.length)return toast("Nothing urgent to plan. Add a backlog/topic or update Study State.");
-
-  // Prevent duplicate planning of the same topic/exam today unless the user explicitly has room.
-  const plannedKeys=new Set(D.planner.filter(x=>x.date===today).map(x=>[x.subject,x.chapter,x.topic,x.exam].join("|")));
-
-  let added=0,ci=0;
-  const breakBetween=10;
-  for(const [lo,hi] of free){
-    let cursor=lo;
-    while(cursor+30<=hi && ci<candidates.length){
-      const c=candidates[ci++];
-      const key=[c.subject,c.chapter,c.topic,c.exam].join("|");
-      if(plannedKeys.has(key))continue;
-
-      // Match task length to cognitive load.
-      const heavy=["Concept Building","Error Review + Reattempt","Timed Practice / Mini Test"].includes(action[c.state]);
-      let dur=heavy?60:45;
-      if(hi-cursor<dur)dur=hi-cursor;
-      if(dur<30)break;
-
-      D.planner.push({
-        id:uid(),date:today,start:fmt(cursor),end:fmt(cursor+dur),
-        subject:c.subject,chapter:c.chapter,topic:c.topic,exam:c.exam,
-        type:action[c.state],done:false,
-        reason:(c.testDays<=7?"Test in "+c.testDays+" day(s). ":"")+String(c.reason||"Study State: "+(STATES.find(s=>s.k===c.state)?.n||c.state)),
-        generated:true,studyState:c.state
-      });
-      plannedKeys.add(key);added++;
-      cursor+=dur;
-      if(cursor+breakBetween<hi)cursor+=breakBetween;
+  for(const p of priorities){
+    if(selected.length>=capacity) break;
+    const key=p.subject+"::"+p.chapter;
+    if(!selectedKeys.has(key)){
+      selectedKeys.add(key); selected.push(p);
     }
   }
 
-  if(!added)return toast("No free slot large enough for a useful study block.");
-  save();renderPlanner();
-  toast(`Smart plan created: ${added} priority block${added===1?"":"s"}.`);
-};
+  const plan=selected.map(p=>{
+    const split=suggestedChapterTaskSplit(p,date);
+    const tasks=[];
+    if(split.lecture>0) tasks.push({type:"🎥 Lecture",duration:split.lecture});
+    if(split.ncert>0) tasks.push({type:"📖 NCERT Reading",duration:split.ncert});
+    if(split.qns>0) tasks.push({type:"✍️ Questions",duration:split.qns});
+    return {subject:p.subject,chapter:p.chapter,tasks};
+  });
 
-function renderBacklog(){
- const r=document.getElementById("prv3Backlog");if(!r)return;
- r.innerHTML=D.backlog.length?D.backlog.map(b=>`<article class="prv3-topic"><div><small>${esc(b.subject)} · ${esc(b.exam||"NEET")} · ${esc(b.priority)}</small><h3>${esc(b.topic)}</h3><small>${esc(b.reason||"")}</small></div><div class="prv3-actions"><button onclick="prv3Flow('${b.id}')">7-Day Flow</button><button onclick="prv3DeleteBacklog('${b.id}')">×</button></div></article>`).join(""):"<div class='prv3-empty'>No backlog topics.</div>"
-}
-window.prv3AddBacklog=()=>modal("Add Backlog",`<div class="prv3-grid"><label>Subject<input id="v3bs" placeholder="Physics"></label><label>Chapter<input id="v3bc" placeholder="Current Electricity"></label><label>Topic<input id="v3bt" placeholder="Kirchhoff's Laws"></label><label>Exam<select id="v3be">${EXAMS.map(e=>`<option>${e}</option>`).join("")}</select></label><label>Priority<select id="v3bp"><option>High</option><option selected>Medium</option><option>Low</option></select></label><label>Reason<input id="v3br" placeholder="Weak / unfinished / upcoming test"></label></div>`,`<button class="prv3-primary" onclick="prv3SaveBacklog()">Add</button>`);
-window.prv3SaveBacklog=()=>{
- const q=id=>document.getElementById(id)?.value.trim()||"";
- const exam=document.getElementById("v3be")?.value||"NEET";
- const priority=document.getElementById("v3bp")?.value||"Medium";
- if(!q("v3bs")||!q("v3bt"))return toast("Subject and topic are required");
- D.backlog=Array.isArray(D.backlog)?D.backlog:[];
- D.backlog.push({id:uid(),subject:q("v3bs"),chapter:q("v3bc"),topic:q("v3bt"),exam,priority,reason:q("v3br"),createdAt:Date.now()});
- save();prv3Close();renderBacklog();toast("Backlog added");
+  // class11Override=null deliberately keeps the existing automatic Class 11 recap logic.
+  generateTodaysPlan(date,plan,null,null);
 };
-window.prv3DeleteBacklog=id=>{
- D.backlog=(D.backlog||[]).filter(x=>x.id!==id);
- save();renderBacklog();toast("Backlog removed");
-};
-window.prv3EditBacklog=id=>{
- const b=D.backlog.find(x=>x.id===id);if(!b)return;
- modal("Edit Backlog",`<div class="prv3-grid">
- <label>Subject<input id="v3ebs" value="${esc(b.subject||"")}"></label>
- <label>Chapter<input id="v3ebc" value="${esc(b.chapter||"")}"></label>
- <label>Topic<input id="v3ebt" value="${esc(b.topic||"")}"></label>
- <label>Exam<select id="v3ebe">${EXAMS.map(e=>`<option ${e===(b.exam||"NEET")?"selected":""}>${e}</option>`).join("")}</select></label>
- <label>Priority<select id="v3ebp">${["High","Medium","Low"].map(x=>`<option ${x===(b.priority||"Medium")?"selected":""}>${x}</option>`).join("")}</select></label>
- <label>Reason<input id="v3ebr" value="${esc(b.reason||"")}"></label>
- </div>`,`<button class="prv3-primary" onclick="prv3SaveBacklogEdit('${id}')">Save changes</button>`);
-};
-window.prv3SaveBacklogEdit=id=>{
- const b=D.backlog.find(x=>x.id===id);if(!b)return;
- const q=x=>document.getElementById(x)?.value.trim()||"";
- if(!q("v3ebs")||!q("v3ebt"))return toast("Subject and topic are required");
- Object.assign(b,{subject:q("v3ebs"),chapter:q("v3ebc"),topic:q("v3ebt"),exam:document.getElementById("v3ebe").value,priority:document.getElementById("v3ebp").value,reason:q("v3ebr")});
- save();prv3Close();renderBacklog();toast("Backlog updated");
-};
-window.prv3SendBacklogToPlanner=id=>{
- const b=D.backlog.find(x=>x.id===id);if(!b)return;
- const today=new Date().toISOString().slice(0,10);
- const exists=D.planner.some(x=>x.date===today&&x.subject===b.subject&&x.chapter===b.chapter&&x.topic===b.topic&&x.exam===b.exam);
- if(exists)return toast("This backlog topic is already in today's planner");
- D.planner.push({id:uid(),date:today,start:"17:00",end:"17:45",subject:b.subject,chapter:b.chapter,topic:b.topic,exam:b.exam,type:"Backlog",done:false,backlogId:b.id});
- save();renderPlanner();toast("Backlog topic added to today's planner");
-};
-window.prv3Flow=id=>{
- const b=D.backlog.find(x=>x.id===id);if(!b)return;
- const steps=[["Sunday","Concept Building",60],["Monday","NCERT + Active Recall",45],["Tuesday","Question Bank",45],["Wednesday","Timed 2-markers",45],["Thursday","Error Review + Reattempt",40],["Friday","Mini Test + Analysis",45],["Saturday","Active Recall + Checkpoint",35]];
- modal("7-Day Flow — "+b.topic,steps.map(x=>`<div class="prv3-flow"><b>${x[0]}</b><span>${x[1]}</span><em>${x[2]} min</em></div>`).join(""),`<button class="prv3-primary" onclick="prv3MakeFlow('${b.id}')">Add to Planner</button>`)
-};
-window.prv3MakeFlow=id=>{
- const b=D.backlog.find(x=>x.id===id);if(!b)return;
- const base=new Date(); base.setHours(0,0,0,0);
- // Sunday starts the same-chapter sequence. Find the next Sunday, including today.
- const sunday=new Date(base);
- sunday.setDate(base.getDate()-base.getDay());
- const steps=[["Concept Building",60],["NCERT + Active Recall",45],["Question Bank",45],["Timed 2-markers",45],["Error Review + Reattempt",40],["Mini Test + Analysis",45],["Active Recall + Checkpoint",35]];
- steps.forEach((x,i)=>{
-   const d=new Date(sunday);d.setDate(sunday.getDate()+i);
-   const date=d.toISOString().slice(0,10);
-   const exists=D.planner.some(p=>p.date===date&&p.subject===b.subject&&p.chapter===b.chapter&&p.topic===b.topic&&p.exam===b.exam&&p.workflow===b.id);
-   if(!exists)D.planner.push({id:uid(),date,start:"17:00",end:"17:45",subject:b.subject,chapter:b.chapter,topic:b.topic,exam:b.exam,type:x[0],duration:x[1],done:false,workflow:b.id,backlogId:b.id});
+})();
+</script>
+
+<script id="pragati-feedback-engine-js">
+(function(){
+"use strict";
+const F=window.PRAGATI_V3||(window.PRAGATI_V3={});
+F.feedback=F.feedback||{};
+F.feedback.lastUpdated=F.feedback.lastUpdated||null;
+const fsave=()=>localStorage.setItem("pragati_v3_data",JSON.stringify(F));
+const fesc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ftoast=m=>window.prToast?window.prToast(m):null;
+
+/* Infer topic-level pressure from the data already recorded in Pragati.
+   No score is invented when there is no evidence. */
+function topicFeedbackIndex(){
+ const result=[];
+ const subjects=F.subjects||{};
+ const mistakes=Array.isArray(F.mistakes)?F.mistakes:[];
+ const pyqs=Array.isArray(F.pyqs)?F.pyqs:[];
+ const tests=Array.isArray(F.tests)?F.tests:[];
+ Object.keys(subjects).forEach(subject=>{
+   const s=subjects[subject]||{};
+   (s.chapters||[]).forEach(ch=>{
+     (ch.topics||[]).forEach(t=>{
+       const name=(t.name||"").trim(); if(!name)return;
+       ensureTopicStudyState?.(t);
+       const states=t.studyState||{};
+       const mistakeCount=mistakes.filter(m=>
+         (m.subject||"")===subject && (m.chapter||"")===ch.name &&
+         ((m.topic||"").toLowerCase()==name.toLowerCase() || !m.topic)
+       ).length;
+       const pyqFor=pyqs.filter(q=>
+         (q.subject||"")===subject && (q.chapter||"")===ch.name &&
+         ((q.topic||"").toLowerCase()==name.toLowerCase() || !q.topic)
+       );
+       const wrongPyq=pyqFor.filter(q=>q.correct===false || q.result==="wrong" || q.status==="wrong").length;
+       const relevantTests=tests.filter(test=>
+         Array.isArray(test.topics)&&test.topics.some(x=>
+           (x.subject||subject)===subject && (x.chapter||ch.name)===ch.name &&
+           (x.topic||"").toLowerCase()===name.toLowerCase()
+         )
+       );
+       const stateValues=STUDY_EXAMS.map(e=>states[e]).filter(Boolean);
+       const worst=stateValues.includes("error")?"error":
+         stateValues.includes("practicing")?"practicing":
+         stateValues.includes("understanding")?"understanding":
+         stateValues.includes("learning")?"learning":
+         stateValues.includes("examready")?"examready":
+         stateValues.includes("mastered")?"mastered":"notstarted";
+       let pressure=mistakeCount*2+wrongPyq*1.5+(worst==="error"?4:worst==="practicing"?2:worst==="learning"?1:0);
+       let action="Keep the current state and continue normal revision.";
+       if(mistakeCount>=3 || wrongPyq>=4 || worst==="error"){
+         action="Error review + reattempt; keep this topic active in the next plan.";
+       }else if(worst==="practicing"){
+         action="Timed question practice / PYQs, then review errors.";
+       }else if(worst==="understanding"){
+         action="Active recall + a small question set.";
+       }else if(worst==="learning"||worst==="notstarted"){
+         action="Concept learning + NCERT/notes.";
+       }else if(worst==="examready"){
+         action="Timed mixed practice to confirm exam readiness.";
+       }else if(worst==="mastered"){
+         action="Spaced revision only; avoid over-scheduling.";
+       }
+       result.push({subject,chapter:ch.name,topic:name,states:stateValues,mistakes:mistakeCount,wrongPyq,tests:relevantTests.length,pressure,action});
+     });
+   });
  });
- save();prv3Close();renderPlanner();toast("7-day backlog workflow created from Sunday");
-};
+ return result.sort((a,b)=>b.pressure-a.pressure);
+}
 
-window.prv3DayReview=()=>{
- const today=new Date().toISOString().slice(0,10),p=D.planner.filter(x=>x.date===today),done=p.filter(x=>x.done).length;
- modal("Day Review",`<div class="prv3-review"><b>${done}/${p.length}</b><span>planned blocks completed</span></div>
- <div class="prv3-grid"><label>Energy<select id="v3re"><option>High</option><option selected>Normal</option><option>Low</option></select></label><label>Mood<select id="v3rm"><option>Great</option><option>Good</option><option selected>Okay</option><option>Low</option></select></label></div>
- <label>What worked?<textarea id="v3rw"></textarea></label><label>What should change tomorrow?<textarea id="v3rf"></textarea></label><label>Sleep hours<input id="v3rs" type="number" step=".5"></label>`,
- `<button class="prv3-primary" onclick="prv3SaveReview()">Save Review</button>`)
-};
-window.prv3SaveReview=()=>{D.reviews.push({id:uid(),date:new Date().toISOString().slice(0,10),energy:v3("v3re"),mood:v3("v3rm"),worked:v3("v3rw"),fix:v3("v3rf"),sleep:v3("v3rs")});save();prv3Close();toast("Day review saved")};
-function v3(id){return document.getElementById(id)?.value||""}
-
-window.prv3AddTest=()=>modal("Add Test",`<div class="prv3-grid"><label>Test name<input id="v3tn" placeholder="Physics Slip Test"></label><label>Date<input id="v3td" type="date"></label><label>Exam<select id="v3te">${["CBSE","NEET","JEE","Aakash","School"].map(x=>`<option>${x}</option>`).join("")}</select></label><label>Portion<input id="v3tp" placeholder="Chapters / topics"></label></div>`,`<button class="prv3-primary" onclick="prv3SaveTest()">Save Test</button>`);
-window.prv3SaveTest=()=>{if(!v3("v3tn")||!v3("v3td"))return toast("Test name and date required");D.tests.push({id:uid(),name:v3("v3tn"),date:v3("v3td"),exam:v3("v3te"),portion:v3("v3tp"),analysis:null});save();prv3Close();renderTests();toast("Test added")};
-function renderTests(){const r=document.getElementById("prv3Tests");if(!r)return;r.innerHTML=D.tests.length?D.tests.sort((a,b)=>a.date.localeCompare(b.date)).map(t=>`<article class="prv3-plan"><div><b>${esc(t.name)}</b><small>${esc(t.date)} · ${esc(t.exam)} · ${esc(t.portion||"")}</small></div><div class="prv3-actions"><button onclick="prv3Analyze('${t.id}')">Analysis</button></div></article>`).join(""):"<div class='prv3-empty'>No tests.</div>"}
-window.prv3Analyze=id=>{let t=D.tests.find(x=>x.id===id);if(!t)return;let a=t.analysis||{};modal("Test Analysis — "+t.name,`<div class="prv3-grid"><label>Marks<input id="v3tm" type="number" value="${a.marks||""}"></label><label>Total<input id="v3ttot" type="number" value="${a.total||""}"></label><label>Wrong<input id="v3tw" type="number" value="${a.wrong||""}"></label><label>Skipped<input id="v3tsk" type="number" value="${a.skipped||""}"></label><label>Concept mistakes<input id="v3tc1" type="number" value="${a.concept||""}"></label><label>Calculation mistakes<input id="v3tc2" type="number" value="${a.calc||""}"></label><label>Silly mistakes<input id="v3tc3" type="number" value="${a.silly||""}"></label><label>Time issues<input id="v3tc4" type="number" value="${a.time||""}"></label></div>`,`<button class="prv3-primary" onclick="prv3SaveAnalysis('${id}')">Save Analysis</button>`)};
-window.prv3SaveAnalysis=id=>{let t=D.tests.find(x=>x.id===id);if(!t)return;t.analysis={marks:+v3("v3tm")||0,total:+v3("v3ttot")||0,wrong:+v3("v3tw")||0,skipped:+v3("v3tsk")||0,concept:+v3("v3tc1")||0,calc:+v3("v3tc2")||0,silly:+v3("v3tc3")||0,time:+v3("v3tc4")||0};save();prv3Close();renderTests();toast("Analysis saved")};
-
-window.prv3Health=()=>modal("Health Tracker",`<div class="prv3-grid"><label>Sleep hours<input id="v3hs" type="number" step=".5"></label><label>Water glasses<input id="v3hw" type="number"></label><label>Movement minutes<input id="v3hm" type="number"></label><label>Energy<select id="v3he"><option>High</option><option selected>Normal</option><option>Low</option></select></label></div>`,`<button class="prv3-primary" onclick="prv3SaveHealth()">Save</button>`);
-window.prv3SaveHealth=()=>{D.health.push({id:uid(),date:new Date().toISOString().slice(0,10),sleep:v3("v3hs"),water:v3("v3hw"),movement:v3("v3hm"),energy:v3("v3he")});save();prv3Close();toast("Health saved")};
-
-function renderAll(){renderTopics();renderPlanner();renderBacklog();renderTests()}
-window.pragatiV3Init=renderAll;
-document.addEventListener("DOMContentLoaded",renderAll);
-})();
-
-
-
-</script>
-
-
-<section id="pragatiV3Panel" style="max-width:1120px;margin:18px auto;padding:0 16px 120px">
- <div class="card" style="padding:18px;margin-bottom:14px">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-   <div><h2 style="margin:0">Pragati Study Command</h2><p style="margin:5px 0;color:#777">Smart Plan uses your available window, existing blocks, Study State, backlog priority and upcoming tests.</p></div>
-   <div style="display:flex;gap:7px;flex-wrap:wrap">
-    <button class="prv3-primary" onclick="prv3AddTopic()">＋ Topic</button>
-    <button class="prv3-primary" onclick="prv3AddPlanner()">＋ Study</button>
-    <button class="prv3-primary" onclick="prv3Generate()">⚡ Smart Plan</button>
-    <button class="prv3-primary" onclick="prv3DayReview()">🌙 Day Review</button>
-    <button class="prv3-primary" onclick="prv3AddTest()">＋ Test</button>
-    <button class="prv3-primary" onclick="prv3Health()">❤️ Health</button>
+function renderFeedbackEngine(){
+ const root=document.getElementById("prFeedbackRoot");if(!root)return;
+ const all=topicFeedbackIndex();
+ const active=all.filter(x=>x.pressure>0);
+ const error=all.filter(x=>x.mistakes>=3||x.wrongPyq>=4||x.states.includes("error")).length;
+ const practice=all.filter(x=>x.states.includes("practicing")).length;
+ const ready=all.filter(x=>x.states.includes("examready")||x.states.includes("mastered")).length;
+ root.querySelector("#prFbError").textContent=error;
+ root.querySelector("#prFbPractice").textContent=practice;
+ root.querySelector("#prFbReady").textContent=ready;
+ root.querySelector("#prFbList").innerHTML=active.length?active.slice(0,8).map(x=>`
+  <div class="pr-feedback-item">
+   <div class="pr-feedback-item-head">
+    <div><b>${fesc(x.topic)}</b><div style="font-size:10px;color:#777">${fesc(x.subject)} · ${fesc(x.chapter)}</div></div>
+    <span class="pr-feedback-state">${x.states.length?fesc(x.states.join(" / ")):"Not Started"}</span>
    </div>
-  </div>
- </div>
- <div class="card" style="padding:18px;margin-bottom:14px"><h2 style="margin:0">📚 Topic-wise Study State</h2><div id="prv3Topics" style="margin-top:10px"></div></div>
- <div class="card" style="padding:18px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2 style="margin:0">🔄 Backlog</h2><button class="prv3-primary" onclick="prv3AddBacklog()">＋ Backlog</button></div><div id="prv3Backlog" style="margin-top:10px"></div></div>
- <div class="card" style="padding:18px;margin-bottom:14px"><h2 style="margin:0">📅 Today's Planner</h2><div id="prv3Planner" style="margin-top:10px"></div></div>
- <div class="card" style="padding:18px"><h2 style="margin:0">📝 Tests & Analysis</h2><div id="prv3Tests" style="margin-top:10px"></div></div>
-</section>
-
-
-<script id="pragati-v7-mistake-pyq">
-(function(){
-"use strict";
-const K="pragati_v3_data";
-const D=window.PRAGATI_V3||(window.PRAGATI_V3={});
-D.mistakes=Array.isArray(D.mistakes)?D.mistakes:[];
-D.pyqs=Array.isArray(D.pyqs)?D.pyqs:[];
-const save7=()=>localStorage.setItem(K,JSON.stringify(D));
-const id7=()=>Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);
-const e7=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const toast7=m=>window.prToast?window.prToast(m):alert(m);
-
-window.prv7AddMistake=function(){
- modal("Add Mistake",`
- <div class="prv3-grid">
-  <label>Subject<input id="m7s" placeholder="Physics"></label>
-  <label>Chapter<input id="m7c" placeholder="Current Electricity"></label>
-  <label>Topic<input id="m7t" placeholder="Kirchhoff's Laws"></label>
-  <label>Exam<select id="m7e"><option>CBSE</option><option>NEET</option><option>JEE</option><option>Aakash</option></select></label>
-  <label>Question / ID<input id="m7q" placeholder="Question number or short description"></label>
-  <label>Mistake type<select id="m7type"><option>Concept</option><option>Calculation</option><option>Silly</option><option>Question Reading</option><option>Time Management</option><option>Memory</option></select></label>
- </div>
- <label>What went wrong?<textarea id="m7why" placeholder="Briefly record the mistake"></textarea></label>
- <label>Correct idea / fix<textarea id="m7fix" placeholder="What should you remember next time?"></textarea></label>
- `,`<button class="prv3-primary" onclick="prv7SaveMistake()">Save Mistake</button>`);
-};
-window.prv7SaveMistake=function(){
- const q=x=>document.getElementById(x)?.value.trim()||"";
- if(!q("m7s")||!q("m7t"))return toast7("Subject and topic are required");
- D.mistakes.push({id:id7(),date:new Date().toISOString().slice(0,10),subject:q("m7s"),chapter:q("m7c"),topic:q("m7t"),exam:q("m7e"),question:q("m7q"),type:q("m7type"),why:q("m7why"),fix:q("m7fix"),status:"Open",reattempts:0});
- save7();prv3Close();prv7RenderMistakes();toast7("Mistake saved");
-};
-window.prv7ResolveMistake=function(id){
- const m=D.mistakes.find(x=>x.id===id);if(!m)return;
- m.status=m.status==="Fixed"?"Open":"Fixed";
- if(m.status==="Fixed")m.reattempts=(m.reattempts||0)+1;
- save7();prv7RenderMistakes();toast7(m.status==="Fixed"?"Mistake marked fixed":"Mistake reopened");
-};
-window.prv7DeleteMistake=function(id){
- D.mistakes=D.mistakes.filter(x=>x.id!==id);save7();prv7RenderMistakes();toast7("Mistake deleted");
-};
-window.prv7RenderMistakes=function(){
- const r=document.getElementById("prv7Mistakes");if(!r)return;
- const a=D.mistakes.slice().sort((x,y)=>(y.date||"").localeCompare(x.date||""));
- r.innerHTML=a.length?a.map(m=>`<article class="prv3-topic ${m.status==="Fixed"?"prv7-fixed":""}">
-  <div><small>${e7(m.subject)} · ${e7(m.chapter)} · ${e7(m.exam)}</small>
-   <h3>${e7(m.topic)}</h3>
-   <small>${e7(m.type)} · Q: ${e7(m.question||"—")} · ${e7(m.date)}</small>
-   <p><b>Why:</b> ${e7(m.why||"—")}</p><p><b>Fix:</b> ${e7(m.fix||"—")}</p>
-   <span class="prv7-status">${m.status==="Fixed"?"🟢 Fixed":"🔴 Open"} · Reattempts: ${m.reattempts||0}</span>
-  </div><div class="prv3-actions">
-   <button onclick="prv7ResolveMistake('${m.id}')">${m.status==="Fixed"?"↩ Reopen":"✓ Fixed"}</button>
-   <button onclick="prv7DeleteMistake('${m.id}')">×</button>
-  </div></article>`).join(""):"<div class='prv3-empty'>No mistakes logged yet.</div>";
-};
-
-window.prv7AddPYQ=function(){
- modal("Log PYQ",`
- <div class="prv3-grid">
-  <label>Subject<input id="p7s" placeholder="Physics"></label>
-  <label>Chapter<input id="p7c" placeholder="Current Electricity"></label>
-  <label>Topic<input id="p7t" placeholder="Kirchhoff's Laws"></label>
-  <label>Exam<select id="p7e"><option>NEET</option><option>JEE</option><option>CBSE</option><option>Aakash</option></select></label>
-  <label>Year<input id="p7y" placeholder="2025"></label>
-  <label>Question ID<input id="p7q" placeholder="PYQ-01"></label>
-  <label>Attempt<select id="p7a"><option>Correct</option><option>Wrong</option><option>Skipped</option></select></label>
-  <label>Time (min)<input id="p7tm" type="number" min="0" placeholder="2"></label>
- </div>
- <label>Note<textarea id="p7n" placeholder="Key idea / why it was difficult"></textarea></label>
- `,`<button class="prv3-primary" onclick="prv7SavePYQ()">Save PYQ</button>`);
-};
-window.prv7SavePYQ=function(){
- const q=x=>document.getElementById(x)?.value.trim()||"";
- if(!q("p7s")||!q("p7t"))return toast7("Subject and topic are required");
- D.pyqs.push({id:id7(),date:new Date().toISOString().slice(0,10),subject:q("p7s"),chapter:q("p7c"),topic:q("p7t"),exam:q("p7e"),year:q("p7y"),question:q("p7q"),attempt:q("p7a"),time:q("p7tm"),note:q("p7n")});
- save7();prv3Close();prv7RenderPYQs();toast7("PYQ logged");
-};
-window.prv7DeletePYQ=function(id){D.pyqs=D.pyqs.filter(x=>x.id!==id);save7();prv7RenderPYQs();toast7("PYQ deleted")};
-window.prv7RenderPYQs=function(){
- const r=document.getElementById("prv7PYQs");if(!r)return;
- const a=D.pyqs.slice().sort((x,y)=>(y.date||"").localeCompare(x.date||""));
- r.innerHTML=a.length?a.map(p=>`<article class="prv3-plan">
-  <div><b>${e7(p.subject)} · ${e7(p.topic)}</b><small>${e7(p.exam)} · ${e7(p.year||"Year not set")} · ${e7(p.question||"")}</small></div>
-  <div><span class="prv7-attempt ${String(p.attempt).toLowerCase()}">${p.attempt==="Correct"?"✅":p.attempt==="Wrong"?"❌":"⏭️"} ${e7(p.attempt)}</span><small>${e7(p.time||"0")} min</small></div>
-  <button onclick="prv7DeletePYQ('${p.id}')">×</button>
- </article>`).join(""):"<div class='prv3-empty'>No PYQs logged yet.</div>";
-};
-
-document.addEventListener("DOMContentLoaded",()=>{
- const host=document.getElementById("pragatiV3Panel");
- if(!host)return;
- const wrap=document.createElement("div");
- wrap.innerHTML=`<div class="card prv7-card"><div class="prv7-head"><div><h2>📕 Mistake Notebook</h2><p>Log wrong attempts and reattempt until fixed.</p></div><button class="prv3-primary" onclick="prv7AddMistake()">＋ Mistake</button></div><div id="prv7Mistakes"></div></div>
- <div class="card prv7-card"><div class="prv7-head"><div><h2>🎯 PYQ Tracker</h2><p>Track correct, wrong and skipped PYQs by exact topic.</p></div><button class="prv3-primary" onclick="prv7AddPYQ()">＋ PYQ</button></div><div id="prv7PYQs"></div></div>`;
- host.appendChild(wrap);
- prv7RenderMistakes();prv7RenderPYQs();
-});
-})();
-</script>
-
-<script id="pragati-v8-academic-core">
-(function(){
-"use strict";
-const D8=window.PRAGATI_V3||(window.PRAGATI_V3={});
-D8.tests=Array.isArray(D8.tests)?D8.tests:[];
-D8.syllabus=Array.isArray(D8.syllabus)?D8.syllabus:[];
-D8.testCalendar=Array.isArray(D8.testCalendar)?D8.testCalendar:[];
-const save8=()=>localStorage.setItem("pragati_v3_data",JSON.stringify(D8));
-const uid8=()=>Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);
-const esc8=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const toast8=m=>window.prToast?window.prToast(m):alert(m);
-const v=id=>document.getElementById(id)?.value||"";
-
-function render8Tests(){
- const r=document.getElementById("v8Tests");if(!r)return;
- const a=D8.tests.slice().sort((x,y)=>(x.date||"").localeCompare(y.date||""));
- r.innerHTML=a.length?a.map(t=>{
-  const an=t.analysis||{};
-  const pct=an.total?Math.round((an.marks/an.total)*100):null;
-  return `<article class="v8-cardrow">
-   <div><b>${esc8(t.name)}</b><small>${esc8(t.date)} · ${esc8(t.exam)} · ${esc8(t.portion||"")}</small>
-   ${pct!==null?`<span class="v8-chip">${pct}% · ${an.marks}/${an.total}</span>`:"<span class='v8-chip'>Analysis pending</span>"}</div>
-   <div class="prv3-actions"><button onclick="v8Analyze('${t.id}')">Analysis</button><button onclick="v8DeleteTest('${t.id}')">×</button></div>
-  </article>`;
- }).join(""):"<div class='prv3-empty'>No tests added.</div>";
+   <div class="pr-feedback-action">
+    ${x.mistakes?`Mistakes: <strong>${x.mistakes}</strong> · `:""}${x.wrongPyq?`Wrong PYQs: <strong>${x.wrongPyq}</strong> · `:""}
+    ${fesc(x.action)}
+   </div>
+  </div>`).join(""):"<div style='font-size:12px;color:#777'>No evidence requiring intervention yet. Complete some topic tracking, PYQs, mistakes or tests and Pragati will adapt.</div>";
+ F.feedback.lastUpdated=new Date().toISOString();fsave();
 }
-window.v8AddTest=()=>{
- modal("Add Test",`<div class="prv3-grid">
- <label>Test name<input id="v8tn" placeholder="Physics Weekly Test"></label>
- <label>Date<input id="v8td" type="date"></label>
- <label>Exam<select id="v8te"><option>School</option><option>CBSE</option><option>NEET</option><option>JEE</option><option>Aakash</option></select></label>
- <label>Portion<input id="v8tp" placeholder="Ch 1–3 / exact topics"></label>
- <label>Total marks<input id="v8tt" type="number" min="1" placeholder="100"></label>
- </div>`,`<button class="prv3-primary" onclick="v8SaveTest()">Save Test</button>`)
-};
-window.v8SaveTest=()=>{
- if(!v("v8tn")||!v("v8td"))return toast8("Test name and date are required");
- D8.tests.push({id:uid8(),name:v("v8tn"),date:v("v8td"),exam:v("v8te"),portion:v("v8tp"),total:+v("v8tt")||null,analysis:null});
- save8();prv3Close();render8Tests();render8Calendar();toast8("Test added")
-};
-window.v8DeleteTest=id=>{D8.tests=D8.tests.filter(x=>x.id!==id);save8();render8Tests();render8Calendar();toast8("Test deleted")};
-window.v8Analyze=id=>{
- const t=D8.tests.find(x=>x.id===id);if(!t)return;
- const a=t.analysis||{};
- modal("Test Analysis — "+t.name,`
- <div class="v8-analysis-grid">
-  <label>Marks<input id="v8am" type="number" min="0" value="${a.marks??""}"></label>
-  <label>Total<input id="v8at" type="number" min="1" value="${a.total??t.total??""}"></label>
-  <label>Wrong<input id="v8aw" type="number" min="0" value="${a.wrong??""}"></label>
-  <label>Skipped<input id="v8as" type="number" min="0" value="${a.skipped??""}"></label>
-  <label>Concept errors<input id="v8ac" type="number" min="0" value="${a.concept??""}"></label>
-  <label>Calculation errors<input id="v8acal" type="number" min="0" value="${a.calc??""}"></label>
-  <label>Silly errors<input id="v8asi" type="number" min="0" value="${a.silly??""}"></label>
-  <label>Time-management errors<input id="v8ati" type="number" min="0" value="${a.time??""}"></label>
- </div>
- <label>Weak topics<textarea id="v8atop" placeholder="Exact topics to revise">${esc8(a.weakTopics||"")}</textarea></label>
- <label>Action for next test<textarea id="v8anext" placeholder="What will you change?">${esc8(a.nextAction||"")}</textarea></label>
- <div id="v8analysisPreview" class="v8-analysis-preview"></div>
- `,`<button class="prv3-primary" onclick="v8SaveAnalysis('${id}')">Save Analysis</button>`);
- setTimeout(()=>v8PreviewAnalysis(),30);
- ["v8am","v8at","v8aw","v8as","v8ac","v8acal","v8asi","v8ati"].forEach(x=>document.getElementById(x)?.addEventListener("input",v8PreviewAnalysis));
-};
-window.v8PreviewAnalysis=()=>{
- const m=+v("v8am")||0,t=+v("v8at")||0,w=+v("v8aw")||0,s=+v("v8as")||0;
- const pct=t?Math.round(m/t*100):0;
- const el=document.getElementById("v8analysisPreview");if(el)el.innerHTML=`<b>${pct}%</b><span>${m}/${t||"—"} marks · ${w} wrong · ${s} skipped</span>`;
-};
-window.v8SaveAnalysis=id=>{
- const t=D8.tests.find(x=>x.id===id);if(!t)return;
- const marks=+v("v8am")||0,total=+v("v8at")||0;
- if(total<=0||marks<0||marks>total)return toast8("Enter valid marks and total");
- t.total=total;t.analysis={marks,total,wrong:+v("v8aw")||0,skipped:+v("v8as")||0,concept:+v("v8ac")||0,calc:+v("v8acal")||0,silly:+v("v8asi")||0,time:+v("v8ati")||0,weakTopics:v("v8atop"),nextAction:v("v8anext"),savedAt:new Date().toISOString()};
- save8();prv3Close();render8Tests();toast8("Test analysis saved")
+
+/* Called by the planner before a Smart Plan is generated.
+   It adds evidence-driven priorities to the existing planner priority engine. */
+window.pragatiFeedbackBoost=function(items){
+ const idx=topicFeedbackIndex();
+ if(!Array.isArray(items))return items;
+ const map=new Map(idx.map(x=>[x.subject+"::"+x.chapter+"::"+x.topic,x.pressure]));
+ return items.map(p=>{
+   const key=p.subject+"::"+p.chapter+"::"+(p.topic||"");
+   const boost=map.get(key)||0;
+   return Object.assign({},p,{feedbackBoost:boost,_originalPriority:p.priority||0,priority:(p.priority||0)+boost});
+ }).sort((a,b)=>(b.priority||0)-(a.priority||0));
 };
 
-function render8Calendar(){
- const r=document.getElementById("v8Calendar");if(!r)return;
- const a=D8.tests.slice().sort((x,y)=>(x.date||"").localeCompare(y.date||""));
- r.innerHTML=a.length?a.map(t=>{
-   const today=new Date().toISOString().slice(0,10), days=Math.ceil((new Date(t.date+"T23:59:59")-new Date())/86400000);
-   const status=t.analysis?"Analysed":t.date<today?"Past":"Upcoming";
-   return `<article class="v8-calendar-item ${status.toLowerCase()}"><div><b>${esc8(t.date)}</b><strong>${esc8(t.name)}</strong><small>${esc8(t.exam)} · ${esc8(t.portion||"")}</small></div><span>${status}${status==="Upcoming"&&days>=0?` · ${days} day${days===1?"":"s"}`:""}</span></article>`
- }).join(""):"<div class='prv3-empty'>Your test calendar is empty.</div>";
+/* Recompute the feedback layer whenever the app redraws or data changes. */
+const oldRender=window.render;
+if(typeof oldRender==="function" && !window.__pragatiFeedbackRenderWrapped){
+ window.render=function(){
+   const r=oldRender.apply(this,arguments);
+   setTimeout(renderFeedbackEngine,0);
+   return r;
+ };
+ window.__pragatiFeedbackRenderWrapped=true;
 }
-window.v8CalendarAdd=window.v8AddTest;
-
-function render8Syllabus(){
- const r=document.getElementById("v8Syllabus");if(!r)return;
- const a=D8.syllabus;
- r.innerHTML=a.length?a.map(x=>{
-   const pct=x.total?Math.round(x.done/x.total*100):0;
-   return `<article class="v8-syllabus"><div><b>${esc8(x.subject)}</b><strong>${esc8(x.chapter)}</strong><small>${esc8(x.exam)} · ${x.done}/${x.total} topics</small></div><div class="v8-progress"><i style="width:${pct}%"></i></div><span>${pct}%</span><div class="prv3-actions"><button onclick="v8AddSyllabusTopic('${x.id}')">＋ Topic</button><button onclick="v8DeleteSyllabus('${x.id}')">×</button></div></article>`
- }).join(""):"<div class='prv3-empty'>No syllabus entries. Add your chapters and topics.</div>";
-}
-window.v8AddSyllabus=()=>{
- modal("Add Syllabus Chapter",`<div class="prv3-grid"><label>Subject<input id="v8ss" placeholder="Physics"></label><label>Chapter<input id="v8sc" placeholder="Current Electricity"></label><label>Exam<select id="v8se"><option>CBSE</option><option>NEET</option><option>JEE</option></select></label><label>Total topics<input id="v8st" type="number" min="1" value="1"></label></div>`,`<button class="prv3-primary" onclick="v8SaveSyllabus()">Add Chapter</button>`)
-};
-window.v8SaveSyllabus=()=>{
- if(!v("v8ss")||!v("v8sc"))return toast8("Subject and chapter are required");
- D8.syllabus.push({id:uid8(),subject:v("v8ss"),chapter:v("v8sc"),exam:v("v8se"),total:Math.max(1,+v("v8st")||1),done:0,topics:[]});
- save8();prv3Close();render8Syllabus();toast8("Syllabus chapter added")
-};
-window.v8AddSyllabusTopic=id=>{
- const x=D8.syllabus.find(z=>z.id===id);if(!x)return;
- modal("Add Syllabus Topic",`<label>Topic<input id="v8stp" placeholder="Kirchhoff's Laws"></label>`,`<button class="prv3-primary" onclick="v8SaveSyllabusTopic('${id}')">Add Topic</button>`)
-};
-window.v8SaveSyllabusTopic=id=>{
- const x=D8.syllabus.find(z=>z.id===id);if(!x||!v("v8stp"))return toast8("Topic required");
- x.topics=x.topics||[];x.topics.push({id:uid8(),name:v("v8stp"),done:false});
- x.total=x.topics.length;x.done=x.topics.filter(t=>t.done).length;
- save8();prv3Close();render8Syllabus();toast8("Syllabus topic added")
-};
-window.v8ToggleSyllabusTopic=(cid,tid)=>{
- const x=D8.syllabus.find(z=>z.id===cid),t=x?.topics?.find(q=>q.id===tid);if(!t)return;
- t.done=!t.done;x.done=x.topics.filter(q=>q.done).length;x.total=x.topics.length;save8();render8Syllabus()
-};
-window.v8DeleteSyllabus=id=>{D8.syllabus=D8.syllabus.filter(x=>x.id!==id);save8();render8Syllabus();toast8("Syllabus entry deleted")};
-
 document.addEventListener("DOMContentLoaded",()=>{
  const host=document.getElementById("pragatiV3Panel");if(!host)return;
- const wrap=document.createElement("div");wrap.innerHTML=`
- <div class="card v8-card"><div class="v8-head"><div><h2>🗓️ Test Calendar</h2><p>Every test has an editable date and portion.</p></div><button class="prv3-primary" onclick="v8AddTest()">＋ Test</button></div><div id="v8Calendar"></div></div>
- <div class="card v8-card"><div class="v8-head"><div><h2>📝 Test Analysis</h2><p>Marks, errors, weak topics and next action.</p></div></div><div id="v8Tests"></div></div>
- <div class="card v8-card"><div class="v8-head"><div><h2>📚 Syllabus Sync</h2><p>Add exact chapters/topics and track completion.</p></div><button class="prv3-primary" onclick="v8AddSyllabus()">＋ Chapter</button></div><div id="v8Syllabus"></div></div>`;
- host.appendChild(wrap);render8Tests();render8Calendar();render8Syllabus();
-});
-})();
-</script>
-
-<script id="pragati-notes-concepts-js">
-(function(){
-"use strict";
-const R=window.PRAGATI_V3||(window.PRAGATI_V3={});
-R.notes=Array.isArray(R.notes)?R.notes:[];
-R.concepts=Array.isArray(R.concepts)?R.concepts:[];
-const save=()=>localStorage.setItem("pragati_v3_data",JSON.stringify(R));
-const uid=()=>Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);
-const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const toast=m=>window.prToast?window.prToast(m):alert(m);
-const val=id=>document.getElementById(id)?.value.trim()||"";
-
-window.prAddNote=function(){
- modal("Quick Revision Note",`
- <div class="pr-ref-form"><div class="pr-ref-grid">
- <label>Subject<input id="rnS" placeholder="Physics"></label><label>Chapter<input id="rnC" placeholder="Current Electricity"></label>
- <label>Topic<input id="rnT" placeholder="Kirchhoff's Laws"></label><label>Exam<select id="rnE"><option>CBSE</option><option>NEET</option><option>JEE</option></select></label>
- </div>
- <label>Core concept<textarea id="rnCore" placeholder="The one idea I need to remember"></textarea></label>
- <div class="pr-ref-grid"><label>Key points<textarea id="rnKey"></textarea></label><label>Formula / Rule<textarea id="rnFormula"></textarea></label>
- <label>Common trap<textarea id="rnTrap"></textarea></label><label>High-yield point<textarea id="rnHigh"></textarea></label></div>
- </div>`,`<button class="pr-ref-btn" onclick="prSaveNote()">Save Note</button>`)
-};
-window.prSaveNote=function(){
- if(!val("rnS")||!val("rnT"))return toast("Subject and topic are required");
- R.notes.push({id:uid(),date:new Date().toISOString().slice(0,10),subject:val("rnS"),chapter:val("rnC"),topic:val("rnT"),exam:val("rnE"),core:val("rnCore"),key:val("rnKey"),formula:val("rnFormula"),trap:val("rnTrap"),high:val("rnHigh")});
- save();prv3Close();renderNotes();toast("Note saved")
-};
-window.prDeleteNote=function(id){R.notes=R.notes.filter(x=>x.id!==id);save();renderNotes();toast("Note deleted")};
-
-window.prAddConcept=function(){
- modal("Concept Book Entry",`
- <div class="pr-ref-form"><div class="pr-ref-grid">
- <label>Subject<input id="rcS" placeholder="Physics"></label><label>Chapter<input id="rcC" placeholder="Current Electricity"></label>
- <label>Topic<input id="rcT" placeholder="Kirchhoff's Laws"></label><label>Exam<select id="rcE"><option>CBSE</option><option>NEET</option><option>JEE</option></select></label>
- </div>
- <label>What is the concept?<textarea id="rcWhat"></textarea></label>
- <label>Why does it work?<textarea id="rcWhy"></textarea></label>
- <label>Mental model / diagram explanation<textarea id="rcModel"></textarea></label>
- <label>Question patterns<textarea id="rcPattern"></textarea></label>
- <label>Example / application<textarea id="rcExample"></textarea></label>
- <label>Common misconceptions<textarea id="rcMis"></textarea></label>
- </div>`,`<button class="pr-ref-btn" onclick="prSaveConcept()">Save Concept</button>`)
-};
-window.prSaveConcept=function(){
- if(!val("rcS")||!val("rcT"))return toast("Subject and topic are required");
- R.concepts.push({id:uid(),date:new Date().toISOString().slice(0,10),subject:val("rcS"),chapter:val("rcC"),topic:val("rcT"),exam:val("rcE"),what:val("rcWhat"),why:val("rcWhy"),model:val("rcModel"),pattern:val("rcPattern"),example:val("rcExample"),mis:val("rcMis")});
- save();prv3Close();renderConcepts();toast("Concept saved")
-};
-window.prDeleteConcept=function(id){R.concepts=R.concepts.filter(x=>x.id!==id);save();renderConcepts();toast("Concept deleted")};
-
-window.prFilterNotes=function(){
- const q=(document.getElementById("prNoteSearch")?.value||"").toLowerCase();
- document.querySelectorAll("#prNotesList .pr-note").forEach(x=>x.style.display=x.innerText.toLowerCase().includes(q)?"block":"none")
-};
-window.prFilterConcepts=function(){
- const q=(document.getElementById("prConceptSearch")?.value||"").toLowerCase();
- document.querySelectorAll("#prConceptsList .pr-concept").forEach(x=>x.style.display=x.innerText.toLowerCase().includes(q)?"block":"none")
-};
-
-function renderNotes(){
- const r=document.getElementById("prNotesList");if(!r)return;
- r.innerHTML=R.notes.length?R.notes.slice().reverse().map(n=>`<article class="pr-note">
- <small>${esc(n.subject)} · ${esc(n.chapter)} · ${esc(n.exam)}</small><h3>${esc(n.topic)}</h3>
- <div class="pr-note-body">
-  <div class="pr-note-box"><b>🧠 Core concept</b>${esc(n.core||"—")}</div>
-  <div class="pr-note-box"><b>📌 Key points</b>${esc(n.key||"—")}</div>
-  <div class="pr-note-box"><b>📐 Formula / Rule</b>${esc(n.formula||"—")}</div>
-  <div class="pr-note-box"><b>⚠️ Common trap</b>${esc(n.trap||"—")}</div>
-  <div class="pr-note-box"><b>⭐ High-yield</b>${esc(n.high||"—")}</div>
- </div>
- <div class="pr-ref-actions"><button onclick="prDeleteNote('${n.id}')">Delete</button></div>
- </article>`).join(""):"<div class='prv3-empty'>No notes yet. Add a quick revision note.</div>";
-}
-function renderConcepts(){
- const r=document.getElementById("prConceptsList");if(!r)return;
- r.innerHTML=R.concepts.length?R.concepts.slice().reverse().map(c=>`<article class="pr-concept">
- <small>${esc(c.subject)} · ${esc(c.chapter)} · ${esc(c.exam)}</small><h3>🧠 ${esc(c.topic)}</h3>
- ${[
- ["What is the concept?",c.what],["Why does it work?",c.why],["Mental model / diagram",c.model],
- ["Question patterns",c.pattern],["Example / application",c.example],["Common misconceptions",c.mis]
- ].map(a=>`<div class="pr-concept-section"><b>${esc(a[0])}</b><div>${esc(a[1]||"—")}</div></div>`).join("")}
- <div class="pr-ref-actions"><button onclick="prDeleteConcept('${c.id}')">Delete</button></div>
- </article>`).join(""):"<div class='prv3-empty'>No concept entries yet.</div>";
-}
-
-document.addEventListener("DOMContentLoaded",()=>{
- const host=document.getElementById("pragatiV3Panel");if(!host)return;
- const wrap=document.createElement("div");
- wrap.className="pragati-refined";
- wrap.innerHTML=`
- <section class="pr-ref-card">
-  <div class="pr-ref-head"><div><h2>📓 Notes</h2><p>Quick revision notes — compact, searchable and topic-specific.</p></div><button class="pr-ref-btn" onclick="prAddNote()">＋ Note</button></div>
-  <div class="pr-ref-search"><input id="prNoteSearch" oninput="prFilterNotes()" placeholder="Search notes by subject, chapter or topic"></div>
-  <div id="prNotesList"></div>
- </section>
- <section class="pr-ref-card">
-  <div class="pr-ref-head"><div><h2>🧠 Concept Book</h2><p>Understand the why, connections and question patterns — not just memorise.</p></div><button class="pr-ref-btn" onclick="prAddConcept()">＋ Concept</button></div>
-  <div class="pr-ref-search"><input id="prConceptSearch" oninput="prFilterConcepts()" placeholder="Search concepts by subject, chapter or topic"></div>
-  <div id="prConceptsList"></div>
- </section>`;
- host.appendChild(wrap);renderNotes();renderConcepts();
-});
-})();
-</script>
-
-<script id="pragati-health-v9-js">
-(function(){
-"use strict";
-const H=window.PRAGATI_V3||(window.PRAGATI_V3={});
-H.health=Array.isArray(H.health)?H.health:[];
-const hs=()=>localStorage.setItem("pragati_v3_data",JSON.stringify(H));
-const hu=()=>Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);
-const hv=id=>document.getElementById(id)?.value||"";
-const he=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const ht=m=>window.prToast?window.prToast(m):alert(m);
-const today=()=>new Date().toISOString().slice(0,10);
-
-function healthRecord(date){
- return H.health.find(x=>x.date===date);
-}
-function calcHealthScore(x){
- if(!x)return 0;
- let score=0,n=0;
- if(+x.sleep>0){score+=Math.min(+x.sleep/8,1)*25;n+=25}
- if(+x.water>0){score+=Math.min(+x.water/6,1)*20;n+=20}
- if(+x.movement>=0){score+=Math.min(+x.movement/30,1)*20;n+=20}
- if(x.energy){score+=(x.energy==="High"?1:x.energy==="Normal"?0.75:0.45)*15;n+=15}
- if(x.studyBreaks){score+=(+x.studyBreaks>=3?1:+x.studyBreaks/3)*10;n+=10}
- if(x.meals){score+=(+x.meals>=3?1:+x.meals/3)*10;n+=10}
- return n?Math.round(score/n*100):0;
-}
-function renderHealth(){
- const r=document.getElementById("prHealthRoot");if(!r)return;
- const t=healthRecord(today())||{};
- const score=calcHealthScore(t);
- const week=[];
- const base=new Date();base.setHours(0,0,0,0);base.setDate(base.getDate()-6);
- for(let i=0;i<7;i++){let d=new Date(base);d.setDate(base.getDate()+i);let ds=d.toISOString().slice(0,10);week.push({d,ds,x:healthRecord(ds)})}
- r.querySelector("#prHealthScore").textContent=score+"%";
- r.querySelector("#prHealthSleep").textContent=t.sleep||"—";
- r.querySelector("#prHealthWater").textContent=t.water||"—";
- r.querySelector("#prHealthMove").textContent=t.movement||"—";
- r.querySelector("#prHealthWeek").innerHTML=week.map(w=>`<div class="pr-health-day"><b>${w.d.toLocaleDateString(undefined,{weekday:"short"})}</b><strong>${w.x?calcHealthScore(w.x)+"%":"—"}</strong><small>${w.x?(w.x.sleep||"—")+"h sleep":"No log"}</small></div>`).join("");
- ["sleep","water","movement","energy","studyBreaks","meals","screen","mood","notes"].forEach(k=>{
-   const el=document.getElementById("ph_"+k);if(el&&t[k]!=null)el.value=t[k];
- });
- ["sleepOk","waterOk","movementOk","breaksOk","mealsOk"].forEach(k=>{let e=document.getElementById("ph_"+k);if(e)e.checked=!!t[k]});
-}
-window.prHealthSave=function(){
- const date=hv("ph_date")||today();
- let x=healthRecord(date);
- if(!x){x={id:hu(),date};H.health.push(x)}
- Object.assign(x,{
-  sleep:hv("ph_sleep"),water:hv("ph_water"),movement:hv("ph_movement"),
-  energy:hv("ph_energy"),studyBreaks:hv("ph_breaks"),meals:hv("ph_meals"),
-  screen:hv("ph_screen"),mood:hv("ph_mood"),notes:hv("ph_notes"),
-  sleepOk:document.getElementById("ph_sleepOk")?.checked,
-  waterOk:document.getElementById("ph_waterOk")?.checked,
-  movementOk:document.getElementById("ph_movementOk")?.checked,
-  breaksOk:document.getElementById("ph_breaksOk")?.checked,
-  mealsOk:document.getElementById("ph_mealsOk")?.checked,
-  savedAt:new Date().toISOString()
- });
- hs();renderHealth();ht("Health log saved");
-};
-window.prHealthToday=function(){document.getElementById("ph_date").value=today();renderHealth()};
-window.prHealthClear=function(){
- const date=hv("ph_date")||today();H.health=H.health.filter(x=>x.date!==date);hs();renderHealth();ht("Today's health log cleared")
-};
-document.addEventListener("DOMContentLoaded",()=>{
- const host=document.getElementById("pragatiV3Panel");if(!host)return;
- const sec=document.createElement("section");sec.className="pr-health";
+ const sec=document.createElement("section");sec.className="pr-feedback";
  sec.innerHTML=`
- <div class="pr-health-head"><div><h2>❤️ Health Tracker</h2><p>Track wellbeing so your study plan stays sustainable.</p></div>
- <div class="pr-health-actions"><button class="pr-health-btn" onclick="prHealthSave()">Save today's log</button><button class="pr-health-btn secondary" onclick="prHealthToday()">Today</button></div></div>
- <div class="pr-health-grid">
-  <div class="pr-health-stat"><b id="prHealthScore">0%</b><span>Daily balance</span></div>
-  <div class="pr-health-stat"><b id="prHealthSleep">—</b><span>Sleep hours</span></div>
-  <div class="pr-health-stat"><b id="prHealthWater">—</b><span>Water glasses</span></div>
-  <div class="pr-health-stat"><b id="prHealthMove">—</b><span>Movement min</span></div>
- </div>
- <div class="pr-health-form">
-  <label>Date<input id="ph_date" type="date" value="${today()}"></label>
-  <label>Sleep (hours)<input id="ph_sleep" type="number" min="0" max="24" step=".5" placeholder="e.g. 8"></label>
-  <label>Water (glasses)<input id="ph_water" type="number" min="0" max="30" placeholder="e.g. 6"></label>
-  <label>Movement (minutes)<input id="ph_movement" type="number" min="0" max="300" placeholder="e.g. 30"></label>
-  <label>Energy<select id="ph_energy"><option value="">Choose</option><option>High</option><option>Normal</option><option>Low</option></select></label>
-  <label>Study breaks<input id="ph_breaks" type="number" min="0" max="20" placeholder="Number"></label>
-  <label>Meals<input id="ph_meals" type="number" min="0" max="10" placeholder="Number"></label>
-  <label>Screen time (hours)<input id="ph_screen" type="number" min="0" max="24" step=".5" placeholder="Optional"></label>
-  <label>Mood<select id="ph_mood"><option value="">Choose</option><option>Great</option><option>Good</option><option>Okay</option><option>Low</option></select></label>
-  <label class="wide">Notes<textarea id="ph_notes" rows="2" placeholder="How did you feel today?"></textarea></label>
- </div>
- <div class="pr-health-checks">
-  <label class="pr-health-check"><input id="ph_sleepOk" type="checkbox"> Slept well</label>
-  <label class="pr-health-check"><input id="ph_waterOk" type="checkbox"> Hydrated</label>
-  <label class="pr-health-check"><input id="ph_movementOk" type="checkbox"> Moved today</label>
-  <label class="pr-health-check"><input id="ph_breaksOk" type="checkbox"> Took study breaks</label>
-  <label class="pr-health-check"><input id="ph_mealsOk" type="checkbox"> Regular meals</label>
- </div>
- <div class="pr-health-note">The balance score is only a gentle self-check — not a medical or body/weight score. Missing data is not treated as failure.</div>
- <h3 style="margin-bottom:4px">Last 7 days</h3><div id="prHealthWeek" class="pr-health-week"></div>
- <div class="pr-health-actions"><button class="pr-health-btn secondary" onclick="prHealthClear()">Clear selected day</button></div>`;
- host.appendChild(sec);
- renderHealth();
+  <h2>🔄 Feedback Engine</h2>
+  <div class="pr-feedback-sub">Mistakes, PYQs and Study States now influence what Pragati recommends next.</div>
+  <div class="pr-feedback-grid">
+   <div class="pr-feedback-card"><b id="prFbError">0</b><span>Topics needing error review</span></div>
+   <div class="pr-feedback-card"><b id="prFbPractice">0</b><span>Topics in practice stage</span></div>
+   <div class="pr-feedback-card"><b id="prFbReady">0</b><span>Exam-ready / mastered topics</span></div>
+  </div>
+  <div id="prFbList" class="pr-feedback-list"></div>`;
+ host.appendChild(sec);renderFeedbackEngine();
 });
 })();
 </script>
-
-<script id="pragati-notify-v10-js">
-(function(){
-"use strict";
-const N=window.PRAGATI_V3||(window.PRAGATI_V3={});
-N.notifications=N.notifications||{enabled:false,water:false,waterInterval:120,blockLead:10,testReminders:true,dayReview:true,quietStart:"22:00",quietEnd:"06:00"};
-const saveN=()=>localStorage.setItem("pragati_v3_data",JSON.stringify(N));
-const nv=id=>document.getElementById(id)?.value||"";
-const nt=m=>window.prToast?window.prToast(m):alert(m);
-const todayN=()=>new Date().toISOString().slice(0,10);
-
-function permissionStatus(){
- if(!("Notification" in window))return "unsupported";
- return Notification.permission;
-}
-async function requestNotify(){
- if(!("Notification" in window))return nt("Browser notifications are not supported here.");
- const p=await Notification.requestPermission();
- if(p==="granted"){N.notifications.enabled=true;saveN();renderNotify();nt("Notifications enabled.");}
- else nt("Notification permission was not granted.");
-}
-window.prEnableNotifications=requestNotify;
-
-function inQuietHours(){
- const q=N.notifications;
- const now=new Date();const mins=now.getHours()*60+now.getMinutes();
- const [sh,sm]=q.quietStart.split(":").map(Number),[eh,em]=q.quietEnd.split(":").map(Number);
- const a=sh*60+sm,b=eh*60+em;
- return a>b?(mins>=a||mins<b):(mins>=a&&mins<b);
-}
-function fire(title,body){
- if(!N.notifications.enabled||permissionStatus()!=="granted"||inQuietHours())return;
- try{new Notification(title,{body,tag:"pragati-"+title.slice(0,20)})}catch(e){}
-}
-window.pragatiNotifyTest=()=>{if(permissionStatus()==="granted")fire("Pragati","Notifications are working.");else requestNotify()};
-
-function scheduleLoop(){
- if(window._pragatiNotifyLoop)return;
- window._pragatiNotifyLoop=setInterval(()=>{
-  if(!N.notifications.enabled||permissionStatus()!=="granted")return;
-  const now=new Date(), date=todayN(), hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
-  const planner=Array.isArray(N.planner)?N.planner:[];
-  planner.filter(x=>x.date===date&&!x.done).forEach(b=>{
-    const [h,m]=String(b.start||"").split(":").map(Number);
-    if(Number.isNaN(h)||Number.isNaN(m))return;
-    const diff=(h*60+m)-(now.getHours()*60+now.getMinutes());
-    const lead=+N.notifications.blockLead||10;
-    const key=date+"|"+b.id;
-    window._pragatiSent=window._pragatiSent||{};
-    if(diff===lead&&!window._pragatiSent["lead"+key]){
-      fire("Pragati · Study Block",`${b.subject||"Study"} · ${b.topic||"Study"} starts in ${lead} minutes.`);
-      window._pragatiSent["lead"+key]=1;
-    }
-    if(diff===0&&!window._pragatiSent["start"+key]){
-      fire("Pragati · Start Now",`Time to study ${b.subject||""} · ${b.topic||"your planned block"}.`);
-      window._pragatiSent["start"+key]=1;
-    }
-    const [eh,em]=String(b.end||"").split(":").map(Number);
-    if(!Number.isNaN(eh)&&!Number.isNaN(em)){
-      const end=eh*60+em, cur=now.getHours()*60+now.getMinutes();
-      if(end===cur&&!window._pragatiSent["end"+key]){
-        fire("Pragati · Block Complete",`${b.topic||"Study block"} ended. Open Pragati and mark it Done.`);
-        window._pragatiSent["end"+key]=1;
-      }
-    }
-  });
-  if(N.notifications.water&&N.notifications.enabled){
-    const last=window._pragatiLastWater||0, interval=(+N.notifications.waterInterval||120)*60000;
-    if(Date.now()-last>=interval){fire("Pragati · Water","Time for a water break 💧");window._pragatiLastWater=Date.now();}
-  }
- },30000);
-}
-scheduleLoop();
-
-function renderNotify(){
- const r=document.getElementById("prNotifyRoot");if(!r)return;
- const n=N.notifications;
- const perm=permissionStatus();
- r.querySelector("#prNotifyStatus").textContent=perm==="granted"?"Granted":perm==="denied"?"Blocked":"Not enabled";
- r.querySelector("#pnMaster").checked=!!n.enabled;
- r.querySelector("#pnWater").checked=!!n.water;
- r.querySelector("#pnTest").checked=n.testReminders!==false;
- r.querySelector("#pnReview").checked=n.dayReview!==false;
- r.querySelector("#pnInterval").value=n.waterInterval||120;
- r.querySelector("#pnLead").value=n.blockLead||10;
- r.querySelector("#pnQuietStart").value=n.quietStart||"22:00";
- r.querySelector("#pnQuietEnd").value=n.quietEnd||"06:00";
-}
-window.prSaveNotificationSettings=()=>{
- N.notifications.enabled=document.getElementById("pnMaster").checked;
- N.notifications.water=document.getElementById("pnWater").checked;
- N.notifications.testReminders=document.getElementById("pnTest").checked;
- N.notifications.dayReview=document.getElementById("pnReview").checked;
- N.notifications.waterInterval=Math.max(30,+nv("pnInterval")||120);
- N.notifications.blockLead=Math.max(1,+nv("pnLead")||10);
- N.notifications.quietStart=nv("pnQuietStart")||"22:00";
- N.notifications.quietEnd=nv("pnQuietEnd")||"06:00";
- saveN();renderNotify();nt("Reminder settings saved.");
-};
-window.prTestNotification=()=>window.pragatiNotifyTest();
-
-document.addEventListener("DOMContentLoaded",()=>{
- const host=document.getElementById("pragatiV3Panel");if(!host)return;
- const sec=document.createElement("section");sec.className="pr-notify";
- sec.innerHTML=`
- <div class="pr-notify-head"><div><h2>🔔 Notifications & Reminders</h2><p>One reminder system for water, study blocks, tests and day review.</p></div>
- <span id="prNotifyStatus" class="pr-notify-badge">Checking…</span></div>
- <div class="pr-notify-toggle"><input id="pnMaster" type="checkbox"> Enable Pragati notifications</div>
- <div class="pr-notify-grid" style="margin-top:10px">
-  <label>Study-block reminder<input id="pnLead" type="number" min="1" max="60"> minutes before each block</label>
-  <label>Water interval<input id="pnInterval" type="number" min="30" step="15"> minutes</label>
-  <label>Quiet hours start<input id="pnQuietStart" type="time"></label>
-  <label>Quiet hours end<input id="pnQuietEnd" type="time"></label>
- </div>
- <div class="pr-notify-grid" style="margin-top:10px">
-  <label class="pr-notify-toggle"><input id="pnWater" type="checkbox"> 💧 Water reminders</label>
-  <label class="pr-notify-toggle"><input id="pnTest" type="checkbox"> 📝 Test reminders</label>
-  <label class="pr-notify-toggle"><input id="pnReview" type="checkbox"> 🌙 Day-review reminder</label>
- </div>
- <div class="pr-notify-actions">
-  <button class="pr-notify-btn" onclick="prEnableNotifications()">Enable / Request Permission</button>
-  <button class="pr-notify-btn" onclick="prSaveNotificationSettings()">Save settings</button>
-  <button class="pr-notify-btn secondary" onclick="prTestNotification()">Test notification</button>
- </div>`;
- host.appendChild(sec);renderNotify();
-});
-})();
-</script>
-<script id="pragati-final-integrated-fix">
-(function(){
-'use strict';
-const D=window.PRAGATI_V3||(window.PRAGATI_V3={});
-const DATA0=window.DATA||window.PRAGATI_DATA||{};
-function min(t){if(!t)return 0;const p=String(t).split(':').map(Number);return p[0]*60+p[1]}
-function fmt(n){n=((Math.round(n)%1440)+1440)%1440;return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
-function fixedFor(date){
-  try{return typeof getFixedBlocksForDate==='function'?getFixedBlocksForDate(date):[]}
-  catch(e){return []}
-}
-function studyBounds(){
-  const st=(D.settings&&D.settings.start)||'05:30', en=(D.settings&&D.settings.end)||'22:00';
-  return [min(st),min(en)];
-}
-function freeFor(date,extra=[]){
-  const [lo,hi]=studyBounds(); if(hi<=lo)return [];
-  const busy=[];
-  const push=(a,b)=>{a=min(a);b=min(b);if(b>a)busy.push({start:a,end:b})};
-  (D.planner||[]).filter(x=>x.date===date).forEach(x=>push(x.start,x.end));
-  fixedFor(date).forEach(x=>push(x.start,x.end));
-  extra.forEach(x=>busy.push({start:Number(x.start),end:Number(x.end)}));
-  busy.sort((a,b)=>a.start-b.start);const merged=[];
-  busy.forEach(b=>{if(merged.length&&b.start<=merged[-1]?.end){merged[merged.length-1].end=Math.max(merged[merged.length-1].end,b.end)}else merged.push({...b})});
-  const free=[];let c=lo;for(const b of merged){const a=Math.max(lo,b.start),z=Math.min(hi,b.end);if(z<=lo||a>=hi)continue;if(a>c)free.push({start:c,end:a});c=Math.max(c,z)}if(c<hi)free.push({start:c,end:hi});
-  return free.filter(x=>x.end-x.start>=25);
-}
-
-// No second generation-window UI. Smart planning respects Master Schedule and the
-// single daily study framework in Settings.
-window.generationWindowHTML=function(){return ''};
-window.getGenerationWindow=function(date){const [start,end]=studyBounds();return {date,day:typeof generationDayKey==='function'?generationDayKey(date):'',start:fmt(start),end:fmt(end),startMin:start,endMin:end,enabled:true}};
-window.generationWindowFreeSlots=function(date,extra){return freeFor(date,extra||[])};
-window.generationWindowViolation=function(){return false};
-window.enforceGenerationWindowOnEvents=function(){};
-window.validateTodayPlannerWindow=function(){return {ok:true,violations:[]}};
-
-// Smart Study: one default framework, Master Schedule locked, adaptive session lengths
-// and longer recovery after heavy blocks.
-window.prv3Generate=function(){
-  const today=new Date().toISOString().slice(0,10);
-  const free=freeFor(today);
-  if(!free.length)return toast('No free study slots are available after Master Schedule commitments.');
-  const rank={notstarted:0,learning:1,understanding:2,practicing:3,errorfixing:4,examready:5,mastered:6};
-  const action={notstarted:'Concept Building',learning:'Concept Building',understanding:'NCERT + Active Recall',practicing:'Question Bank / PYQ',errorfixing:'Error Review + Reattempt',examready:'Timed Practice / Mini Test',mastered:'Spaced Revision'};
-  const tests=(D.tests||[]).filter(x=>x.date>=today);
-  const daysLeft=d=>{if(!d)return 999;return Math.max(0,Math.ceil((new Date(d+'T23:59:59')-new Date())/86400000))};
-  const candidates=[];
-  (D.backlog||[]).forEach(b=>{const t=(D.topics||[]).find(x=>x.subject===b.subject&&x.chapter===b.chapter&&x.topic===b.topic);const ex=b.exam||'NEET';const st=t?.states?.[ex]||'notstarted';const td=Math.min(...tests.filter(x=>!x.exam||x.exam===ex).map(x=>daysLeft(x.date)),999);let score=(b.priority==='High'?70:b.priority==='Medium'?40:20)+(6-rank[st])*9+(td<=7?(8-td)*10:0);if(/weak|mistake|wrong|overdue/i.test(b.reason||''))score+=18;candidates.push({...b,state:st,testDays:td,score})});
-  (D.topics||[]).forEach(t=>['CBSE','NEET','JEE'].forEach(ex=>{const st=t.states?.[ex]||'notstarted';if(st==='mastered')return;if(!candidates.some(c=>c.subject===t.subject&&c.chapter===t.chapter&&c.topic===t.topic&&c.exam===ex))candidates.push({subject:t.subject,chapter:t.chapter,topic:t.topic,exam:ex,state:st,priority:'Auto',reason:'Study State: '+st,score:(6-rank[st])*8+12})}));
-  candidates.sort((a,b)=>b.score-a.score);const planned=new Set((D.planner||[]).filter(x=>x.date===today).map(x=>[x.subject,x.topic,x.exam].join('|')));let added=0;
-  for(const slot of free){let c=slot.start;while(c+30<=slot.end&&added<candidates.length){let picked=null;while(candidates.length&&!picked){const x=candidates.shift();const k=[x.subject,x.topic,x.exam].join('|');if(!planned.has(k))picked=x}if(!picked)break;const heavy=['Concept Building','Error Review + Reattempt','Timed Practice / Mini Test'].includes(action[picked.state]);const dur=Math.min(heavy?75:50,slot.end-c);if(dur<30)break;D.planner.push({id:(Date.now()+added).toString(36),date:today,start:fmt(c),end:fmt(c+dur),subject:picked.subject,chapter:picked.chapter,topic:picked.topic,exam:picked.exam,type:action[picked.state],done:false,generated:true,studyState:picked.state,reason:(picked.testDays<=7?'Test in '+picked.testDays+' day(s). ':'')+picked.reason});planned.add([picked.subject,picked.topic,picked.exam].join('|'));added++;c+=dur+(heavy?20:12)}}
-  if(!added)return toast('No free slot large enough for a useful study block.');save();renderPlanner();toast('Smart plan created with adaptive study + recovery blocks.');
-};
-
-// Backlog flow: Sunday-first, actual free slots, one chapter for the full 7 days.
-window.prv3MakeFlow=function(id){const b=D.backlog.find(x=>x.id===id);if(!b)return;const steps=[['Concept Building',60],['NCERT + Active Recall',45],['Question Bank',45],['Timed 2-markers',45],['Error Review + Reattempt',45],['Mini Test + Analysis',50],['Active Recall + Checkpoint',40]];const base=new Date();base.setHours(0,0,0,0);base.setDate(base.getDate()-base.getDay());let added=0;steps.forEach((st,i)=>{const d=new Date(base);d.setDate(base.getDate()+i);const date=d.toISOString().slice(0,10);const key=st[0];const exists=D.planner.some(p=>p.date===date&&p.backlogId===b.id);if(exists)return;const slots=freeFor(date);let placed=false;for(const sl of slots){const dur=Math.min(st[1],sl.end-sl.start);if(dur>=Math.min(st[1],40)){D.planner.push({id:(Date.now()+i).toString(36),date,start:fmt(sl.start),end:fmt(sl.start+dur),subject:b.subject,chapter:b.chapter,topic:b.topic,exam:b.exam,type:key,duration:dur,done:false,workflow:b.id,backlogId:b.id,generated:true});added++;placed=true;break}}});if(!added)return toast('No suitable free slots for this 7-day flow.');save();prv3Close();renderPlanner();toast('Sunday-first 7-day backlog flow added.');};
-
-// Test calendar editing: date/portion/exam/name remain editable after saving.
-window.prv3EditTest=function(id){const t=D.tests.find(x=>x.id===id);if(!t)return;modal('Edit Test',`<div class="prv3-grid"><label>Name<input id="etn" value="${esc(t.name||'')}"></label><label>Date<input id="etd" type="date" value="${esc(t.date||'')}"></label><label>Exam<select id="ete">${['CBSE','NEET','JEE','Aakash','School'].map(x=>`<option ${x===t.exam?'selected':''}>${x}</option>`).join('')}</select></label><label>Portion<input id="etp" value="${esc(t.portion||'')}"></label></div>`,`<button class="prv3-primary" onclick="prv3SaveTestEdit('${id}')">Save changes</button>`) };
-window.prv3SaveTestEdit=function(id){const t=D.tests.find(x=>x.id===id);if(!t)return;Object.assign(t,{name:document.getElementById('etn').value,date:document.getElementById('etd').value,exam:document.getElementById('ete').value,portion:document.getElementById('etp').value});save();prv3Close();renderTests();toast('Test updated');};
-const oldRenderTests=window.renderTests;
-window.renderTests=function(){const r=document.getElementById('prv3Tests');if(!r)return;r.innerHTML=D.tests.length?D.tests.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>`<article class="prv3-plan"><div><b>${esc(t.name)}</b><small>${esc(t.date)} · ${esc(t.exam)} · ${esc(t.portion||'Portion not set')}</small></div><div class="prv3-actions"><button onclick="prv3EditTest('${t.id}')">✎ Edit</button><button onclick="prv3Analyze('${t.id}')">Analysis</button></div></article>`).join(''):`<div class='prv3-empty'>No tests.</div>`};
-
-// Planner completion sync: one completion action can update each exam independently.
-window.prv3Toggle=function(id){const b=D.planner.find(x=>x.id===id);if(!b)return;b.done=!b.done;save();renderPlanner();if(b.done&&b.topicId){const t=topic(b.topicId);if(t)statePicker(t.id,null);else toast('Block completed.');}else toast(b.done?'Block completed':'Block reopened')};
-
-// Notifications: use the actual planner + Master Schedule, not a separate planner copy.
-try{if(window._pragatiNotifyLoop)clearInterval(window._pragatiNotifyLoop)}catch(e){}
-window._pragatiNotifyLoop=setInterval(function(){try{
- const n=N.notifications||{}; if(!n.enabled||Notification?.permission!=='granted')return;const now=new Date();const date=now.toISOString().slice(0,10),cur=now.getHours()*60+now.getMinutes();
- const planner=(D.planner||[]).filter(x=>x.date===date);window._pragatiSent=window._pragatiSent||{};
- const quiet=n.quietStart||'22:00',qend=n.quietEnd||'06:00';const qm=x=>{const p=x.split(':').map(Number);return p[0]*60+p[1]};const a=qm(quiet),z=qm(qend);if(a>z?(cur>=a||cur<z):(cur>=a&&cur<z))return;
- planner.forEach(b=>{const st=qm(b.start||'00:00'),en=qm(b.end||'00:00'),lead=Number(n.blockLead||10),key=date+'|'+b.id;if(st-cur===lead&&!window._pragatiSent['l'+key]){new Notification('Pragati · Study Block',{body:`${b.subject||'Study'} · ${b.topic||'Study'} starts in ${lead} minutes.`});window._pragatiSent['l'+key]=1}if(st===cur&&!window._pragatiSent['s'+key]){new Notification('Pragati · Start Now',{body:`Time to study ${b.subject||''} · ${b.topic||'your planned block'}.`});window._pragatiSent['s'+key]=1}if(en===cur&&!window._pragatiSent['e'+key]){new Notification('Pragati · Block Complete',{body:`${b.topic||'Study block'} ended. Mark it Done.`});window._pragatiSent['e'+key]=1}});
- if(n.water){const last=window._pragatiLastWater||0,interval=Math.max(30,Number(n.waterInterval||120))*60000;if(Date.now()-last>=interval){new Notification('Pragati · Water',{body:'Time for a water break 💧'});window._pragatiLastWater=Date.now()}}
-}catch(e){}},30000);
-
-// Keep the notification settings card, but make its copy precise.
-document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){document.querySelectorAll('.pr-notify p').forEach(p=>p.textContent='Reminders follow your actual Today Planner blocks and Master Schedule.');},20)});
-})();
-</script></body>
+</body>
 </html>
