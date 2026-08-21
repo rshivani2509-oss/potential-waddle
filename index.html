@@ -1437,6 +1437,45 @@ function cycleTopicStudyState(subject,chId,topicId,exam){
   setTopicStudyState(t,exam,next);
   save(); render(); checkAchievements?.();
 }
+// Opens a small picker modal so a topic's study state can be set directly (any state, not just
+// the next one in the cycle). Pass an `exam` to edit just that exam's state, or omit it (as the
+// per-topic icon button does) to show every exam this topic is tagged for.
+function openStudyStatePicker(subject, chId, topicId, exam){
+  const ch = DATA.subjects?.[subject]?.chapters?.find(c=>c.id===chId);
+  const t = ch?.topics?.find(x=>x.id===topicId);
+  if(!t) return;
+  ensureTopicStudyState(t);
+  const exams = (exam && STUDY_EXAMS.includes(exam))
+    ? [exam]
+    : STUDY_EXAMS.filter(ex => ex==='CBSE' || t.jee>0 || t.neet>0 || t.studyState?.[ex] !== undefined);
+  openModal(`
+    <div class="modal-head"><h3>🎯 ${esc(t.name)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs muted mb-12">${esc(subject)}${ch?.name?' · '+esc(ch.name):''}</div>
+    ${exams.map(ex=>{
+      const cur = getTopicStudyState(t, ex);
+      return `
+      <div class="mb-16">
+        <div class="text-xs faint mb-6" style="font-weight:700; text-transform:uppercase; letter-spacing:.04em;">${esc(ex)}</div>
+        <div class="flex gap-6 flex-wrap">
+          ${STUDY_STATE_ORDER.map(s=>{
+            const m = STUDY_STATE_META[s];
+            const active = s===cur;
+            return `<button class="btn btn-sm ${active?'btn-primary':'btn-outline'}" onclick="pickStudyState('${subject}','${chId}','${topicId}','${ex}','${s}')" title="${esc(m.action)}">${m.icon} ${esc(m.label)}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+  `);
+}
+function pickStudyState(subject, chId, topicId, exam, state){
+  const ch = DATA.subjects?.[subject]?.chapters?.find(c=>c.id===chId);
+  const t = ch?.topics?.find(x=>x.id===topicId);
+  if(!t) return;
+  setTopicStudyState(t, exam, state);
+  save(); closeModal(); render(); checkAchievements?.();
+  const m = STUDY_STATE_META[state];
+  toast(`${m.icon} ${exam}: ${m.label} — ${esc(t.name)}`);
+}
 function studyStateBadge(t,exam){
   const s=getTopicStudyState(t,exam), m=STUDY_STATE_META[s];
   return `<span class="study-state-badge state-${s}" title="${esc(m.action)}">${m.icon} ${m.label}</span>`;
@@ -2924,7 +2963,8 @@ function topicTrackerModal(blockId){
   ensureTopicTracker(ch||{});
   const blockTopic=fallback.toLowerCase();
 
-  openModal("📚 What did you complete?", `
+  openModal(`
+    <div class="modal-head"><h3>📚 What did you complete?</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="section-desc">
       Select the exact topic(s) you completed in this block.
       Then mark the relevant tracker(s) separately for CBSE, NEET and JEE.
