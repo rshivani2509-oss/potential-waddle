@@ -1081,13 +1081,25 @@ html[data-theme="dark"] .modal .icon-btn{color:#4c463d!important;background:#f6f
 .pr-class-group .chapter-card{margin-bottom:9px}
 </style>
 <style id="pragati-generator-topic-hint">.pr-topic-pick{color:var(--ink)!important}.pr-topic-pick label{color:var(--ink)!important}.pr-topic-pick input{accent-color:var(--sage)}.pr-gen-class-group>div:first-child{color:var(--ink)!important}</style>
+<style id="pragati-working-selector-css">
+#genPlanList{
+  display:block!important;
+  visibility:visible!important;
+  min-height:180px;
+  background:var(--card,#fff)!important;
+}
+#genPlanList .pr-gen-class-group{display:block!important;visibility:visible!important}
+#genPlanList .genplan-chapter-row{display:block!important;visibility:visible!important}
+#genPlanList input.genplan-chk,#genPlanList input.genplan-topic{
+  display:inline-block!important;visibility:visible!important;opacity:1!important;
+}
+</style>
 
-
-<style id="pragati-selector-v2-css">
-#genPlanList,#genPlanList *{box-sizing:border-box}
-#genPlanList{color:var(--ink)!important}
-#genPlanList input{color:var(--ink)!important}
-#genPlanList input::placeholder{color:var(--ink-soft)!important;opacity:1}
+<style id="manual-chapter-picker-css">
+.manual-chapter-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:600px){.manual-chapter-wrap{grid-template-columns:1fr}}
+.manual-topic-list{margin-top:7px;padding:8px;border:1px solid var(--card-border);border-radius:9px;background:var(--bg-soft);max-height:180px;overflow:auto}
+.manual-topic-list label{display:flex;align-items:center;gap:6px;padding:4px 3px;font-size:12px}
 </style>
 </head>
 <body>
@@ -1436,45 +1448,6 @@ function cycleTopicStudyState(subject,chId,topicId,exam){
   const next=STUDY_STATE_ORDER[(i+1)%STUDY_STATE_ORDER.length];
   setTopicStudyState(t,exam,next);
   save(); render(); checkAchievements?.();
-}
-// Opens a small picker modal so a topic's study state can be set directly (any state, not just
-// the next one in the cycle). Pass an `exam` to edit just that exam's state, or omit it (as the
-// per-topic icon button does) to show every exam this topic is tagged for.
-function openStudyStatePicker(subject, chId, topicId, exam){
-  const ch = DATA.subjects?.[subject]?.chapters?.find(c=>c.id===chId);
-  const t = ch?.topics?.find(x=>x.id===topicId);
-  if(!t) return;
-  ensureTopicStudyState(t);
-  const exams = (exam && STUDY_EXAMS.includes(exam))
-    ? [exam]
-    : STUDY_EXAMS.filter(ex => ex==='CBSE' || t.jee>0 || t.neet>0 || t.studyState?.[ex] !== undefined);
-  openModal(`
-    <div class="modal-head"><h3>🎯 ${esc(t.name)}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
-    <div class="text-xs muted mb-12">${esc(subject)}${ch?.name?' · '+esc(ch.name):''}</div>
-    ${exams.map(ex=>{
-      const cur = getTopicStudyState(t, ex);
-      return `
-      <div class="mb-16">
-        <div class="text-xs faint mb-6" style="font-weight:700; text-transform:uppercase; letter-spacing:.04em;">${esc(ex)}</div>
-        <div class="flex gap-6 flex-wrap">
-          ${STUDY_STATE_ORDER.map(s=>{
-            const m = STUDY_STATE_META[s];
-            const active = s===cur;
-            return `<button class="btn btn-sm ${active?'btn-primary':'btn-outline'}" onclick="pickStudyState('${subject}','${chId}','${topicId}','${ex}','${s}')" title="${esc(m.action)}">${m.icon} ${esc(m.label)}</button>`;
-          }).join('')}
-        </div>
-      </div>`;
-    }).join('')}
-  `);
-}
-function pickStudyState(subject, chId, topicId, exam, state){
-  const ch = DATA.subjects?.[subject]?.chapters?.find(c=>c.id===chId);
-  const t = ch?.topics?.find(x=>x.id===topicId);
-  if(!t) return;
-  setTopicStudyState(t, exam, state);
-  save(); closeModal(); render(); checkAchievements?.();
-  const m = STUDY_STATE_META[state];
-  toast(`${m.icon} ${exam}: ${m.label} — ${esc(t.name)}`);
 }
 function studyStateBadge(t,exam){
   const s=getTopicStudyState(t,exam), m=STUDY_STATE_META[s];
@@ -2963,8 +2936,7 @@ function topicTrackerModal(blockId){
   ensureTopicTracker(ch||{});
   const blockTopic=fallback.toLowerCase();
 
-  openModal(`
-    <div class="modal-head"><h3>📚 What did you complete?</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+  openModal("📚 What did you complete?", `
     <div class="section-desc">
       Select the exact topic(s) you completed in this block.
       Then mark the relevant tracker(s) separately for CBSE, NEET and JEE.
@@ -5074,217 +5046,114 @@ function realisticChapterCapacity(freeMin, date){
 // Step 1 of plan generation: show the sorted priority list and let the student pick which
 // chapters actually go into today's plan, with a realistic default selection pre-checked.
 function openGeneratePlanModal(date){
-  // Robust chapter/topic selector. It deliberately renders from the real DATA store,
-  // with DEFAULT_CHAPTERS as a safe fallback, so a priority/analytics error can never
-  // make the selector appear blank.
   date = date || plannerViewDate || todayStr();
+  const taper = isTaperWindow(date);
+  let priorities = computeChapterPriorities(date);
+  if(taper) priorities = filterPrioritiesForTaper(priorities);
+  const mandatoryKeys = new Set(todaysMandatoryTopics(date).map(m=>m.subject+'::'+m.chapter));
+  const freeMin = estimateFreePlanningMinutes(date);
+  const energy = todaysEnergy(date);
+  const energyMeta = ENERGY_LEVELS[energy];
+  const capacity = Math.max(1, Math.round(realisticChapterCapacity(freeMin, date) * energyMeta.mult));
+  const completionRate = recentPlanCompletionRate(14);
+  const freeH = Math.floor(freeMin/60), freeM = Math.round(freeMin%60);
+  const energySelectorHtml = `
+    <div class="mb-16" style="border:1px solid var(--card-border); border-radius:10px; padding:10px 12px;">
+      <div class="text-xs" style="font-weight:600; margin-bottom:8px;">How's your energy today?</div>
+      <div class="flex gap-8 flex-wrap">
+        ${Object.entries(ENERGY_LEVELS).map(([key,e])=>`<button class="btn ${energy===key?'btn-primary':'btn-outline'} btn-sm" onclick="setGenPlanEnergy('${date}','${key}')">${e.icon} ${e.label}</button>`).join('')}
+      </div>
+      <div class="text-xs faint mt-8">${energyMeta.hint}</div>
+    </div>`;
 
-  const selectedToday = new Set(Array.isArray(DATA?.smartPlanSelection) ? DATA.smartPlanSelection : []);
-  const topicMemory = (DATA && DATA.smartPlanTopics) || {};
-  let freePlanningMinutes = 0;
-  try { freePlanningMinutes = Math.max(0, Number(estimateFreePlanningMinutes(date)) || 0); } catch(e) { freePlanningMinutes = 0; }
-
-  const subjectOrder = ['Physics','Chemistry','Biology','Maths'];
-  const chapterRows = [];
-
-  subjectOrder.forEach(subject=>{
-    const stored = DATA?.subjects?.[subject]?.chapters;
-    const names = Array.isArray(stored) && stored.length
-      ? stored.map(ch=>ch.name).filter(Boolean)
-      : (DEFAULT_CHAPTERS[subject] || []);
-
-    names.forEach((name, idx)=>{
-      const ch = Array.isArray(stored) ? stored.find(x=>x.name===name) : null;
-      let level = 12;
-      try {
-        level = typeof chapterClassLevel==='function' && ch ? chapterClassLevel(subject,ch) : autoClassLevel(subject,name);
-      } catch(e) {
-        level = autoClassLevel(subject,name);
-      }
-      const topics = Array.isArray(ch?.topics)
-        ? ch.topics.filter(t=>String(t?.name||'').trim())
-        : [];
-      chapterRows.push({
-        subject,
-        chapter:name,
-        classLevel: level===11 ? 11 : 12,
-        topics,
-        key: subject+'::'+name
-      });
+  // Build the complete selectable syllabus, not just the priority shortlist.
+  // Priority data is displayed as a hint, while the student can choose ANY Class 11/12 chapter
+  // and, inside it, the exact topics to study today.
+  const priorityMap = new Map(priorities.map(p=>[p.subject+'::'+p.chapter,p]));
+  const selectedToday = new Set(Array.isArray(DATA.smartPlanSelection)?DATA.smartPlanSelection:[]);
+  const allRows=[];
+  subjectNames().forEach(subject=>{
+    const chapters=DATA.subjects[subject]?.chapters||[];
+    chapters.forEach(ch=>{
+      const key=subject+'::'+ch.name;
+      const level=chapterClassLevel(subject,ch);
+      const p=priorityMap.get(key);
+      allRows.push({subject,chapter:ch,classLevel:level,key,priority:p?.total||0,p});
     });
   });
+  allRows.sort((a,b)=>a.classLevel-b.classLevel||a.subject.localeCompare(b.subject)||a.chapter.localeCompare(b.chapter));
 
-  // If a custom subject somehow has chapters but isn't in the normal order, retain it too.
-  Object.entries(DATA?.subjects || {}).forEach(([subject,obj])=>{
-    if(subjectOrder.includes(subject)) return;
-    (obj?.chapters || []).forEach(ch=>{
-      if(!ch?.name) return;
-      chapterRows.push({
-        subject, chapter:ch.name, classLevel:12,
-        topics:Array.isArray(ch.topics)?ch.topics.filter(t=>String(t?.name||'').trim()):[],
-        key:subject+'::'+ch.name
-      });
-    });
-  });
-
-  const unique = [];
-  const seen = new Set();
-  chapterRows.forEach(r=>{ if(!seen.has(r.key)){seen.add(r.key);unique.push(r);} });
-
-  function safeTopics(row){
-    const remembered = Array.isArray(topicMemory[row.key]) ? topicMemory[row.key] : [];
-    return row.topics.length ? row.topics : remembered.map(name=>({name}));
-  }
-
-  function renderRow(row){
-    const remembered = new Set(Array.isArray(topicMemory[row.key]) ? topicMemory[row.key] : []);
-    const checked = selectedToday.has(row.key);
-    const topics = safeTopics(row);
-
-    return `<div class="genplan-chapter-row" data-search="${esc((row.subject+' '+row.chapter).toLowerCase())}"
-      style="padding:12px 6px;border-bottom:1px solid var(--card-border);display:block!important;">
-      <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;">
-        <input type="checkbox" class="genplan-chk" value="${esc(row.key)}" ${checked?'checked':''}
-          onchange="updateGenPlanCount()"
-          style="margin-top:4px;width:18px;height:18px;accent-color:var(--sage);flex:0 0 auto;">
-        <span style="flex:1;min-width:0;">
-          <span style="display:block;font-size:14px;font-weight:750;color:var(--ink);">
-            ${esc(row.chapter)}
-          </span>
-          <span style="display:inline-block;margin-top:3px;font-size:11px;color:var(--ink-soft);">
-            ${esc(row.subject)} · Class ${row.classLevel}
-          </span>
-        </span>
-      </label>
-      <div class="genplan-details" style="margin:8px 0 0 27px;">
-        <div style="display:flex;gap:7px;flex-wrap:wrap;">
-          <label style="font-size:11px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px;">
-            🎥 <input type="number" class="genplan-task" data-key="${esc(row.key)}" data-type="Lecture"
-              value="20" min="0" max="180" step="5" onchange="updateGenPlanCount()"
-              style="width:48px;padding:4px;border:1px solid var(--card-border);border-radius:6px;background:var(--card);color:var(--ink);"> min
-          </label>
-          <label style="font-size:11px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px;">
-            📖 <input type="number" class="genplan-task" data-key="${esc(row.key)}" data-type="NCERT"
-              value="15" min="0" max="180" step="5" onchange="updateGenPlanCount()"
-              style="width:48px;padding:4px;border:1px solid var(--card-border);border-radius:6px;background:var(--card);color:var(--ink);"> min
-          </label>
-          <label style="font-size:11px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:3px;">
-            ✍️ <input type="number" class="genplan-task" data-key="${esc(row.key)}" data-type="Qns"
-              value="20" min="0" max="180" step="5" onchange="updateGenPlanCount()"
-              style="width:48px;padding:4px;border:1px solid var(--card-border);border-radius:6px;background:var(--card);color:var(--ink);"> min
-          </label>
+  const renderChapter=(row,i)=>{
+    const ch=row.chapter, key=row.key, p=row.p;
+    const mandatory=mandatoryKeys.has(key);
+    const recommended = mandatory || selectedToday.has(key) || (!selectedToday.size && p && i<capacity);
+    const checked=recommended;
+    const topics=(ch.topics||[]).filter(t=>(t.name||'').trim());
+    const split=p ? suggestedChapterTaskSplit(p,date) : {lecture:20,ncert:15,qns:20};
+    const taskField=(type,label,val)=>`<label class="text-xs faint" style="display:inline-flex;align-items:center;gap:3px;" title="${label} minutes">${label[0]}<input type="number" class="genplan-task" data-key="${esc(key)}" data-type="${type}" value="${val}" min="0" max="90" step="5" onchange="updateGenPlanCount()" style="width:40px;padding:2px 3px;border:1px solid var(--card-border);border-radius:6px;font-size:11.5px;"></label>`;
+    const topicHtml=topics.length?`
+      <div class="pr-topic-pick" style="margin-top:8px;padding:7px 8px;border:1px solid var(--card-border);border-radius:8px;background:var(--bg-soft);">
+        <div class="text-xs" style="font-weight:650;margin-bottom:5px;">📌 Select exact topics <span class="faint">(optional — leave all unchecked to study the whole chapter)</span></div>
+        <div class="flex gap-8 flex-wrap">
+          ${topics.map(t=>`<label class="text-xs" style="display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border:1px solid var(--card-border);border-radius:7px;background:var(--card);">
+            <input type="checkbox" class="genplan-topic" data-key="${esc(key)}" value="${esc(t.name)}" onchange="updateGenPlanCount()">${esc(t.name)}
+          </label>`).join('')}
         </div>
-        ${topics.length ? `
-          <div style="margin-top:9px;padding:8px;border:1px solid var(--card-border);border-radius:8px;background:var(--bg-soft);">
-            <div style="font-size:11px;font-weight:700;color:var(--ink);margin-bottom:6px;">
-              📌 Select specific topics (optional)
-            </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              ${topics.map(t=>{
-                const n=String(t.name||'').trim();
-                return `<label style="display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border:1px solid var(--card-border);border-radius:7px;background:var(--card);color:var(--ink);font-size:11px;cursor:pointer;">
-                  <input type="checkbox" class="genplan-topic" data-key="${esc(row.key)}" value="${esc(n)}"
-                    ${remembered.has(n)?'checked':''} onchange="updateGenPlanCount()"
-                    style="width:14px;height:14px;accent-color:var(--sage);">
-                  ${esc(n)}
-                </label>`;
-              }).join('')}
-            </div>
-          </div>` : `
-          <div style="margin-top:7px;font-size:10.5px;color:var(--ink-soft);">
-            No topic breakdown added yet — selecting this chapter plans the whole chapter.
-          </div>`}
+      </div>`:'';
+    return `<div class="genplan-chapter-row" style="padding:9px 6px;border-bottom:1px solid var(--card-border);">
+      <div class="flex gap-8" style="align-items:flex-start;">
+        <input type="checkbox" class="genplan-chk" value="${esc(key)}" ${checked?'checked':''} onchange="updateGenPlanCount()" style="margin-top:5px;width:16px;height:16px;accent-color:var(--sage);flex-shrink:0;">
+        <div style="flex:1;min-width:0;">
+          <div><span class="text-sm" style="font-weight:650;">${esc(ch.name)}</span> <span class="faint text-xs">(${esc(row.subject)})</span>
+            ${mandatory?`<span class="tag tag-high" style="font-size:9.5px;margin-left:4px;">Exam soon</span>`:''}
+            ${p?.examTypeBoost>0?`<span class="tag tag-high" style="font-size:9.5px;margin-left:4px;">📌 ${esc(p.priorityTestName||'Test')}</span>`:''}
+            ${p?.revisionScore>0?`<span class="tag tag-med" style="font-size:9.5px;margin-left:4px;">Revision due</span>`:''}
+            <span class="tag" style="font-size:9px;margin-left:4px;">Class ${row.classLevel}</span>
+          </div>
+          <div class="flex gap-10 mt-4 flex-wrap">${taskField('Lecture','🎥Lec',split.lecture)}${taskField('NCERT','📖NCERT',split.ncert)}${taskField('Qns','✍️Qns',split.qns)}</div>
+          ${topicHtml}
+        </div>
       </div>
     </div>`;
-  }
-
-  const buildGroup=(level)=>{
-    const rows=unique.filter(r=>r.classLevel===level);
-    return `<section class="pr-gen-class-group" data-class="${level}" style="display:block!important;margin-bottom:12px;">
-      <div style="position:sticky;top:0;z-index:3;padding:10px 9px;background:var(--card);color:var(--ink);border-bottom:1px solid var(--card-border);font-weight:800;">
-        ${level===11?'📘':'📕'} Class ${level}
-      </div>
-      ${subjectOrder.map(subject=>{
-        const rs=rows.filter(r=>r.subject===subject);
-        if(!rs.length)return '';
-        return `<div class="genplan-subject-group" data-subject="${esc(subject)}" style="display:block!important;">
-          <div style="padding:9px 6px 5px;color:var(--gold,#8a6a2f);font-size:12px;font-weight:800;">
-            ${esc(subject)}
-          </div>
-          ${rs.map(renderRow).join('')}
-        </div>`;
-      }).join('')}
-    </section>`;
   };
 
-  const allGroups = [buildGroup(11),buildGroup(12)].join('');
-  const count = unique.length;
+  const groups=[11,12].map(level=>{
+    const rows=allRows.filter(x=>x.classLevel===level);
+    const subjects=subjectNames().map(sub=>({sub,rows:rows.filter(x=>x.subject===sub)})).filter(x=>x.rows.length);
+    return `<div class="pr-gen-class-group" style="margin-bottom:12px;">
+      <div style="position:sticky;top:0;z-index:2;padding:8px 10px;background:var(--card);border-bottom:1px solid var(--card-border);font-weight:750;">${level===11?'📘':'📕'} Class ${level}</div>
+      ${subjects.map(s=>`<div style="margin:6px 0 3px;padding:0 8px;font-size:11px;font-weight:700;color:var(--gold,#8a6a2f);">${esc(s.sub)}</div>${s.rows.map(renderChapter).join('')}`).join('')}
+    </div>`;
+  }).join('');
+
+  const c11 = class11RecapOptionsForModal(date);
+  const c11Enabled = DATA.routine.class11Enabled !== false;
+  const c11OptionsHtml = c11.options.map(o=>`<option value="${esc(o.subject+'::'+o.chapter)}">${o.linked?'🔗 ':''}${esc(o.chapter)} (${esc(o.subject)})</option>`).join('');
+  const ved = vedantuModalInfo(date);
+  const vedHtml = ved ? `<div class="mb-16" style="border:1px solid var(--card-border);border-radius:10px;padding:10px 12px;">
+    <div class="text-xs" style="font-weight:600;margin-bottom:6px;">🟣 Today's Vedantu Lecture${ved.slots.length>1?'s':''}</div>
+    <div class="text-xs faint mb-8">${esc(ved.reason)}</div>
+    ${ved.slots.map(s=>`<div class="flex gap-8 mb-8 flex-wrap" style="align-items:center;"><span class="text-xs faint" style="min-width:96px;">Slot ${s.n} · ${fmtTime(s.start)}–${fmtTime(s.end)}</span><select id="ved_subj_${s.n}" style="padding:6px 8px;border:1px solid var(--card-border);border-radius:8px;font-size:12.5px;background:var(--card);color:var(--ink);">${subjectNames().map(sub=>`<option value="${esc(sub)}" ${sub===s.defaultSubject?'selected':''}>${esc(sub)}</option>`).join('')}</select><input type="text" id="ved_name_${s.n}" placeholder="Lesson/lecture name" style="flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--card-border);border-radius:8px;font-size:12.5px;"></div>`).join('')}
+  </div>`:'';
 
   openModal(`
-    <div class="modal-head">
-      <h3>📚 Choose Today's Study</h3>
-      <button class="icon-btn" onclick="closeModal()">✕</button>
+    <div class="modal-head"><h3>🎯 Build Today's Study Plan</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    ${taper?`<div class="mb-16" style="background:var(--coral-soft);border-radius:10px;padding:10px 12px;"><div class="text-sm" style="font-weight:700;">⏳ Taper Mode — ${taper.key} in ${taper.days} day${taper.days===1?'':'s'}</div><div class="text-xs muted mt-4">Choose the exact chapters/topics you want to focus on; urgent revision remains visible as a recommendation.</div></div>`:''}
+    ${energySelectorHtml}
+    <div class="text-xs muted mb-12">Choose from your <strong>complete Class 11 + Class 12 syllabus</strong>. Inside each chapter, select the exact topics if you don't want the whole chapter. The priority badges are recommendations only — <strong>you control today's plan</strong>. About <strong>${freeH}h ${freeM}m</strong> is free today.</div>
+    ${completionRate!==null?`<div class="text-xs faint mb-12">📊 Last 2 weeks: <strong>${Math.round(completionRate*100)}%</strong> of generated study blocks completed.</div>`:''}
+    ${vedHtml}
+    <div class="flex gap-8 mb-10 flex-wrap"><button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(${capacity})">⭐ Recommended ${capacity}</button><button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(9999)">Select all</button><button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(0)">Clear all</button></div>
+    <div id="genPlanList" style="max-height:52vh;overflow-y:auto;border:1px solid var(--card-border);border-radius:10px;padding:2px 8px;">${groups}</div>
+    <div class="text-xs mt-8" id="genPlanCount" data-free-min="${freeMin}"></div>
+    <div class="mt-16" style="border-top:1px solid var(--card-border);padding-top:12px;">
+      <label class="flex" style="align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin-bottom:8px;"><input type="checkbox" id="c11_on" ${c11Enabled?'checked':''} onchange="document.getElementById('c11_fields').style.display=this.checked?'flex':'none';updateGenPlanCount();"> 📘 Include today's Class 11 recap</label>
+      <div id="c11_fields" class="flex gap-8 flex-wrap" style="display:${c11Enabled?'flex':'none'};align-items:center;"><select id="c11_select" onchange="updateGenPlanCount()" style="flex:1;min-width:180px;padding:6px 8px;border:1px solid var(--card-border);border-radius:8px;font-size:12.5px;background:var(--card);color:var(--ink);">${c11.suggestion?`<option value="${esc(c11.suggestion.subject+'::'+c11.suggestion.chapter)}">✨ Suggested: ${esc(c11.suggestion.chapter)} (${esc(c11.suggestion.subject)})</option>`:''}${c11OptionsHtml}${!c11.suggestion&&!c11.options.length?`<option value="">No Class 11 chapters left to recap 🎉</option>`:''}</select><input type="number" id="c11_dur" value="${DATA.routine.class11DailyMin||15}" min="5" max="60" step="5" onchange="updateGenPlanCount()" style="width:60px;padding:6px 5px;border:1px solid var(--card-border);border-radius:8px;font-size:12.5px;"> min</div>
     </div>
-
-    <div style="padding:10px 12px;border:1px solid var(--card-border);border-radius:10px;background:var(--bg-soft);margin-bottom:12px;color:var(--ink);">
-      <div style="font-weight:750;font-size:13px;">You choose the lesson. Pragati plans the time.</div>
-      <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">
-        ${count} chapters available. Choose a whole chapter or select specific topics inside it.
-        Class 11 and Class 12 are separated.
-      </div>
-    </div>
-
-    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;">
-      <input id="genPlanSearch" type="search" placeholder="🔎 Search chapter or topic"
-        oninput="filterGenPlanList(this.value)"
-        style="flex:1;min-width:180px;padding:9px 10px;border:1px solid var(--card-border);border-radius:9px;background:var(--card);color:var(--ink);">
-      <button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(9999)">Select all</button>
-      <button class="btn btn-outline btn-sm" onclick="setGenPlanSelection(0)">Clear all</button>
-    </div>
-
-    <div style="display:flex;gap:7px;margin-bottom:10px;">
-      <button class="btn btn-outline btn-sm" onclick="showGenPlanClass(11)">Class 11</button>
-      <button class="btn btn-outline btn-sm" onclick="showGenPlanClass(12)">Class 12</button>
-      <button class="btn btn-outline btn-sm" onclick="showGenPlanClass('all')">All</button>
-    </div>
-
-    <div id="genPlanList" style="display:block!important;visibility:visible!important;max-height:55vh;overflow-y:auto;border:1px solid var(--card-border);border-radius:10px;padding:2px 8px;background:var(--card);">
-      ${allGroups}
-    </div>
-
-    <div class="text-xs mt-8" id="genPlanCount" data-free-min="${freePlanningMinutes}">
-      No chapters selected.
-    </div>
-
-    <button class="btn btn-primary w-full mt-12" onclick="confirmGeneratePlan('${date}')">
-      ✨ Generate Today's Study Plan
-    </button>
+    <button class="btn btn-primary w-full mt-12" onclick="confirmGeneratePlan('${date}')">✨ Generate Today's Study Plan</button>
   `);
   updateGenPlanCount();
 }
-
-function filterGenPlanList(query){
-  const q=String(query||'').trim().toLowerCase();
-  document.querySelectorAll('#genPlanList .genplan-chapter-row').forEach(row=>{
-    row.style.display=(!q || String(row.dataset.search||'').includes(q) ||
-      [...row.querySelectorAll('.genplan-topic')].some(t=>String(t.value||'').toLowerCase().includes(q)))?'block':'none';
-  });
-  document.querySelectorAll('#genPlanList .genplan-subject-group').forEach(group=>{
-    const visible=[...group.querySelectorAll('.genplan-chapter-row')].some(r=>r.style.display!=='none');
-    group.style.display=visible?'block':'none';
-  });
-  document.querySelectorAll('#genPlanList .pr-gen-class-group').forEach(group=>{
-    const visible=[...group.querySelectorAll('.genplan-subject-group')].some(s=>s.style.display!=='none');
-    group.style.display=visible?'block':'none';
-  });
-}
-
-function showGenPlanClass(level){
-  document.querySelectorAll('#genPlanList .pr-gen-class-group').forEach(group=>{
-    group.style.display=(level==='all' || group.dataset.class===String(level))?'block':'none';
-  });
-}
-
 function setGenPlanEnergy(date, level){
   setEnergy(date, level);
   openGeneratePlanModal(date); // rebuild the modal so capacity/durations reflect the new energy level
@@ -6638,7 +6507,20 @@ function openPlannerForm(date, editId){
       <div class="field"><label>Start time</label><input type="time" id="f_start" value="${existing?existing.startTime:'06:00'}"></div>
       <div class="field"><label>End time</label><input type="time" id="f_end" value="${existing?existing.endTime:'07:00'}"></div>
     </div>
-    <div class="field"><label>Subject / Category</label><select id="f_subject">${subjectOptions.map(s=>`<option ${existing&&existing.subject===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="field"><label>Subject / Category</label>
+      <select id="f_subject" onchange="updateManualChapterPicker()">${subjectOptions.map(s=>`<option ${existing&&existing.subject===s?'selected':''}>${s}</option>`).join('')}</select>
+    </div>
+    <div class="field">
+      <label>Chapter / Lesson <span class="faint">(choose what this block is for)</span></label>
+      <div class="manual-chapter-wrap">
+        <select id="f_chapter_class" onchange="updateManualChapterPicker()">
+          <option value="11">Class 11</option>
+          <option value="12">Class 12</option>
+        </select>
+        <select id="f_chapter" onchange="updateManualTopicPicker()"></select>
+      </div>
+      <div id="f_topic_picker" class="manual-topic-list" style="display:none"></div>
+    </div>
     <div class="field"><label>Activity / notes</label><input id="f_activity" placeholder="e.g. Revise Electrostatics + DPP" value="${existing?esc(existing.activity||''):''}"></div>
     <div class="field"><label>Goals (one per line, optional)</label><textarea id="f_goals" rows="3" placeholder="Formula Revision&#10;15 PYQs" style="width:100%; border:1px solid var(--card-border); border-radius:10px; padding:8px 10px; resize:vertical;">${existing && Array.isArray(existing.goals) ? esc(existing.goals.join('\n')) : ''}</textarea></div>
     <div class="field">
@@ -6653,6 +6535,57 @@ function openPlannerForm(date, editId){
       ${existing ? `<button class="btn btn-danger" onclick="deletePlannerBlock('${existing.id}'); closeModal();">Delete</button>` : ''}
     </div>
   `);
+  updateManualChapterPicker(JSON.stringify(existing ? (existing.chapter || '') : ''));
+}
+function updateManualChapterPicker(preferredChapter){
+  const subject = document.getElementById('f_subject')?.value;
+  const chSel = document.getElementById('f_chapter');
+  const classSel = document.getElementById('f_chapter_class');
+  const topicBox = document.getElementById('f_topic_picker');
+  if(!chSel || !classSel) return;
+
+  const special = ['Revision','PYQs','NCERT','Vedantu','Mock Test','Break','Sleep','Fixed','Reflection','Other'];
+  if(special.includes(subject)){
+    classSel.disabled = true;
+    chSel.disabled = true;
+    chSel.innerHTML = '<option value="">No chapter required</option>';
+    if(topicBox) topicBox.style.display='none';
+    return;
+  }
+
+  classSel.disabled = false;
+  chSel.disabled = false;
+
+  const chapters = DATA.subjects?.[subject]?.chapters || [];
+  const class11 = chapters.filter(ch => chapterClassLevel(subject,ch)===11);
+  const class12 = chapters.filter(ch => chapterClassLevel(subject,ch)===12);
+  const level = preferredChapter
+    ? (class11.some(ch=>ch.name===preferredChapter) ? 11 : 12)
+    : Number(classSel.value||12);
+  classSel.value = String(level);
+
+  const list = level===11 ? class11 : class12;
+  chSel.innerHTML = list.length
+    ? list.map(ch=>`<option value="${esc(ch.name)}">${esc(ch.name)}</option>`).join('')
+    : '<option value="">No chapters available</option>';
+
+  if(preferredChapter && list.some(ch=>ch.name===preferredChapter)) chSel.value=preferredChapter;
+  updateManualTopicPicker(JSON.stringify(existing ? (existing.topic || '') : ''));
+}
+function updateManualTopicPicker(preferredTopic){
+  window.__manualSelectedTopics = [...document.querySelectorAll('.manual-topic:checked')].map(x=>x.value);
+  const subject = document.getElementById('f_subject')?.value;
+  const chName = document.getElementById('f_chapter')?.value;
+  const box = document.getElementById('f_topic_picker');
+  if(!box) return;
+  const ch = DATA.subjects?.[subject]?.chapters?.find(c=>c.name===chName);
+  const topics = (ch?.topics||[]).filter(t=>(t.name||'').trim());
+  if(!topics.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  const current = Array.isArray(window.__manualSelectedTopics) ? window.__manualSelectedTopics : [];
+  const wanted = preferredTopic ? [preferredTopic] : current;
+  box.innerHTML = '<div class="text-xs faint mb-4">Optional: select exact topics for this block. Leave unchecked for the whole chapter.</div>' +
+    topics.map(t=>`<label><input type="checkbox" class="manual-topic" value="${esc(t.name)}" ${wanted.includes(t.name)?'checked':''}>${esc(t.name)}</label>`).join('');
 }
 function savePlannerBlock(editId){
   const date = document.getElementById('f_date').value;
@@ -6661,8 +6594,14 @@ function savePlannerBlock(editId){
   if(!date || !startTime || !endTime) return toast('Please fill date, start and end time.');
   if(endTime <= startTime) return toast('End time must be after start time.');
   const subject = document.getElementById('f_subject').value;
+  const chapter = document.getElementById('f_chapter')?.disabled ? '' : (document.getElementById('f_chapter')?.value || '');
+  const topics = [...document.querySelectorAll('.manual-topic:checked')].map(x=>x.value);
   const activity = document.getElementById('f_activity').value.trim();
   const goals = document.getElementById('f_goals').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!['Revision','PYQs','NCERT','Vedantu','Mock Test','Break','Sleep','Fixed','Reflection','Other'].includes(subject) && !chapter){
+    return toast('Please choose a chapter for this study block.');
+  }
+  const finalActivity = activity || (chapter ? `${chapter}${topics.length ? ' — '+topics.join(', ') : ''}` : subject);
   if(!DATA.plannerEvents) DATA.plannerEvents = [];
   // Build the subtask checklist from whichever of the three step-checkboxes are ticked,
   // carrying over each subtask's existing done-state (by kind) so re-saving never resets progress.
@@ -6677,12 +6616,12 @@ function savePlannerBlock(editId){
   });
   if(editId){
     const b = DATA.plannerEvents.find(x=>x.id===editId);
-    Object.assign(b, {date, startTime, endTime, subject, activity, goals, subtasks});
+    Object.assign(b, {date, startTime, endTime, subject, chapter, topics, activity:finalActivity, goals, subtasks});
     // The moment you hand-edit an auto-generated block, it becomes yours — Generate Plan
     // will never silently overwrite it again unless you delete it yourself.
     if(b.generated && b.subject!=='Fixed') b.generated = false;
   } else {
-    DATA.plannerEvents.push({id:uid(), date, startTime, endTime, subject, activity, goals, subtasks, done:false});
+    DATA.plannerEvents.push({id:uid(), date, startTime, endTime, subject, chapter, topics, activity:finalActivity, goals, subtasks, done:false});
   }
   plannerViewDate = date;
   save(); closeModal(); render(); toast('Time block saved.');
