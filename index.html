@@ -6374,7 +6374,13 @@ function smartExamUrgency(date){
   return {label:'LATER',score:30};
 }
 function smartExamUpcoming(){
-  return examPlanTests().slice(0,8).map(t=>({...t,urgency:smartExamUrgency(t.date)}));
+  const target=typeof pragatiTomorrowExams==='function'
+    ? new Set(pragatiTomorrowExams().map(t=>String(t.id)))
+    : new Set();
+  return examPlanTests()
+    .map(t=>({...t,urgency:smartExamUrgency(t.date),isTomorrow:target.has(String(t.id))}))
+    .sort((a,b)=>(b.isTomorrow-a.isTomorrow)||((b.urgency?.score||0)-(a.urgency?.score||0)))
+    .slice(0,8);
 }
 function smartExamChapterStrength(subject,chapter){
   const rows=prChapterMasterySafe(subject,chapter);
@@ -6462,12 +6468,16 @@ function minToTime(n){
 }
 function smartExamRender(){
   const s=smartExamEnsure(),tests=smartExamUpcoming(),priority=smartExamBuildPriorityList(),rec=smartExamRecoverUnfinished();
-  if(!tests.length)return '';
+  const tomorrowTests=typeof pragatiTomorrowExams==='function' ? pragatiTomorrowExams() : tests.filter(t=>t.isTomorrow);
+  if(!tests.length && !tomorrowTests.length)return '';
+  const visibleTests=tests.length?tests:tomorrowTests.map(t=>({...t,urgency:{label:'TOMORROW',score:95},isTomorrow:true}));
   return `<div class="smart-exam-card">
     <div class="smart-exam-title">🎯 Smart Exam Mode</div>
-    <div class="smart-exam-sub">Pragati automatically increases priority for urgent exams and gives extra attention to weak chapters. You can still control the percentages and preferred timing.</div>
+    <div class="smart-exam-sub">${tomorrowTests.length
+ ? '🔴 <b>EXAM TOMORROW</b> — set the percentage you want to spend on tomorrow’s exam, then generate the plan in your preferred timings.'
+ : 'Pragati automatically increases priority for urgent exams and gives extra attention to weak chapters. You can still control the percentages and preferred timing.'}</div>
     <div class="smart-exam-grid">
-      ${tests.slice(0,4).map(t=>`<div class="smart-exam-box">
+      ${visibleTests.slice(0,4).map(t=>`<div class="smart-exam-box">
         <label>${esc(t.name||'Exam')}</label>
         <div class="smart-exam-badge">${t.urgency.label}</div>
         <div style="margin-top:6px;font-size:11px;color:#C9BFA8;">${esc(t.date)} · ${t.urgency.score} urgency</div>
@@ -12637,6 +12647,50 @@ document.addEventListener('click',e=>{
   const r=e.target.closest('#smart-exam-recover');
   if(r)smartExamGenerateRecovery();
 });
+</script>
+
+<script id="tomorrow-exam-fix">
+(function(){
+  function localDateOnly(v){
+    if(!v) return '';
+    const s=String(v).slice(0,10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+  }
+  function tomorrowLocal(){
+    const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  window.pragatiTomorrowExams=function(){
+    const target=tomorrowLocal();
+    return (DATA.upcomingTests||[]).filter(t=>localDateOnly(t.date)===target);
+  };
+  window.pragatiExamTodayContext=function(){
+    const today=localDateOnly(todayStr());
+    const tomorrow=tomorrowLocal();
+    const exams=pragatiTomorrowExams();
+    const todayExams=(DATA.upcomingTests||[]).filter(t=>localDateOnly(t.date)===today);
+    return {tomorrow, today, exams, todayExams};
+  };
+})();
+</script>
+
+<script id="tomorrow-exam-alert-js">
+function renderTomorrowExamAlert(){
+  try{
+    const box=document.getElementById('tomorrow-exam-alert');
+    const list=document.getElementById('tomorrow-exam-list');
+    if(!box||!list||typeof pragatiTomorrowExams!=='function')return;
+    const exams=pragatiTomorrowExams();
+    if(!exams.length){box.style.display='none';return;}
+    box.style.display='block';
+    list.innerHTML=exams.map(t=>`<div style="padding:6px 0;border-bottom:1px solid #3b2f1d"><b>${esc(t.name||'Exam')}</b> · ${esc(t.date)} · ${(t.chapters||[]).length} chapters</div>`).join('');
+  }catch(e){console.warn('Tomorrow exam alert:',e);}
+}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(renderTomorrowExamAlert,100));
+const oldRender=window.render;
+if(typeof oldRender==='function'){
+  window.render=function(){const r=oldRender.apply(this,arguments);setTimeout(renderTomorrowExamAlert,0);return r;};
+}
 </script>
 </body>
 </html>
