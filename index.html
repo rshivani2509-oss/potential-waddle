@@ -1174,99 +1174,11 @@ html[data-theme="dark"] .modal .icon-btn{color:#4c463d!important;background:#f6f
 .epv-exam{padding:9px 0;border-bottom:1px solid #3b2f1d;color:#eee;font-size:12px}
 .epv-tomorrow{color:#f1cf73;font-weight:800}
 </style>
-
-<style id="exam-priority-visible-final-css">
+<style id="exam-priority-universal-css">
 .exam-priority-visible{margin:0 0 16px;padding:18px;border:1px solid var(--card-border);border-radius:18px;background:var(--card);box-shadow:var(--shadow)}
-.exam-priority-visible h3{margin:0 0 5px;font-size:18px}
-.exam-priority-visible .hint{font-size:11.5px;color:var(--ink-soft);line-height:1.5}
-.epv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
-.epv-item{padding:10px;border:1px solid var(--card-border);border-radius:11px;background:var(--bg-soft)}
-.epv-item label{display:block;font-size:10px;color:var(--ink-soft);margin-bottom:5px}
-.epv-item input{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--card-border);border-radius:8px;background:var(--card);color:var(--ink)}
-.epv-exam{margin-top:10px;padding:10px;border-radius:10px;font-size:11.5px}
-.epv-tomorrow{background:var(--coral-soft);color:var(--coral);font-weight:750}
-.epv-school{background:var(--sky-soft);color:var(--sky);font-weight:700}
-.epv-note{font-size:10.5px;color:var(--ink-faint);margin-top:8px}
+.epv-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.exam-priority-visible h3{margin:0 0 5px;font-size:18px}.epv-universal{font-size:9px;font-weight:800;padding:5px 8px;border-radius:999px;background:var(--sage-soft);color:var(--sage);white-space:nowrap}.exam-priority-visible .hint{font-size:11.5px;color:var(--ink-soft);line-height:1.5}.epv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-top:10px}.epv-item{padding:10px;border:1px solid var(--card-border);border-radius:11px;background:var(--bg-soft)}.epv-item label{display:block;font-size:10px;color:var(--ink-soft);margin-bottom:4px}.epv-item b{font-size:12px}.epv-date{font-size:10px;color:var(--ink-faint);margin:2px 0 6px}.epv-item input{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--card-border);border-radius:8px;background:var(--card);color:var(--ink)}.epv-exam{margin-top:10px;padding:10px;border-radius:10px;font-size:11.5px;line-height:1.45}.epv-tomorrow{background:var(--coral-soft);color:var(--coral);font-weight:650}.epv-normal{background:var(--bg-soft);color:var(--ink-soft)}.epv-types{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.epv-types span{font-size:9px;padding:4px 7px;border-radius:999px;background:var(--sky-soft);color:var(--sky);font-weight:700}.epv-empty{margin-top:10px;padding:12px;border:1px dashed var(--card-border);border-radius:10px;font-size:11px;color:var(--ink-soft)}.epv-example{font-size:10.5px;color:var(--ink-faint);margin-top:9px;line-height:1.4}.epv-time-grid{margin-top:8px}.epv-time-grid .epv-item{background:var(--lavender-soft)}
+@media(max-width:640px){.epv-head{display:block}.epv-universal{display:inline-block;margin-top:7px}}
 </style>
-<script id="exam-priority-visible-js">
-(function(){
-  function d0(s){return String(s||'').slice(0,10);}
-  function localToday(){
-    const d=new Date(); d.setHours(0,0,0,0);
-    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  }
-  function tomorrow(){
-    const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+1);
-    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  }
-  function escSafe(v){
-    return typeof esc==="function" ? esc(String(v??'')) : String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-  window.renderVisibleExamPriority=function(){
-    const host=document.getElementById("exam-priority-visible-mount");
-    if(!host)return;
-    const tests=Array.isArray(window.DATA?.upcomingTests)?window.DATA.upcomingTests:[];
-    const tmr=tomorrow(), today=localToday();
-    const upcoming=tests.filter(t=>d0(t.date)>=today).sort((a,b)=>d0(a.date).localeCompare(d0(b.date)));
-    const tomorrowTests=tests.filter(t=>d0(t.date)===tmr);
-    const schoolTests=upcoming.filter(t=>String(t.source||'').toLowerCase()==='school' || t.schoolWeekly===true);
-    const weights=window.DATA.examPlanWeights||{};
-    const pref=window.DATA.examPreferredWindow||{};
-    host.innerHTML=`<div class="exam-priority-visible">
-      <h3>🎯 Exam Priority for Today</h3>
-      <div class="hint">Choose the percentage of today's available study time for each upcoming exam. This includes <b>school exams</b>, Aakash, NEET/JEE tests and other tests. Tomorrow's exam is highlighted automatically. Your preferred start/end timing controls where generated blocks are placed.</div>
-      ${tomorrowTests.length?`<div class="epv-exam epv-tomorrow">🔴 EXAM TOMORROW — ${tomorrowTests.map(t=>escSafe(t.name||'Exam')).join(', ')}</div>`:''}
-      ${schoolTests.length?`<div class="epv-exam epv-school">🏫 SCHOOL EXAM — ${schoolTests.slice(0,4).map(t=>`${escSafe(t.name||'School Test')} · ${escSafe(t.date)}`).join(' | ')}</div>`:''}
-      <div class="epv-grid" style="margin-top:10px">
-        ${upcoming.slice(0,8).map(t=>{
-          const id=String(t.id||t.name||t.date);
-          const val=Number(weights[t.id] ?? t.planWeight ?? 0);
-          const school=(String(t.source||'').toLowerCase()==='school'||t.schoolWeekly===true);
-          return `<div class="epv-item">
-            <label>${school?'🏫 ':''}${escSafe(t.name||'Exam')} · ${escSafe(t.date)}</label>
-            <input type="number" min="0" max="100" data-ep-id="${escSafe(id)}" value="${val}" placeholder="%">
-          </div>`;
-        }).join('')}
-        <div class="epv-item"><label>Preferred start</label><input id="epv-start" type="time" value="${escSafe(pref.start||'')}"></div>
-        <div class="epv-item"><label>Preferred end</label><input id="epv-end" type="time" value="${escSafe(pref.end||'')}"></div>
-      </div>
-      <div class="epv-note">Example: Tomorrow's school Physics exam 70% · another exam 20% · backlog/other 10%. The percentages are used as proportional priorities when Today's Planner generates the blocks.</div>
-      <button class="btn btn-primary" id="epv-save" style="margin-top:10px">Save exam priorities & timing</button>
-    </div>`;
-  };
-  window.saveVisibleExamPriority=function(){
-    window.DATA.examPlanWeights=window.DATA.examPlanWeights||{};
-    document.querySelectorAll("[data-ep-id]").forEach(x=>{
-      const test=(window.DATA.upcomingTests||[]).find(t=>String(t.id||t.name||t.date)===x.dataset.epId);
-      if(test)window.DATA.examPlanWeights[test.id]=Math.max(0,Math.min(100,Number(x.value)||0));
-    });
-    window.DATA.examPreferredWindow=window.DATA.examPreferredWindow||{};
-    window.DATA.examPreferredWindow.start=document.getElementById("epv-start")?.value||"";
-    window.DATA.examPreferredWindow.end=document.getElementById("epv-end")?.value||"";
-    if(typeof save==="function")save();
-    if(typeof render==="function")render();
-    setTimeout(window.renderVisibleExamPriority,0);
-    if(typeof toast==="function")toast("🎯 Exam priorities and preferred timing saved.");
-  };
-  document.addEventListener("click",function(e){
-    if(e.target.closest("#epv-save")) window.saveVisibleExamPriority();
-  });
-  function mount(){
-    setTimeout(window.renderVisibleExamPriority,0);
-    setTimeout(window.renderVisibleExamPriority,250);
-  }
-  document.addEventListener("DOMContentLoaded",mount);
-  // Re-render after navigation/render. This is intentionally lightweight.
-  const oldRender=window.render;
-  if(typeof oldRender==="function"){
-    window.render=function(){
-      const r=oldRender.apply(this,arguments);
-      setTimeout(window.renderVisibleExamPriority,0);
-      return r;
-    };
-  }
-})();
-</script>
 </head>
 <body>
 <div id="app">
@@ -2814,6 +2726,8 @@ function render(){
     html = fn();
   }
   main.innerHTML = topbarHTML() + html;
+  // Universal exam-priority UI must be mounted AFTER Today's Planner DOM is rendered.
+  if(route==='planner') setTimeout(()=>{ if(typeof window.renderVisibleExamPriority==='function') window.renderVisibleExamPriority(); },0);
   if(route==='mocks') renderMockChart();
   if(route==='analytics') renderAnalyticsCharts();
   renderFloatHost();
@@ -12799,6 +12713,55 @@ if(typeof oldRender==='function'){
 }
 </script>
 
-
+<script id="exam-priority-visible-js">
+(function(){
+  function d0(s){return String(s||'').slice(0,10);}
+  function localToday(){const d=new Date();d.setHours(0,0,0,0);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+  function tomorrow(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+  function escV(v){return typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function examType(t){
+    const raw=(String(t.source||'')+' '+String(t.testType||'')+' '+String(t.name||'')).toLowerCase();
+    if(raw.includes('school')||t.schoolWeekly===true||raw.includes('cbse')||raw.includes('periodic')||raw.includes('month-end')) return 'CBSE / School';
+    if(raw.includes('aakash')||raw.includes('aiats')||raw.includes('tym')) return 'Aakash';
+    if(raw.includes('vedantu')) return 'Vedantu';
+    if(raw.includes('neet')) return 'NEET';
+    if(raw.includes('jee')) return 'JEE';
+    return t.source||t.testType||'Other';
+  }
+  window.renderVisibleExamPriority=function(){
+    const host=document.getElementById('exam-priority-visible-mount');
+    if(!host)return;
+    const tests=Array.isArray(window.DATA?.upcomingTests)?window.DATA.upcomingTests:[];
+    const today=localToday(),tmr=tomorrow();
+    const upcoming=tests.filter(t=>d0(t.date)>=today).sort((a,b)=>d0(a.date).localeCompare(d0(b.date)));
+    const tomorrowTests=upcoming.filter(t=>d0(t.date)===tmr);
+    const weights=window.DATA.examPlanWeights||{};
+    const pref=window.DATA.examPreferredWindow||{};
+    const shown=upcoming.slice(0,10);
+    const types=['NEET','JEE','CBSE / School','Aakash','Vedantu'];
+    host.innerHTML=`<div class="exam-priority-visible">
+      <div class="epv-head"><div><h3>🎯 Exam Priority + Preferred Timing</h3><div class="hint">This control applies to <b>NEET, JEE, CBSE/School, Aakash, Vedantu</b> and any other exam you add to Test Calendar.</div></div><span class="epv-universal">ALL EXAMS</span></div>
+      ${tomorrowTests.length?`<div class="epv-exam epv-tomorrow">🔴 <b>EXAM TOMORROW</b> — ${tomorrowTests.map(t=>escV(t.name||'Exam')).join(', ')}<br><span>Set its percentage below. Today's generated plan will give it the requested priority.</span></div>`:`<div class="epv-exam epv-normal">📅 No exam tomorrow. You can still set percentages for any upcoming exam.</div>`}
+      <div class="epv-types">${types.map(x=>`<span>${x}</span>`).join('')}</div>
+      ${shown.length?`<div class="epv-grid">${shown.map(t=>{const id=String(t.id||t.name||t.date),type=examType(t),val=Number(weights[t.id]??t.planWeight??0);return `<div class="epv-item"><label>${escV(type)}</label><b>${escV(t.name||'Exam')}</b><div class="epv-date">${escV(t.date)}</div><input type="number" min="0" max="100" data-ep-id="${escV(id)}" value="${val}" placeholder="% of today's study time"></div>`}).join('')}</div>`:`<div class="epv-empty">No upcoming exams are entered yet. Add the exam in <b>Test Calendar</b> first; it will automatically appear here.</div>`}
+      <div class="epv-grid epv-time-grid"><div class="epv-item"><label>Preferred study start</label><input id="epv-start" type="time" value="${escV(pref.start||'')}"></div><div class="epv-item"><label>Preferred study end</label><input id="epv-end" type="time" value="${escV(pref.end||'')}"></div></div>
+      <div class="epv-example">Example: School Chemistry tomorrow <b>70%</b> + NEET test <b>20%</b> + JEE <b>10%</b>. Pragati uses these as proportional priorities inside your preferred time window.</div>
+      <button class="btn btn-primary" id="epv-save">💾 Save exam priorities & timing</button>
+    </div>`;
+  };
+  window.saveVisibleExamPriority=function(){
+    window.DATA.examPlanWeights=window.DATA.examPlanWeights||{};
+    document.querySelectorAll('[data-ep-id]').forEach(x=>{const t=(window.DATA.upcomingTests||[]).find(t=>String(t.id||t.name||t.date)===x.dataset.epId);if(t)window.DATA.examPlanWeights[t.id]=Math.max(0,Math.min(100,Number(x.value)||0));});
+    window.DATA.examPreferredWindow=window.DATA.examPreferredWindow||{};
+    window.DATA.examPreferredWindow.start=document.getElementById('epv-start')?.value||'';
+    window.DATA.examPreferredWindow.end=document.getElementById('epv-end')?.value||'';
+    if(typeof save==='function')save();
+    if(typeof toast==='function')toast('🎯 Exam priorities and preferred timing saved.');
+    if(typeof render==='function')render();
+  };
+  document.addEventListener('click',e=>{if(e.target.closest('#epv-save'))window.saveVisibleExamPriority();});
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(window.renderVisibleExamPriority,150));
+})();
+</script>
 </body>
 </html>
