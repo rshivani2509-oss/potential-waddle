@@ -5771,18 +5771,18 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       }
     }
   });
-  events=examPlanApplyPreferredWindow(events);
-  DATA.plannerEvents = [...DATA.plannerEvents, ...events];
+  const finalGeneratedEvents = examPlanApplyPreferredWindow(events);
+  DATA.plannerEvents = [...DATA.plannerEvents, ...finalGeneratedEvents];
   plannerViewDate = date;
   save(); render();
-  if(selectedSet && selectedSet.size && !events.some(e=>selectedSet.has(e.subject+'::'+(e.chapter||'')))){
+  if(selectedSet && selectedSet.size && !finalGeneratedEvents.some(e=>selectedSet.has(e.subject+'::'+(e.chapter||'')))){
     toast('⚠️ No selected chapter could be placed in the available study slots. Check your free time, study-step minutes, or commitments.');
   }
   const lockedCount = DATA.plannerEvents.filter(b=>b.date===date && b.locked).length;
-  const prereqWarnings = collectPrereqWarningsForEvents(events);
+  const prereqWarnings = collectPrereqWarningsForEvents(finalGeneratedEvents);
   toast((selectedSet
-    ? `🤖 Generated ${events.length} blocks for ${fmtDate(date)} — ${selectedSet.size} chapter${selectedSet.size===1?'':'s'} you chose, at a realistic pace${timeWindow&&timeWindow.enabled?` inside ${fmtTime(timeWindow.start)}–${fmtTime(timeWindow.end)}`:''}.`
-    : `🤖 Generated ${events.length} blocks for ${fmtDate(date)}.`) + (lockedCount ? ` 🔒 ${lockedCount} locked block${lockedCount===1?'':'s'} left untouched.` : '') + (taper ? ` ⏳ Taper mode — consolidation only, ${taper.key} in ${taper.days}d.` : '') + (recap ? ` 📉 Recap ramp-down block added — ${recap.key} in ${recap.days}d.` : '') + (prereqWarnings.length ? ` ⚠️ Scheduled ahead of a prerequisite: ${prereqWarnings.slice(0,2).join(', ')}.` : ''));
+    ? `🤖 Generated ${finalGeneratedEvents.length} blocks for ${fmtDate(date)} — ${selectedSet.size} chapter${selectedSet.size===1?'':'s'} you chose, at a realistic pace${timeWindow&&timeWindow.enabled?` inside ${fmtTime(timeWindow.start)}–${fmtTime(timeWindow.end)}`:''}.`
+    : `🤖 Generated ${finalGeneratedEvents.length} blocks for ${fmtDate(date)}.`) + (lockedCount ? ` 🔒 ${lockedCount} locked block${lockedCount===1?'':'s'} left untouched.` : '') + (taper ? ` ⏳ Taper mode — consolidation only, ${taper.key} in ${taper.days}d.` : '') + (recap ? ` 📉 Recap ramp-down block added — ${recap.key} in ${recap.days}d.` : '') + (prereqWarnings.length ? ` ⚠️ Scheduled ahead of a prerequisite: ${prereqWarnings.slice(0,2).join(', ')}.` : ''));
 }
 function scheduleOverrideSummary(date){
   const ov = (DATA.scheduleOverrides||{})[date] || {};
@@ -6269,24 +6269,17 @@ function examPlanWeightedTasks(baseTasks, totalMinutes){
 function examPlanApplyPreferredWindow(events){
   const w=examPlanPreferredWindow();
   if(!w.start||!w.end)return events;
-  const [sh,sm]=w.start.split(':').map(Number),[eh,em]=w.end.split(':').map(Number);
-  let a=sh*60+sm,b=eh*60+em;if(b<=a)b+=1440;
-  const study=events.filter(e=>e.type==='study'||e.kind==='study');
-  if(!study.length)return events;
-  const fixed=events.filter(e=>!(e.type==='study'||e.kind==='study'));
-  const total=Math.max(0,b-a);
-  let cursor=a;
-  const mapped=[];
-  study.forEach(e=>{
-    const dur=Math.max(5,Number(e.duration||e.minutes||30));
-    if(cursor+dur> b) return;
-    const hh=Math.floor((cursor%1440)/60),mm=cursor%60;
-    const ehh=Math.floor(((cursor+dur)%1440)/60),emm=(cursor+dur)%60;
-    e.start=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-    e.end=`${String(ehh).padStart(2,'0')}:${String(emm).padStart(2,'0')}`;
-    mapped.push(e);cursor+=dur;
+  const ws=toMin(w.start), we=toMin(w.end);
+  if(!Number.isFinite(ws)||!Number.isFinite(we)||we<=ws)return events;
+  // The main generator already clips its free slots to this window. Do not re-time
+  // the generated blocks here; doing so used the wrong event shape (start/end instead
+  // of startTime/endTime) and could discard/duplicate blocks. Just enforce the boundary.
+  return events.filter(e=>{
+    if(e.subject==='Fixed'||e.locked)return true;
+    if(!e.startTime||!e.endTime)return true;
+    const s=toMin(e.startTime), en=toMin(e.endTime);
+    return s>=ws && en<=we;
   });
-  return [...fixed,...mapped];
 }
 function renderExamWeightedControls(){
   const tests=examPlanTests();
