@@ -2727,7 +2727,7 @@ function render(){
   }
   main.innerHTML = topbarHTML() + html;
   // Universal exam-priority UI must be mounted AFTER Today's Planner DOM is rendered.
-  if(route==='planner') setTimeout(()=>{ if(typeof window.renderVisibleExamPriority==='function') window.renderVisibleExamPriority(); },0);
+  if(route==='planner') setTimeout(()=>{ try{ if(typeof window.renderVisibleExamPriority==='function') window.renderVisibleExamPriority(); }catch(e){ console.error('Exam priority UI failed:',e); } },0);
   if(route==='mocks') renderMockChart();
   if(route==='analytics') renderAnalyticsCharts();
   renderFloatHost();
@@ -12731,12 +12731,12 @@ if(typeof oldRender==='function'){
   window.renderVisibleExamPriority=function(){
     const host=document.getElementById('exam-priority-visible-mount');
     if(!host)return;
-    const tests=Array.isArray(window.DATA?.upcomingTests)?window.DATA.upcomingTests:[];
+    const tests=Array.isArray(DATA?.upcomingTests)?DATA.upcomingTests:[];
     const today=localToday(),tmr=tomorrow();
     const upcoming=tests.filter(t=>d0(t.date)>=today).sort((a,b)=>d0(a.date).localeCompare(d0(b.date)));
     const tomorrowTests=upcoming.filter(t=>d0(t.date)===tmr);
-    const weights=window.DATA.examPlanWeights||{};
-    const pref=window.DATA.examPreferredWindow||{};
+    const weights=DATA.examPlanWeights||{};
+    const pref=DATA.examPreferredWindow||{};
     const shown=upcoming.slice(0,10);
     const types=['NEET','JEE','CBSE / School','Aakash','Vedantu'];
     host.innerHTML=`<div class="exam-priority-visible">
@@ -12750,11 +12750,11 @@ if(typeof oldRender==='function'){
     </div>`;
   };
   window.saveVisibleExamPriority=function(){
-    window.DATA.examPlanWeights=window.DATA.examPlanWeights||{};
-    document.querySelectorAll('[data-ep-id]').forEach(x=>{const t=(window.DATA.upcomingTests||[]).find(t=>String(t.id||t.name||t.date)===x.dataset.epId);if(t)window.DATA.examPlanWeights[t.id]=Math.max(0,Math.min(100,Number(x.value)||0));});
-    window.DATA.examPreferredWindow=window.DATA.examPreferredWindow||{};
-    window.DATA.examPreferredWindow.start=document.getElementById('epv-start')?.value||'';
-    window.DATA.examPreferredWindow.end=document.getElementById('epv-end')?.value||'';
+    DATA.examPlanWeights=DATA.examPlanWeights||{};
+    document.querySelectorAll('[data-ep-id]').forEach(x=>{const t=(DATA.upcomingTests||[]).find(t=>String(t.id||t.name||t.date)===x.dataset.epId);if(t)DATA.examPlanWeights[t.id]=Math.max(0,Math.min(100,Number(x.value)||0));});
+    DATA.examPreferredWindow=DATA.examPreferredWindow||{};
+    DATA.examPreferredWindow.start=document.getElementById('epv-start')?.value||'';
+    DATA.examPreferredWindow.end=document.getElementById('epv-end')?.value||'';
     if(typeof save==='function')save();
     if(typeof toast==='function')toast('🎯 Exam priorities and preferred timing saved.');
     if(typeof render==='function')render();
