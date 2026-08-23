@@ -1117,6 +1117,51 @@ html[data-theme="dark"] .modal .icon-btn{color:#4c463d!important;background:#f6f
 .prg-toggle input:checked+.prg-slider{background:var(--accent)}
 .prg-toggle input:checked+.prg-slider:before{transform:translateX(19px)}
 </style>
+
+<style id="exam-eve-morning-css">
+.exam-revision-panel{
+  border:1px solid rgba(214,169,74,.38)!important;
+  border-radius:18px!important;
+  padding:16px!important;
+  margin-bottom:16px!important;
+  background:linear-gradient(135deg,#241b0e,#15110b)!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.28)!important;
+}
+.exam-revision-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.exam-revision-title{font-family:Georgia,serif;color:#F1CF73;font-size:19px;font-weight:700}
+.exam-revision-sub{color:#C9BFA8;font-size:11.5px;line-height:1.5;margin-top:4px}
+.exam-revision-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid #6A5125;background:#21180D;color:#F1CF73;font-size:10.5px;font-weight:800}
+.exam-revision-q{
+  margin-top:10px;padding:12px;border:1px solid #49391F;border-radius:13px;
+  background:#1A150D;
+}
+.exam-revision-q .qtext{color:#F7F0DF;font-size:13px;font-weight:650;line-height:1.5}
+.exam-revision-q .qmeta{color:#8F846C;font-size:10.5px;margin-bottom:6px}
+.exam-revision-q .qconcept{color:#C9BFA8;font-size:11px;line-height:1.45;margin-top:7px}
+.exam-revision-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+</style>
+
+<style id="exam-weighted-css">
+.exam-weight-card{border:1px solid rgba(214,169,74,.35)!important;border-radius:18px!important;padding:16px!important;margin-top:12px!important;background:linear-gradient(135deg,#241b0e,#15110b)!important}
+.exam-weight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:10px}
+.exam-weight-row{border:1px solid #49391F;border-radius:12px;padding:10px;background:#1A150D}
+.exam-weight-row label{display:block;color:#C9BFA8;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.exam-weight-row input,.exam-weight-row select{width:100%;padding:8px;border-radius:8px;border:1px solid #4A3A20;background:#15120E;color:#F4ECD9}
+.exam-weight-hint{font-size:11px;color:#9F947C;line-height:1.45;margin-top:8px}
+.exam-weight-total{margin-top:10px;padding:9px 11px;border-radius:10px;background:#21180D;border:1px solid #49391F;color:#F1CF73;font-size:11px;font-weight:700}
+</style>
+
+<style id="smart-exam-css">
+.smart-exam-card{border:1px solid rgba(214,169,74,.35);border-radius:18px;padding:16px;margin:12px 0;background:linear-gradient(135deg,#241b0e,#15110b);color:#eee}
+.smart-exam-title{font:700 19px Georgia,serif;color:#F1CF73}
+.smart-exam-sub{font-size:11px;color:#C9BFA8;line-height:1.5;margin-top:4px}
+.smart-exam-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-top:12px}
+.smart-exam-box{padding:11px;border:1px solid #49391F;border-radius:11px;background:#1A150D}
+.smart-exam-box label{display:block;color:#C9BFA8;font-size:10px;margin-bottom:5px;text-transform:uppercase}
+.smart-exam-box input,.smart-exam-box select{width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #4A3A20;background:#15120E;color:#F4ECD9}
+.smart-exam-badge{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid #6A5125;color:#F1CF73;background:#21180D;font-size:10px;font-weight:700}
+.smart-exam-list{margin-top:10px}.smart-exam-item{padding:9px 0;border-bottom:1px solid #3b2f1d;font-size:12px}
+</style>
 </head>
 <body>
 <div id="app">
@@ -5640,6 +5685,12 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
     pool=priorities;
   }
   const remainingMin = new Map();   // task key -> minutes left
+  pool=examPlanWeightedTasks(pool, examPlanMinutesForWindow(examPlanPreferredWindow().start, examPlanPreferredWindow().end)||1440);
+  if(smartExamEnsure().enabled){
+    const sp=smartExamBuildPriorityList();
+    const rank=new Map(sp.map((x,i)=>[x.subject+'::'+x.chapter,i]));
+    pool.sort((a,b)=>(rank.get(a.subject+'::'+a.chapter)??9999)-(rank.get(b.subject+'::'+b.chapter)??9999));
+  }
   const taskPool = [];              // flattened {subject, chapter, type, key, ...scoring fields}
   const pooledChapterKeys = new Set();
   const addChapterTasks = (p)=>{
@@ -5720,6 +5771,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       }
     }
   });
+  events=examPlanApplyPreferredWindow(events);
   DATA.plannerEvents = [...DATA.plannerEvents, ...events];
   plannerViewDate = date;
   save(); render();
@@ -6166,6 +6218,241 @@ function startPlannerBlockFocus(id){
   const b=(DATA.plannerEvents||[]).find(x=>x.id===id); if(!b || b.done) return;
   startFocusSession(b.subject||'Study', b.chapter||'', b.id, b.activity||'Study block');
 }
+
+/* ===== EXAM-WEIGHTED DAY PLANNER ===== */
+function examWeightedSettings(){
+  if(!DATA.examPlanWeights) DATA.examPlanWeights={};
+  if(!DATA.examPreferredWindow) DATA.examPreferredWindow={start:'',end:''};
+  return DATA.examPlanWeights;
+}
+function examPlanTests(){
+  const today=todayStr();
+  return (DATA.upcomingTests||[]).filter(t=>t && t.date>=today)
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+}
+function examPlanWeightFor(t){
+  examWeightedSettings();
+  return Math.max(0,Math.min(100,Number(DATA.examPlanWeights[t.id] ?? t.planWeight ?? 0)));
+}
+function examPlanPreferredWindow(){
+  examWeightedSettings();
+  return DATA.examPreferredWindow;
+}
+function examPlanMinutesForWindow(start,end){
+  if(!start||!end)return 0;
+  const [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);
+  let a=sh*60+sm,b=eh*60+em;
+  if(b<=a)b+=1440;
+  return Math.max(0,b-a);
+}
+function examPlanWeightedTasks(baseTasks, totalMinutes){
+  const tests=examPlanTests();
+  if(!tests.length)return baseTasks;
+  const weighted=tests.map(t=>({test:t,weight:examPlanWeightFor(t)})).filter(x=>x.weight>0);
+  if(!weighted.length)return baseTasks;
+  const total=weighted.reduce((s,x)=>s+x.weight,0);
+  // Prioritize exam-linked chapters in proportion to user-selected percentages.
+  const result=[];
+  weighted.forEach(x=>{
+    const share=x.weight/total;
+    const target=Math.max(0,Math.round(totalMinutes*share));
+    const covered=new Set((x.test.chapters||[]).map(c=>String(c.subject)+'::'+String(c.chapter)));
+    baseTasks.filter(task=>covered.has(String(task.subject)+'::'+String(task.chapter)))
+      .forEach(task=>result.push({...task,_examWeight:x.weight,_examTarget:target}));
+  });
+  // Keep tasks not linked to an exam after exam-priority tasks.
+  const coveredAll=new Set(weighted.flatMap(x=>(x.test.chapters||[]).map(c=>String(c.subject)+'::'+String(c.chapter))));
+  baseTasks.filter(task=>!coveredAll.has(String(task.subject)+'::'+String(task.chapter)))
+    .forEach(task=>result.push({...task,_examWeight:0}));
+  return result;
+}
+function examPlanApplyPreferredWindow(events){
+  const w=examPlanPreferredWindow();
+  if(!w.start||!w.end)return events;
+  const [sh,sm]=w.start.split(':').map(Number),[eh,em]=w.end.split(':').map(Number);
+  let a=sh*60+sm,b=eh*60+em;if(b<=a)b+=1440;
+  const study=events.filter(e=>e.type==='study'||e.kind==='study');
+  if(!study.length)return events;
+  const fixed=events.filter(e=>!(e.type==='study'||e.kind==='study'));
+  const total=Math.max(0,b-a);
+  let cursor=a;
+  const mapped=[];
+  study.forEach(e=>{
+    const dur=Math.max(5,Number(e.duration||e.minutes||30));
+    if(cursor+dur> b) return;
+    const hh=Math.floor((cursor%1440)/60),mm=cursor%60;
+    const ehh=Math.floor(((cursor+dur)%1440)/60),emm=(cursor+dur)%60;
+    e.start=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+    e.end=`${String(ehh).padStart(2,'0')}:${String(emm).padStart(2,'0')}`;
+    mapped.push(e);cursor+=dur;
+  });
+  return [...fixed,...mapped];
+}
+function renderExamWeightedControls(){
+  const tests=examPlanTests();
+  if(!tests.length)return '';
+  const w=examPlanPreferredWindow();
+  return `<div class="exam-weight-card">
+    <div style="color:#F1CF73;font-family:Georgia,serif;font-size:18px;font-weight:700;">🎯 Exam Priority for Today</div>
+    <div class="exam-weight-hint">Choose how much of today's available study time should go toward each upcoming exam. Example: tomorrow's exam 70%, another exam 30%. The generated plan will use these weights and your preferred study window.</div>
+    <div class="exam-weight-grid">
+      ${tests.slice(0,6).map(t=>`<div class="exam-weight-row">
+        <label>${esc(t.name||'Exam')} · ${esc(t.date)}</label>
+        <input class="exam-plan-weight" data-id="${esc(t.id)}" type="number" min="0" max="100" value="${examPlanWeightFor(t)}">
+      </div>`).join('')}
+      <div class="exam-weight-row"><label>Preferred start</label><input id="exam-pref-start" type="time" value="${esc(w.start||'')}"></div>
+      <div class="exam-weight-row"><label>Preferred end</label><input id="exam-pref-end" type="time" value="${esc(w.end||'')}"></div>
+    </div>
+    <div id="exam-weight-total" class="exam-weight-total">Exam allocation: 0%</div>
+    <button class="btn btn-primary" id="exam-weight-save" style="margin-top:10px;">Save exam priorities & timing</button>
+  </div>`;
+}
+function saveExamWeightedControls(){
+  examWeightedSettings();
+  document.querySelectorAll('.exam-plan-weight').forEach(x=>DATA.examPlanWeights[x.dataset.id]=Math.max(0,Math.min(100,Number(x.value)||0)));
+  DATA.examPreferredWindow.start=document.getElementById('exam-pref-start')?.value||'';
+  DATA.examPreferredWindow.end=document.getElementById('exam-pref-end')?.value||'';
+  const total=Object.values(DATA.examPlanWeights).reduce((s,v)=>s+Number(v||0),0);
+  if(total>100){toast('Exam percentages can total more than 100 only if you intentionally want proportional weighting.');}
+  save();render();
+  toast('🎯 Exam priority and preferred timing saved.');
+}
+function updateExamWeightTotal(){
+  const el=document.getElementById('exam-weight-total');if(!el)return;
+  const total=[...document.querySelectorAll('.exam-plan-weight')].reduce((s,x)=>s+(Number(x.value)||0),0);
+  el.textContent=`Exam allocation: ${total}%${total===100?' · perfectly allocated':' · proportional weighting will be used'}`;
+}
+
+
+/* ===== SMART EXAM MODE: urgency + weak-chapter weighting + recovery ===== */
+function smartExamEnsure(){
+  if(!DATA.smartExam) DATA.smartExam={enabled:true,adaptive:true,lastGeneratedDate:'',weights:{}};
+  if(!DATA.smartExam.weights) DATA.smartExam.weights={};
+  return DATA.smartExam;
+}
+function smartExamUrgency(date){
+  const d=daysBetween(todayStr(),date);
+  if(d<=0)return {label:'TODAY',score:100};
+  if(d===1)return {label:'TOMORROW',score:95};
+  if(d<=3)return {label:'2–3 DAYS',score:80};
+  if(d<=7)return {label:'4–7 DAYS',score:60};
+  return {label:'LATER',score:30};
+}
+function smartExamUpcoming(){
+  return examPlanTests().slice(0,8).map(t=>({...t,urgency:smartExamUrgency(t.date)}));
+}
+function smartExamChapterStrength(subject,chapter){
+  const rows=prChapterMasterySafe(subject,chapter);
+  if(!rows) return 50;
+  return rows.mastery;
+}
+function prChapterMasterySafe(subject,chapter){
+  // Use the existing mastery function when available; otherwise infer from chapter stats.
+  if(typeof chapterMastery==='function'){
+    try{return chapterMastery(subject,chapter);}
+    catch(e){}
+  }
+  const attempts=(DATA.attemptLog||[]).filter(a=>a.subject===subject&&a.chapter===chapter);
+  if(!attempts.length)return null;
+  const correct=attempts.filter(a=>a.correct===true).length;
+  const acc=Math.round(correct/attempts.length*100);
+  return {mastery:acc};
+}
+function smartExamChapterPriority(test,chapter){
+  const urgency=test.urgency?.score||smartExamUrgency(test.date).score;
+  const strength=smartExamChapterStrength(chapter.subject,chapter.chapter);
+  // Weakness gets more attention, urgency multiplies it.
+  return Math.round(urgency*(0.65 + (100-strength)/100*0.35));
+}
+function smartExamBuildPriorityList(){
+  const tests=smartExamUpcoming();
+  const rows=[];
+  tests.forEach(t=>{
+    (t.chapters||[]).forEach(c=>{
+      rows.push({
+        testId:t.id,testName:t.name,date:t.date,urgency:t.urgency,
+        subject:c.subject,chapter:c.chapter,
+        strength:smartExamChapterStrength(c.subject,c.chapter),
+        priority:smartExamChapterPriority(t,c)
+      });
+    });
+  });
+  return rows.sort((a,b)=>b.priority-a.priority);
+}
+function smartExamRecoverUnfinished(){
+  const today=todayStr();
+  const unfinished=(DATA.plannerEvents||[]).filter(e=>{
+    if(e.date!==today)return false;
+    if(e.done)return false;
+    if(e.generated===false)return false;
+    return e.chapter && (e.type==='study'||e.kind==='study'||e.subject);
+  });
+  if(!unfinished.length)return {count:0,minutes:0};
+  const windows=[];
+  const w=examPlanPreferredWindow();
+  if(w.start&&w.end)windows.push(w);
+  let minutes=0;
+  unfinished.forEach(e=>minutes+=Number(e.duration||e.minutes||timeDiff(e.startTime||e.start,e.endTime||e.end)||0));
+  return {count:unfinished.length,minutes};
+}
+function smartExamGenerateRecovery(){
+  const rec=smartExamRecoverUnfinished();
+  if(!rec.count)return toast('No unfinished generated blocks to redistribute.');
+  const w=examPlanPreferredWindow();
+  if(!w.start||!w.end)return toast('Set your preferred study window first.');
+  const today=todayStr();
+  const unfinished=(DATA.plannerEvents||[]).filter(e=>e.date===today&&!e.done&&e.chapter);
+  // Remove only unfinished generated study blocks; fixed commitments remain untouched.
+  DATA.plannerEvents=DATA.plannerEvents.filter(e=>!unfinished.includes(e));
+  const start=toMin(w.start),end=toMin(w.end);
+  let cursor=start;
+  unfinished.forEach(e=>{
+    const dur=Math.max(10,Number(e.duration||e.minutes||30));
+    if(cursor+dur>end)return;
+    e.startTime=minToTime(cursor);e.endTime=minToTime(cursor+dur);
+    e.date=today;e.generated=true;e.rebalanced=true;
+    DATA.plannerEvents.push(e);cursor+=dur;
+  });
+  save();render();
+  toast(`🔄 Redistributed ${Math.min(rec.minutes,(end-start))} minutes into your preferred window.`);
+}
+function toMin(t){
+  if(!t)return 0;
+  const [h,m]=String(t).split(':').map(Number);return h*60+m;
+}
+function minToTime(n){
+  n=((n%1440)+1440)%1440;
+  return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+}
+function smartExamRender(){
+  const s=smartExamEnsure(),tests=smartExamUpcoming(),priority=smartExamBuildPriorityList(),rec=smartExamRecoverUnfinished();
+  if(!tests.length)return '';
+  return `<div class="smart-exam-card">
+    <div class="smart-exam-title">🎯 Smart Exam Mode</div>
+    <div class="smart-exam-sub">Pragati automatically increases priority for urgent exams and gives extra attention to weak chapters. You can still control the percentages and preferred timing.</div>
+    <div class="smart-exam-grid">
+      ${tests.slice(0,4).map(t=>`<div class="smart-exam-box">
+        <label>${esc(t.name||'Exam')}</label>
+        <div class="smart-exam-badge">${t.urgency.label}</div>
+        <div style="margin-top:6px;font-size:11px;color:#C9BFA8;">${esc(t.date)} · ${t.urgency.score} urgency</div>
+      </div>`).join('')}
+    </div>
+    <div class="smart-exam-list">
+      <b>Priority chapters</b>
+      ${priority.slice(0,8).map(x=>`<div class="smart-exam-item">
+        <span class="smart-exam-badge">${x.priority}</span>
+        <b>${esc(x.chapter)}</b> · ${esc(x.subject)}
+        <span style="float:right;color:#9F947C;">${x.strength}% mastery</span>
+      </div>`).join('')}
+    </div>
+    ${rec.count?`<div class="smart-exam-item" style="margin-top:8px;">🔄 <b>${rec.count}</b> unfinished generated block${rec.count===1?'':'s'} · about <b>${rec.minutes} min</b> ready for redistribution.</div>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;">
+      <button class="btn" id="smart-exam-toggle">${s.enabled?'Smart Exam Mode: ON':'Smart Exam Mode: OFF'}</button>
+      ${rec.count?`<button class="btn btn-primary" id="smart-exam-recover">🔄 Redistribute unfinished work</button>`:''}
+    </div>
+  </div>`;
+}
+
 function viewPlanner(){
   if(!plannerViewDate) plannerViewDate = todayStr();
   const date = plannerViewDate;
@@ -6190,6 +6477,8 @@ function viewPlanner(){
   const studyHours = nonRestBlocks.reduce((a,b)=>a+blockDurationHours(b),0);
   const studyH = Math.floor(studyHours), studyM = Math.round((studyHours-studyH)*60);
   return `
+  ${smartExamRender()}
+
   ${rightNowBarHTML()}
   ${isToday ? catchUpBannerHTML() : ''}
   ${taperBannerHTML(date)}
@@ -8947,6 +9236,71 @@ function ncertFieldLabel(f){
   return {ncertReadOnce:'Read once', ncertReadTwice:'Read twice', ncertHighlighted:'Highlighted', ncertUnderlined:'Underlined', ncertExamples:'Examples solved', ncertDiagrams:'Diagrams revised'}[f];
 }
 
+
+/* ===== EXAM EVE + EXAM MORNING MISTAKE REVISION ===== */
+function examRevisionContext(){
+  const today = todayStr();
+  const tests = (DATA.upcomingTests||[])
+    .filter(t => t && t.date >= today)
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const exam = tests[0];
+  if(!exam) return null;
+  const days = daysBetween(today, exam.date);
+  if(days!==0 && days!==1) return null;
+  return {exam, days, mode:days===1?'eve':'morning'};
+}
+function examRevisionMistakes(){
+  const ctx = examRevisionContext();
+  if(!ctx) return [];
+  const wanted = new Set((ctx.exam.chapters||[]).map(c=>String(c.subject)+'::'+String(c.chapter)));
+  return (DATA.mistakes||[])
+    .filter(m => wanted.has(String(m.subject)+'::'+String(m.chapter)))
+    .sort((a,b)=>{
+      const ac = a.chapter===ctx.exam.chapters?.[0]?.chapter ? 0 : 1;
+      const bc = b.chapter===ctx.exam.chapters?.[0]?.chapter ? 0 : 1;
+      return ac-bc || String(b.date||'').localeCompare(String(a.date||''));
+    });
+}
+function examRevisionPanelHTML(){
+  const ctx = examRevisionContext();
+  if(!ctx) return '';
+  const mistakes = examRevisionMistakes();
+  const isEve = ctx.mode==='eve';
+  const title = isEve ? '🌙 Exam Eve — Mistake Questions' : '🌅 Exam Morning — Final Mistake Questions';
+  const sub = isEve
+    ? `Tomorrow: <b>${esc(ctx.exam.name)}</b> · ${esc(ctx.exam.source||'Test')} · ${esc(ctx.exam.examType||'Exam')}. Review your mistakes from the chapters in this exam. Do not start new topics.`
+    : `Today: <b>${esc(ctx.exam.name)}</b> · ${esc(ctx.exam.source||'Test')} · ${esc(ctx.exam.examType||'Exam')}. Quick recall only — review these mistakes and then stop.`;
+  const limit = isEve ? mistakes.length : Math.min(mistakes.length, 12);
+  const shown = mistakes.slice(0, limit);
+  return `
+    <div class="exam-revision-panel">
+      <div class="exam-revision-head">
+        <div>
+          <div class="exam-revision-title">${title}</div>
+          <div class="exam-revision-sub">${sub}</div>
+        </div>
+        <span class="exam-revision-chip">${mistakes.length} relevant mistake${mistakes.length===1?'':'s'}</span>
+      </div>
+      <div class="exam-revision-actions">
+        <span class="exam-revision-chip">${isEve?'📚 Full mistake review':'⚡ Quick final recall'}</span>
+        <span class="exam-revision-chip">Chapters: ${(ctx.exam.chapters||[]).length}</span>
+      </div>
+      ${shown.length ? shown.map((m,i)=>`
+        <div class="exam-revision-q">
+          <div class="qmeta">Mistake ${i+1} · ${esc(m.subject)} · ${esc(m.chapter)}${m.reason?' · '+esc(m.reason):''}</div>
+          <div class="qtext">Q: ${esc(m.question||'')}</div>
+          ${m.correctConcept?`<div class="qconcept"><b>Correct concept:</b> ${esc(m.correctConcept)}</div>`:''}
+        </div>
+      `).join('') : `
+        <div class="exam-revision-q">
+          <div class="qtext">🎉 No mistakes are logged for the chapters covered by this exam.</div>
+          <div class="qconcept">Use this time for formulas, NCERT/high-yield facts and a calm final recall.</div>
+        </div>
+      `}
+      ${!isEve && mistakes.length>12 ? `<div class="exam-revision-sub" style="margin-top:9px;">Showing the first 12 for exam-morning speed. The complete Mistake Notebook still contains all ${mistakes.length}.</div>` : ''}
+    </div>`;
+}
+
 /* ============================================================
    VIEW: MISTAKE NOTEBOOK (organized per chapter)
    ============================================================ */
@@ -8958,7 +9312,9 @@ function viewMistakes(){
   const tabs = allSubjectTabs();
   const recurrence = mistakeRecurrence().slice(0,4);
   const chapters = DATA.subjects[mistakeTab].chapters;
+  const examRevisionPanel = examRevisionPanelHTML();
   return `
+  ${examRevisionPanel}
   <div class="grid grid-2 mb-16" style="align-items:start;">
     <div class="card">
       <div class="card-head"><h3>📜 Mistake Recurrence Detector</h3></div>
@@ -12207,5 +12563,24 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#prg-break'))prgBreak('break');
   if(e.target.closest('#prg-stress'))prgBreak('stress');
 });
-</script></body>
+</script><div id="examWeightedMount"></div>
+<script id="exam-weighted-js">
+document.addEventListener('input',e=>{
+  if(e.target.classList.contains('exam-plan-weight')) updateExamWeightTotal();
+});
+document.addEventListener('click',e=>{
+  if(e.target.closest('#exam-weight-save')) saveExamWeightedControls();
+});
+document.addEventListener('DOMContentLoaded',()=>setTimeout(updateExamWeightTotal,50));
+</script>
+
+<script id="smart-exam-js">
+document.addEventListener('click',e=>{
+  const t=e.target.closest('#smart-exam-toggle');
+  if(t){smartExamEnsure();DATA.smartExam.enabled=!DATA.smartExam.enabled;save();render();toast(DATA.smartExam.enabled?'🎯 Smart Exam Mode enabled.':'Smart Exam Mode paused.');}
+  const r=e.target.closest('#smart-exam-recover');
+  if(r)smartExamGenerateRecovery();
+});
+</script>
+</body>
 </html>
