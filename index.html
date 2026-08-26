@@ -1179,6 +1179,36 @@ html[data-theme="dark"] .modal .icon-btn{color:#4c463d!important;background:#f6f
 .epv-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.exam-priority-visible h3{margin:0 0 5px;font-size:18px}.epv-universal{font-size:9px;font-weight:800;padding:5px 8px;border-radius:999px;background:var(--sage-soft);color:var(--sage);white-space:nowrap}.exam-priority-visible .hint{font-size:11.5px;color:var(--ink-soft);line-height:1.5}.epv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-top:10px}.epv-item{padding:10px;border:1px solid var(--card-border);border-radius:11px;background:var(--bg-soft)}.epv-item label{display:block;font-size:10px;color:var(--ink-soft);margin-bottom:4px}.epv-item b{font-size:12px}.epv-date{font-size:10px;color:var(--ink-faint);margin:2px 0 6px}.epv-item input{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--card-border);border-radius:8px;background:var(--card);color:var(--ink)}.epv-exam{margin-top:10px;padding:10px;border-radius:10px;font-size:11.5px;line-height:1.45}.epv-tomorrow{background:var(--coral-soft);color:var(--coral);font-weight:650}.epv-normal{background:var(--bg-soft);color:var(--ink-soft)}.epv-types{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.epv-types span{font-size:9px;padding:4px 7px;border-radius:999px;background:var(--sky-soft);color:var(--sky);font-weight:700}.epv-empty{margin-top:10px;padding:12px;border:1px dashed var(--card-border);border-radius:10px;font-size:11px;color:var(--ink-soft)}.epv-example{font-size:10.5px;color:var(--ink-faint);margin-top:9px;line-height:1.4}.epv-time-grid{margin-top:8px}.epv-time-grid .epv-item{background:var(--lavender-soft)}
 @media(max-width:640px){.epv-head{display:block}.epv-universal{display:inline-block;margin-top:7px}}
 </style>
+<style id="pragati-smart-pack-css">
+.prg-pack{border:1px solid var(--card-border);background:var(--card);border-radius:16px;padding:15px;margin-bottom:14px}
+.prg-pack-title{font-weight:800;font-size:17px}.prg-pack-sub{font-size:11px;color:var(--ink-soft);line-height:1.5}
+.prg-pack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-top:10px}
+.prg-pack-stat{padding:11px;border:1px solid var(--card-border);border-radius:11px;background:var(--bg-soft)}
+.prg-pack-stat b{font-size:20px;display:block;margin-top:2px}
+.prg-command{display:grid;gap:8px;margin-top:10px}.prg-command-item{padding:11px;border-radius:11px;border-left:4px solid var(--accent);background:var(--bg-soft)}
+.prg-command-item.must{border-left-color:var(--coral)}.prg-command-item.should{border-left-color:var(--gold)}
+.prg-command-item.if{border-left-color:var(--sky)}.prg-risk{font-weight:800}
+.prg-risk.fresh{color:var(--green)}.prg-risk.due{color:var(--gold)}.prg-risk.risk{color:var(--coral)}
+</style>
+<style id="study-log-weekly-css">
+.psl-card{border:1px solid var(--card-border);background:var(--card);border-radius:16px;padding:15px;margin-bottom:14px}
+.psl-title{font-weight:800;font-size:17px}.psl-sub{font-size:11px;color:var(--ink-soft);line-height:1.5}
+.psl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-top:10px}
+.psl-stat{padding:11px;border:1px solid var(--card-border);border-radius:11px;background:var(--bg-soft)}
+.psl-stat b{font-size:20px;display:block;margin-top:2px}
+.psl-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:11px}
+.psl-form label{font-size:10px;color:var(--ink-soft)}.psl-form input,.psl-form select,.psl-form textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border:1px solid var(--card-border);border-radius:8px;background:var(--card);color:var(--ink)}
+.psl-entry{padding:10px 0;border-bottom:1px solid var(--card-border);font-size:11px}
+</style>
+
+<style id="one-tap-plan-css">
+.one-tap-plan{border:1px solid var(--card-border);border-radius:18px;padding:16px;margin-bottom:16px;background:linear-gradient(135deg,var(--card),var(--bg-soft))}
+.one-tap-plan h3{margin:0 0 4px;font-size:20px}.one-tap-plan .sub{font-size:11px;color:var(--ink-soft);line-height:1.5}
+.one-tap-plan-btn{margin-top:12px;width:100%;min-height:48px;font-size:15px;font-weight:800}
+.otpp-preview{margin-top:10px;padding:10px;border-radius:10px;background:var(--bg-soft);font-size:11px}
+.otpp-row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--card-border)}
+.otpp-row:last-child{border-bottom:0}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1210,7 +1240,7 @@ const DEFAULT_CHAPTERS = {
   Physics: ['Units & Measurements','Kinematics','Laws of Motion','Work Energy Power','Rotational Motion','Gravitation','Mechanical Properties of Solids','Mechanical Properties of Fluids','Thermodynamics','Kinetic Theory of Gases','Oscillations','Waves','Electric Charges & Fields','Electrostatic Potential & Capacitance','Current Electricity','Moving Charges & Magnetism','Magnetism & Matter','EMI','AC','EM Waves','Ray Optics','Wave Optics','Dual Nature of Matter','Atoms','Nuclei','Semiconductors'],
   Chemistry: ['Some Basic Concepts of Chemistry','Structure of Atom','Classification of Elements','Chemical Bonding','States of Matter','Thermodynamics','Equilibrium','Redox Reactions','Hydrogen','s-Block Elements','p-Block Elements (13,14)','Organic Chemistry Basics','Hydrocarbons','Solid State','Solutions','Electrochemistry','Chemical Kinetics','Surface Chemistry','p-Block Elements (15-18)','d and f Block Elements','Coordination Compounds','Haloalkanes & Haloarenes','Alcohols Phenols Ethers','Aldehydes Ketones Carboxylic Acids','Amines','Biomolecules','Polymers','Chemistry in Everyday Life'],
   Biology: ['The Living World','Biological Classification','Plant Kingdom','Animal Kingdom','Morphology of Flowering Plants','Anatomy of Flowering Plants','Structural Organisation in Animals','Cell: The Unit of Life','Biomolecules','Cell Cycle & Division','Transport in Plants','Mineral Nutrition','Photosynthesis','Respiration in Plants','Plant Growth & Development','Digestion & Absorption','Breathing & Exchange of Gases','Body Fluids & Circulation','Excretory Products','Locomotion & Movement','Neural Control & Coordination','Chemical Coordination','Reproduction in Organisms','Sexual Reproduction in Flowering Plants','Human Reproduction','Reproductive Health','Principles of Inheritance','Molecular Basis of Inheritance','Evolution','Human Health & Disease','Microbes in Human Welfare','Biotechnology Principles','Biotechnology Applications','Organisms & Populations','Ecosystem','Biodiversity & Conservation'],
-  Maths: ['Sets Relations Functions','Complex Numbers','Quadratic Equations','Permutations & Combinations','Binomial Theorem','Sequences & Series','Straight Lines','Conic Sections','Limits & Derivatives','Statistics','Trigonometric Functions','Matrices','Determinants','Continuity & Differentiability','Application of Derivatives','Integrals','Application of Integrals','Differential Equations','Vector Algebra','3D Geometry','Probability']
+  Maths: ['Sets Relations Functions','Complex Numbers','Quadratic Equations','Permutations & Combinations','Binomial Theorem','Sequences & Series','Straight Lines','Conic Sections','Limits & Derivatives','Statistics','Trigonometric Functions','Probability','Matrices','Determinants','Continuity & Differentiability','Application of Derivatives','Integrals','Application of Integrals','Differential Equations','Vector Algebra','3D Geometry','Linear Programming']
 };
 // How many of each subject's DEFAULT_CHAPTERS (in order) belong to the Class 11 syllabus —
 // used to auto-tag chapters so the planner treats "already done last year" topics differently
@@ -1339,7 +1369,8 @@ const DEFAULT_TOPICS = {
     'Differential Equations': ['Order & degree','Variable separable','Linear differential equations'],
     'Vector Algebra': ['Vector operations','Dot & cross product','Scalar triple product'],
     '3D Geometry': ['Direction cosines & ratios','Line equations in 3D','Plane equations','Shortest distance'],
-    'Probability': ['Conditional probability',"Bayes' theorem",'Random variables & distributions']
+    'Probability': ['Conditional probability',"Bayes' theorem",'Random variables & distributions'],
+    'Linear Programming': ['Formulation of linear programming problems','Graphical method','Feasible region and corner points','Maximization and minimization']
   }
 };
 // ---- Chapter Dependency Map ----
@@ -1478,6 +1509,9 @@ const STUDY_STATE_META = {
   mastered:{icon:'⭐',label:'Mastered',action:'Spaced revision / maintenance'}
 };
 const STUDY_EXAMS=['CBSE','NEET','JEE'];
+const EXAM_SUBJECTS = { CBSE:['Physics','Chemistry','Biology','Maths'], NEET:['Physics','Chemistry','Biology'], JEE:['Physics','Chemistry','Maths'] };
+function examAppliesToSubject(exam, subject){ return (EXAM_SUBJECTS[exam]||[]).includes(subject); }
+function allowedExamsForSubject(subject){ return STUDY_EXAMS.filter(ex=>examAppliesToSubject(ex,subject)); }
 
 function normalizeStudyState(v){
   if(v==='practiced') return 'practicing';
@@ -1547,15 +1581,15 @@ function cycleTopicStatus(subj, chId, topicId){
   const exam = window.__topicExamChoice || (t.jee>0 && t.neet>0 ? 'NEET' : t.jee>0 ? 'JEE' : 'CBSE');
   cycleTopicStudyState(subj,chId,topicId,exam);
 }
-const CLASS11_CHAPTER_COUNT = { Physics:12, Chemistry:13, Biology:15, Maths:11 };
-function autoClassLevel(subject, chapterName){
-  const list = DEFAULT_CHAPTERS[subject];
-  if(!list) return 12;
-  const idx = list.indexOf(chapterName);
-  if(idx === -1) return 12; // custom/added chapter — assume current year unless the student marks it
-  return idx < (CLASS11_CHAPTER_COUNT[subject]||0) ? 11 : 12;
-}
-function chapterClassLevel(subject, ch){ return ch.classLevel || autoClassLevel(subject, ch.name); }
+// Explicit Class 11 / Class 12 syllabus grouping. This avoids relying on array position.
+const CLASS11_CHAPTERS = {
+  Physics: new Set(['Units & Measurements','Kinematics','Laws of Motion','Work Energy Power','Rotational Motion','Gravitation','Mechanical Properties of Solids','Mechanical Properties of Fluids','Thermodynamics','Kinetic Theory of Gases','Oscillations','Waves']),
+  Chemistry: new Set(['Some Basic Concepts of Chemistry','Structure of Atom','Classification of Elements','Chemical Bonding','States of Matter','Thermodynamics','Equilibrium','Redox Reactions','Hydrogen','s-Block Elements','p-Block Elements (13,14)','Organic Chemistry Basics','Hydrocarbons']),
+  Biology: new Set(['The Living World','Biological Classification','Plant Kingdom','Animal Kingdom','Morphology of Flowering Plants','Anatomy of Flowering Plants','Structural Organisation in Animals','Cell: The Unit of Life','Biomolecules','Cell Cycle & Division','Transport in Plants','Mineral Nutrition','Photosynthesis','Respiration in Plants','Plant Growth & Development','Digestion & Absorption','Breathing & Exchange of Gases','Body Fluids & Circulation','Excretory Products','Locomotion & Movement','Neural Control & Coordination','Chemical Coordination']),
+  Maths: new Set(['Sets Relations Functions','Complex Numbers','Quadratic Equations','Permutations & Combinations','Binomial Theorem','Sequences & Series','Straight Lines','Conic Sections','Limits & Derivatives','Statistics','Trigonometric Functions','Probability'])
+};
+function autoClassLevel(subject, chapterName){ return CLASS11_CHAPTERS[subject]?.has(chapterName) ? 11 : 12; }
+function chapterClassLevel(subject, ch){ return Number(ch?.classLevel)===11 ? 11 : Number(ch?.classLevel)===12 ? 12 : autoClassLevel(subject, ch?.name); }
 
 // Maps each Class 12 chapter to the Class 11 chapter(s) it's built on — used so the daily
 // Class 11 recap slot picks the actual foundational/related topic for whatever Class 12
@@ -2431,6 +2465,8 @@ function migrateData(d){
   Object.keys(DEFAULT_CHAPTERS).forEach(s => { if(!merged.subjects[s]) merged.subjects[s] = {chapters: DEFAULT_CHAPTERS[s].map(n=>makeChapter(n, s))}; });
   // Backfill module tracker (Aakash/Tatva) + auto-priority mode on any chapters saved before these features existed
   Object.entries(merged.subjects).forEach(([subjKey, subjData]) => {
+    const allowed = new Set(allowedExamsForSubject(subjKey));
+
     (subjData.chapters||[]).forEach(ch => {
       if(!ch.modules) ch.modules = makeModules();
       else MODULE_DEFS.forEach(md => {
@@ -2446,10 +2482,19 @@ function migrateData(d){
       if(!Array.isArray(ch.ncertSections)) ch.ncertSections = [];
       if(ch.skipped===undefined) ch.skipped = false;
       if(ch.resourceLink===undefined) ch.resourceLink = '';
+      // Enforce exam eligibility on saved chapter/topic mappings.
+      ch.examTags = ch.examTags || {};
+      ['CBSE','NEET','JEE'].forEach(ex=>{ if(!allowed.has(ex)) ch.examTags[ex]=false; });
       if(!Array.isArray(ch.topics)) ch.topics = buildTopicsFor(subjKey, ch.name);
       else ch.topics.forEach(t => { if(!t.status) t.status = t.done ? 'mastered' : 'notstarted'; });
     });
   });
+  if(!Array.isArray(merged.missingContentReports)) merged.missingContentReports = [];
+  merged.prgPack ||= {mode:'CBSE',achievements:{},snapshots:[]};
+  merged.practiceCounts ||= {};
+  merged.oneTapPlan ||= {lastGenerated:'',lastSummary:null};
+  if(!Array.isArray(merged.studySessionLogs)) merged.studySessionLogs=[];
+  merged.revisionQueue ||= [];
   if(!merged.examRecords) merged.examRecords = [];
   if(!merged.upcomingTests) merged.upcomingTests = [];
   merged.upcomingTests.forEach(t=>{ if(!t.analysisStatus) t.analysisStatus='pending'; if(!t.testType) t.testType = 'Other'; if(!t.examType) t.examType='NEET'; });
@@ -2468,6 +2513,29 @@ function migrateData(d){
   if(!merged.mitChecks) merged.mitChecks = {};
   merged.backlog = Object.assign({}, fresh.backlog, d.backlog||{});
   if(!Array.isArray(merged.backlog.history)) merged.backlog.history = [];
+
+  // Syllabus/exam cleanup migration: fix old saved data without deleting user progress.
+  Object.entries(merged.subjects).forEach(([subjKey, subjData])=>{
+    (subjData.chapters||[]).forEach(ch=>{
+      if(ch.classLevel!==11 && ch.classLevel!==12) ch.classLevel=autoClassLevel(subjKey,ch.name);
+      const allowed=allowedExamsForSubject(subjKey);
+      ch.examTags=Object.assign({CBSE:false,NEET:false,JEE:false},ch.examTags||{});
+      STUDY_EXAMS.forEach(ex=>{ if(!allowed.includes(ex)) ch.examTags[ex]=false; });
+      allowed.forEach(ex=>{ if(ch.examTags[ex]===undefined) ch.examTags[ex]=true; });
+      (ch.topics||[]).forEach(t=>{
+        if(subjKey==='Biology') t.jee=0;
+        if(subjKey==='Maths') t.neet=0;
+        if(!allowed.includes('JEE') && t.studyState) delete t.studyState.JEE;
+        if(!allowed.includes('NEET') && t.studyState) delete t.studyState.NEET;
+      });
+    });
+    if(subjKey==='Maths' && !(subjData.chapters||[]).some(c=>c.name==='Linear Programming')){
+      const ch=makeChapter('Linear Programming','Maths');
+      ch.classLevel=12;
+      subjData.chapters.push(ch);
+    }
+  });
+
   return merged;
 }
 function save(){
@@ -6538,6 +6606,87 @@ function safePlannerView(){
   }
 }
 
+
+/* PRAGATI SMART STUDY PACK */
+function prgPackEnsure(){
+  if(!DATA.prgPack) DATA.prgPack={mode:'CBSE',achievements:{},snapshots:[]};
+  DATA.prgPack.achievements ||= {}; DATA.prgPack.snapshots ||= [];
+  DATA.practiceCounts ||= {}; DATA.revisionQueue ||= [];
+}
+function prgPackAllowed(s,m){return m==='NEET'?['Physics','Chemistry','Biology'].includes(s):m==='JEE'?['Physics','Chemistry','Maths'].includes(s):['Physics','Chemistry','Maths','Biology'].includes(s)}
+function prgSetMode(m){prgPackEnsure();DATA.prgPack.mode=m;save();render();toast(`🎓 ${m} mode selected.`)}
+function prgRisk(s,c){
+  const ds=(DATA.plannerEvents||[]).filter(e=>e.subject===s&&e.chapter===c&&e.done&&e.date).map(e=>e.date).sort();
+  if(!ds.length)return {label:'🟢 Fresh',cls:'fresh',days:0};
+  const d=Math.max(0,Math.round((new Date(todayStr())-new Date(ds.at(-1)))/86400000));
+  return d<=2?{label:'🟢 Fresh',cls:'fresh',days:d}:d<=7?{label:'🟡 Due soon',cls:'due',days:d}:{label:'🔴 At risk',cls:'risk',days:d};
+}
+function prgNext(){
+  const a=[];prgPackEnsure();
+  Object.entries(DATA.subjects||{}).forEach(([s,x])=>{
+    if(!prgPackAllowed(s,DATA.prgPack.mode))return;
+    (x.chapters||[]).forEach(c=>{
+      const risk=prgRisk(s,c.name), ms=(DATA.mistakes||[]).filter(m=>!m.mastered&&m.subject===s&&m.chapter===c.name).length;
+      const pc=DATA.practiceCounts[s+'::'+c.name]||{}, acc=pc.attempted?pc.correct/pc.attempted*100:0;
+      a.push({s,c:c.name,score:(100-acc)+ms*8+(risk.days>7?20:risk.days>2?8:0),risk,ms});
+    });
+  });return a.sort((x,y)=>y.score-x.score)[0];
+}
+function prgTomorrow(){
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);
+  return d.toISOString().slice(0,10);
+}
+function prgCommand(){
+  const exams=(DATA.upcomingTests||[]).filter(t=>String(t.date).slice(0,10)>=todayStr()).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const tom=exams.filter(t=>String(t.date).slice(0,10)===prgTomorrow()), n=prgNext();
+  return `<div class="prg-pack"><div class="prg-pack-title">🧭 Pragati Command Center</div>
+  <div class="prg-pack-sub">Only today's highest-value actions.</div><div class="prg-command">
+  ${tom.map(t=>`<div class="prg-command-item must"><b>🔴 MUST DO — EXAM TOMORROW</b><br>${esc(t.name||'Exam')}</div>`).join('')}
+  ${((DATA.mistakes||[]).filter(m=>!m.mastered).length)?`<div class="prg-command-item must"><b>🔴 MUST DO</b><br>Review unresolved mistakes.</div>`:''}
+  ${n?`<div class="prg-command-item"><b>⚡ WHAT SHOULD I STUDY NOW?</b><br>${esc(n.s)} → ${esc(n.c)}<div class="prg-pack-sub">${n.risk.label} · ${n.ms} unresolved mistakes</div></div>`:''}
+  </div></div>`;
+}
+function prgMode(){
+  prgPackEnsure();const m=DATA.prgPack.mode;
+  return `<div class="prg-pack"><div class="prg-pack-title">🎓 Study Mode</div><div class="prg-pack-sub">CBSE, NEET and JEE use different study actions.</div>
+  <div class="prg-pack-grid">${['CBSE','NEET','JEE'].map(x=>`<button class="btn ${m===x?'btn-primary':'btn-outline'}" onclick="prgSetMode('${x}')">${x}</button>`).join('')}</div>
+  <div class="prg-pack-sub" style="margin-top:8px">${m==='CBSE'?'NCERT + derivations + board PYQs + answer writing':m==='NEET'?'NCERT + MCQs + NEET PYQs + mistake correction':'Concepts + problems + JEE Main/Advanced PYQs'}</div></div>`;
+}
+function prgPractice(s,c){
+  prgPackEnsure();const p=DATA.practiceCounts[s+'::'+c]||{attempted:0,correct:0,pyq:0,hardCopy:0};
+  openModal(`<div class="card-head"><h3>🔢 Practice Counter</h3></div><div class="text-sm muted">${esc(s)} → ${esc(c)}</div>
+  <div class="grid grid-2"><label>Attempted<input id="pcA" type="number" value="${p.attempted}"></label><label>Correct<input id="pcC" type="number" value="${p.correct}"></label>
+  <label>PYQs<input id="pcP" type="number" value="${p.pyq}"></label><label>Hard-copy<input id="pcH" type="number" value="${p.hardCopy}"></label></div>
+  <button class="btn btn-primary mt-12" onclick="prgSavePractice('${esc(s)}','${esc(c)}')">Save</button>`,true);
+}
+function prgSavePractice(s,c){
+  prgPackEnsure();DATA.practiceCounts[s+'::'+c]={attempted:+pcA.value||0,correct:+pcC.value||0,pyq:+pcP.value||0,hardCopy:+pcH.value||0};
+  save();closeModal();render();toast('🔢 Practice count saved.');
+}
+function prgRevision(s,c){
+  prgPackEnsure();const k=s+'::'+c;
+  if(!DATA.revisionQueue.some(x=>x.key===k))DATA.revisionQueue.push({key:k,subject:s,chapter:c,due:todayStr(),status:'due'});
+  save();render();toast('🔁 Added to revision queue.');
+}
+function prgTestRecovery(id){
+  const t=(DATA.upcomingTests||[]).find(x=>String(x.id)===String(id));if(!t)return;
+  prgPackEnsure();(t.chapters||[]).forEach(c=>{const k=c.subject+'::'+c.chapter;if(!DATA.revisionQueue.some(x=>x.key===k))DATA.revisionQueue.push({key:k,subject:c.subject,chapter:c.chapter,due:todayStr(),status:'test-recovery'})});
+  save();render();toast('🧪 Test recovery queue created.');
+}
+function prgWeekly(){
+  const d=new Date();d.setHours(0,0,0,0);const s=new Date(d);s.setDate(s.getDate()-6);const iso=x=>x.toISOString().slice(0,10);
+  const p=(DATA.plannerEvents||[]).filter(e=>e.date>=iso(s)&&e.date<=iso(d)),done=p.filter(e=>e.done),pm=p.reduce((n,e)=>n+(+e.duration||0),0),dm=done.reduce((n,e)=>n+(+e.duration||0),0);
+  return `<div class="prg-pack"><div class="prg-pack-title">📅 Weekly Reality Report</div><div class="prg-pack-sub">Planned vs actual study — no fake productivity score.</div>
+  <div class="prg-pack-grid"><div class="prg-pack-stat">Planned<b>${p.length}</b></div><div class="prg-pack-stat">Completed<b>${done.length}</b></div>
+  <div class="prg-pack-stat">Planned time<b>${(pm/60).toFixed(1)}h</b></div><div class="prg-pack-stat">Actual time<b>${(dm/60).toFixed(1)}h</b></div>
+  <div class="prg-pack-stat">Completion<b>${pm?Math.round(dm/pm*100):0}%</b></div>
+  <div class="prg-pack-stat">Mistakes<b>${(DATA.mistakes||[]).filter(m=>m.date>=iso(s)&&m.date<=iso(d)).length}</b></div></div></div>`;
+}
+function prgPackRender(){
+  prgPackEnsure();return prgCommand()+prgMode()+prgWeekly()+`<div class="prg-pack"><div class="prg-pack-title">🧪 Test → Automatic Recovery</div>
+  <div class="prg-pack-sub">Send a test's chapters directly to revision when needed.</div>${(DATA.upcomingTests||[]).slice(0,6).map(t=>`<button class="btn btn-soft btn-sm" style="margin:5px" onclick="prgTestRecovery('${esc(t.id)}')">${esc(t.name||'Test')} → Recovery</button>`).join('')}</div>`;
+}
+
 function viewPlanner(){
   if(!plannerViewDate) plannerViewDate = todayStr();
   const date = plannerViewDate;
@@ -6561,7 +6710,13 @@ function viewPlanner(){
   const progressPct = taskBlocks.length ? Math.round(doneCount/taskBlocks.length*100) : 0;
   const studyHours = nonRestBlocks.reduce((a,b)=>a+blockDurationHours(b),0);
   const studyH = Math.floor(studyHours), studyM = Math.round((studyHours-studyH)*60);
-  return `<div id="exam-priority-visible-mount"></div>
+  return `
+  ${otpRenderButton()}
+
+  ${pslRender()}
+
+  ${prgPackRender()}
+<div id="exam-priority-visible-mount"></div>
 
   ${safeSmartExamRender()}
 
@@ -8700,6 +8855,65 @@ function groupedSwapOptions(rows){
   </optgroup>`).join('');
 }
 
+function openAddSubjectChapterModal(subj){
+  const allowed = allowedExamsForSubject(subj);
+  openModal(`
+    <div class="card-head"><h3>➕ Add ${esc(subj)} Lesson / Chapter</h3></div>
+    <div class="text-sm muted mb-12">Add a missing lesson without changing the official default syllabus. It will appear in this Subject Tracker, Today's Planner, Syllabus Sync and chapter selectors.</div>
+    <div class="grid grid-2">
+      <label>Lesson / Chapter name<input id="addChName" placeholder="e.g. Communication Systems" autofocus></label>
+      <label>Class<select id="addChClass"><option value="11">Class 11</option><option value="12" selected>Class 12</option></select></label>
+    </div>
+    <div class="mt-12"><div class="text-xs faint mb-6">Use this lesson for</div>
+      <div class="flex gap-12 flex-wrap">${allowed.map(e=>`<label class="text-sm"><input type="checkbox" id="addChExam_${e}" ${e==='CBSE'||(subj==='Biology'&&e==='NEET')||(subj==='Maths'&&e==='JEE')?'checked':''}> ${e}</label>`).join('')}</div>
+    </div>
+    <label class="mt-12">Topics inside this lesson <span class="faint text-xs">(one topic per line, optional)</span>
+      <textarea id="addChTopics" rows="5" placeholder="Concept 1\nConcept 2\nImportant numericals\nPYQs"></textarea>
+    </label>
+    <div class="text-xs faint mt-8">Pragati will keep the exam mapping correct: Biology → NEET/CBSE only; Maths → JEE/CBSE only.</div>
+    <div class="flex gap-8 mt-14"><button class="btn btn-primary" onclick="saveAddedSubjectChapter()">Add Lesson</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button></div>
+  `, true);
+  document.getElementById('addChName')?.focus();
+  window._addSubjectChapter = subj;
+}
+function saveAddedSubjectChapter(){
+  const subj=window._addSubjectChapter;
+  if(!subj || !DATA.subjects[subj]) return;
+  const name=(document.getElementById('addChName')?.value||'').trim();
+  if(!name) return toast('Enter the lesson/chapter name.');
+  const chapters=DATA.subjects[subj].chapters||[];
+  if(chapters.some(c=>c.name.toLowerCase()===name.toLowerCase())) return toast('That lesson already exists in this tracker.');
+  const ch=makeChapter(name,subj);
+  ch.classLevel=Number(document.getElementById('addChClass')?.value)||12;
+  ch.examTags={};
+  allowedExamsForSubject(subj).forEach(e=>{ ch.examTags[e]=!!document.getElementById('addChExam_'+e)?.checked; });
+  const topics=(document.getElementById('addChTopics')?.value||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  ch.topics=topics.map(t=>({id:uid(),name:t,done:false,status:'notstarted',studyState:{CBSE:'notstarted',NEET:'notstarted',JEE:'notstarted'},jee:subj==='Maths'?3:0,neet:subj==='Biology'?3:0}));
+  chapters.push(ch);
+  save(); closeModal(); render(); toast(`✅ Added ${name} to ${subj} · Class ${ch.classLevel}`);
+}
+function openAddTopicModal(subj,chId){
+  const ch=DATA.subjects[subj]?.chapters?.find(c=>c.id===chId); if(!ch)return;
+  openModal(`
+    <div class="card-head"><h3>➕ Add Topic</h3></div>
+    <div class="text-sm muted mb-12">${esc(subj)} → ${esc(ch.name)}</div>
+    <label>Topic name<input id="addTopicName" placeholder="Specific concept / subtopic" autofocus></label>
+    <div class="text-xs faint mt-8">The topic will inherit the correct exam eligibility for this subject and can use the full 7-state Study State system.</div>
+    <div class="flex gap-8 mt-14"><button class="btn btn-primary" onclick="saveAddedTopic()">Add Topic</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button></div>
+  `);
+  window._addTopicTarget={subj,chId};
+  document.getElementById('addTopicName')?.focus();
+}
+function saveAddedTopic(){
+  const target=window._addTopicTarget; if(!target)return;
+  const ch=DATA.subjects[target.subj]?.chapters?.find(c=>c.id===target.chId); if(!ch)return;
+  const name=(document.getElementById('addTopicName')?.value||'').trim();
+  if(!name)return toast('Enter the topic name.');
+  if((ch.topics||[]).some(t=>t.name.toLowerCase()===name.toLowerCase()))return toast('That topic already exists.');
+  ch.topics=ch.topics||[];
+  ch.topics.push({id:uid(),name,done:false,status:'notstarted',studyState:{CBSE:'notstarted',NEET:'notstarted',JEE:'notstarted'},jee:target.subj==='Maths'?3:0,neet:target.subj==='Biology'?3:0});
+  save();closeModal();render();toast(`✅ Added topic: ${name}`);
+}
 function renderSubjectPage(subj){
   const chapters = DATA.subjects[subj].chapters;
   const completion = subjectCompletion(subj);
@@ -8722,10 +8936,17 @@ function renderSubjectPage(subj){
       <button class="btn btn-outline" onclick="sortSubjectBy['${subj}']='priority'; render();">Sort: Level</button>
       <button class="btn btn-outline" onclick="sortSubjectBy['${subj}']='name'; render();">Sort: Order</button>
       <button class="btn btn-outline" onclick="logStudyQuick('${subj}')">⏱ Log study time</button>
+      <button class="btn btn-outline" onclick="openAddSubjectChapterModal('${subj}')">➕ Add Lesson</button>
+      <button class="btn btn-outline" onclick="prgPractice('${subj}',prompt('Chapter name'))">🔢 Practice Counter</button>
+      <button class="btn btn-outline" onclick="openMissingContentReport('${subj}')">🚩 Report Missing</button>
       <button class="btn btn-primary" onclick="openFocusPicker('${subj}')">🎯 Start Focus</button>
     </div>
   </div>
   ${timeDistributionHTML(subj)}
+  <div class="card mb-16" style="background:var(--bg-soft);">
+    <div class="card-head"><h3>🗂️ Master Syllabus Database</h3><button class="btn btn-soft btn-sm" onclick="openSyllabusAudit()">Audit</button></div>
+    <div class="text-xs muted">This Subject Tracker is the master source. Adding a lesson/topic here makes it available to Today's Planner, Backlog, Syllabus Sync and chapter selectors automatically.</div>
+  </div>
   <div class="card mb-16" style="background:var(--bg-soft);">
     <div class="card-head"><h3>🎯 Topic Study State</h3></div>
     <div class="text-xs muted mb-8">Each chapter below contains its exact topic list. Study State is tracked separately for CBSE, NEET and JEE.</div>
@@ -8870,7 +9091,7 @@ function chapterCardHTML(subj, ch){
           <option value="12" ${chapterClassLevel(subj,ch)===12?'selected':''}>Class 12</option>
         </select>
         <span class="text-xs faint">Exams:</span>
-        ${['CBSE','NEET','JEE'].map(e=>`<label class="text-xs" style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" ${ch.examTags?.[e]?'checked':''} onchange="toggleChapterExamTag('${subj}','${ch.id}','${e}')">${e}</label>`).join('')}
+        ${allowedExamsForSubject(subj).map(e=>`<label class="text-xs" style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" ${ch.examTags?.[e]?'checked':''} onchange="toggleChapterExamTag('${subj}','${ch.id}','${e}')">${e}</label>`).join('')}
         <select style="border:1px solid var(--card-border); border-radius:8px; font-size:11px; padding:4px 6px; background:var(--card); color:var(--ink-soft);" onchange="setPriorityMode('${subj}','${ch.id}', this.value)">
           <option value="auto" ${ch.priorityMode==='auto'?'selected':''}>Auto</option>
           <option value="manual-high" ${ch.priorityMode==='manual' && ch.priority==='high'?'selected':''}>Pin: High</option>
@@ -8892,6 +9113,7 @@ function chapterCardHTML(subj, ch){
       <span>Mistakes: <b>${ch.mistakes}</b></span>
       <button class="btn btn-soft btn-sm" onclick="markChapterRevisedNow('${subj}','${ch.id}')">Mark revised today</button>
       <button class="btn btn-outline btn-sm" onclick="toggleTopicsPanel('${ch.id}')">🎯 Topics ${topicStats.total?`(${topicStats.done}/${topicStats.total})`:''} ${topicsOpen?'▾':'▸'}</button>
+      <button class="btn btn-soft btn-sm" onclick="openAddTopicModal('${subj}','${ch.id}')">＋ Topic</button>
       <button class="btn btn-outline btn-sm" onclick="toggleModulePanel('${ch.id}')">📚 Question Bank ${expanded?'▾':'▸'}</button>
       <button class="btn btn-outline btn-sm" onclick="toggleChapterBook('${ch.id}')">📓 Notes, Concepts & Formulas ${bookExpanded?'▾':'▸'}</button>
     </div>
@@ -8953,7 +9175,7 @@ function topicsPanelHTML(subj, ch){
       ensureTopicStudyState(t);
       const st = topicStatusOf(t);
       const stDef = STUDY_STATE_META[st] || STUDY_STATE_META.notstarted;
-      const examButtons = STUDY_EXAMS.filter(ex=>ex==='CBSE' || t.jee>0 || t.neet>0 || t.studyState?.[ex] !== undefined).map(ex=>{
+      const examButtons = allowedExamsForSubject(subj).map(ex=>{
         const es=t.studyState?.[ex]||'notstarted', em=STUDY_STATE_META[es];
         return `<button class="study-exam-state state-${es}" title="${esc(em.action)}" onclick="cycleTopicStudyState('${subj}','${ch.id}','${t.id}','${ex}')">${em.icon} ${ex}: ${em.label}</button>`;
       }).join('');
@@ -8989,8 +9211,8 @@ function addCustomTopic(subj, chId){
   if(!name) return toast('Type a topic name first.');
   if(!Array.isArray(ch.topics)) ch.topics = [];
   // Custom topics default to whichever exam(s) this subject actually applies to.
-  const jee = (subj==='Maths' || subj==='Physics' || subj==='Chemistry') ? 2 : 0;
-  const neet = (subj==='Biology' || subj==='Physics' || subj==='Chemistry') ? 2 : 0;
+  const jee = examAppliesToSubject('JEE',subj) ? 2 : 0;
+  const neet = examAppliesToSubject('NEET',subj) ? 2 : 0;
   ch.topics.push({id:uid(), name, done:false, status:'notstarted', jee, neet});
   save(); render();
   toast('Topic added.');
@@ -10001,7 +10223,6 @@ function saveRevision(){
 /* ============================================================
    EXAM-SPECIFIC PRACTICE + ADAPTIVE WEAKNESS ENGINE
    ============================================================ */
-const EXAM_SUBJECTS = { NEET:['Physics','Chemistry','Biology'], JEE:['Physics','Chemistry','Maths'], CBSE:['Physics','Chemistry','Biology','Maths'] };
 function examRelevantChapter(ch, exam){ return !!(ch && ch.examTags && ch.examTags[exam]); }
 function chapterPyqStats(subject, chapter, exam){
   const qs = DATA.pyqs.filter(p=>p.subject===subject && p.chapter===chapter && (!exam || p.examType===exam));
@@ -11277,6 +11498,8 @@ function deleteResource(id){ DATA.resources = DATA.resources.filter(r=>r.id!==id
    ============================================================ */
 function viewSettings(){
   return `
+  ${pslWeeklyReport()}
+
   <div class="grid grid-2">
     <div class="card">
       <div class="card-head"><h3>Profile</h3></div>
@@ -11964,13 +12187,139 @@ function gapDetectorList(){
   });
   return gaps.slice(0,8);
 }
+
+/* ============================================================
+   MASTER SYLLABUS / MISSING-CONTENT AUDIT
+   One DATA.subjects database feeds tracker + planner + backlog +
+   syllabus sync + chapter selectors. This audit checks internal
+   consistency without pretending to verify an external syllabus.
+   ============================================================ */
+function syllabusAuditRows(){
+  const rows=[], seen=new Map();
+  Object.keys(DATA.subjects||{}).forEach(subj=>{
+    const allowed=new Set(allowedExamsForSubject(subj));
+    const chapters=DATA.subjects[subj]?.chapters||[];
+    const local=new Set();
+    chapters.forEach(ch=>{
+      const key=subj+'::'+String(ch.name||'').trim().toLowerCase();
+      const issues=[];
+      if(!String(ch.name||'').trim()) issues.push('Missing lesson name');
+      if(local.has(key)) issues.push('Duplicate lesson');
+      local.add(key);
+      const level=chapterClassLevel(subj,ch);
+      if(level!==11 && level!==12) issues.push('Invalid class level');
+      if(!Array.isArray(ch.topics) || !ch.topics.length) issues.push('No topics');
+      const tags=ch.examTags||{};
+      Object.keys(tags).forEach(ex=>{
+        if(tags[ex] && !allowed.has(ex)) issues.push('Invalid '+ex+' mapping');
+      });
+      if(!ch.examTags) issues.push('No exam mapping');
+      if(!seen.has(key)) seen.set(key,[]); seen.get(key).push(subj);
+      rows.push({subj,name:ch.name,level,issues,custom:!DEFAULT_CHAPTERS[subj]?.includes(ch.name)});
+    });
+  });
+  return rows;
+}
+function openSyllabusAudit(){
+  const rows=syllabusAuditRows();
+  const bad=rows.filter(r=>r.issues.length);
+  const custom=rows.filter(r=>r.custom);
+  const byClass=[11,12].map(level=>rows.filter(r=>r.level===level).length);
+  const invalidExam=bad.filter(r=>r.issues.some(x=>x.includes('mapping')));
+  const duplicates=bad.filter(r=>r.issues.includes('Duplicate lesson'));
+  openModal(`
+    <div class="card-head"><h3>🧭 Pragati Syllabus Audit</h3><span class="tag ${bad.length?'tag-med':'tag-low'}">${bad.length} issue${bad.length===1?'':'s'}</span></div>
+    <div class="grid grid-3 mb-12">
+      <div class="card center"><div class="eyebrow">Class 11</div><b style="font-size:22px">${byClass[0]}</b></div>
+      <div class="card center"><div class="eyebrow">Class 12</div><b style="font-size:22px">${byClass[1]}</b></div>
+      <div class="card center"><div class="eyebrow">Custom additions</div><b style="font-size:22px">${custom.length}</b></div>
+    </div>
+    ${bad.length ? `<div class="card mb-12">
+      <div class="card-head"><h3>⚠️ Needs attention</h3></div>
+      ${bad.slice(0,40).map(r=>`<div class="list-item">
+        <span class="txt"><b>${esc(r.subj)} — ${esc(r.name||'Unnamed')}</b><br><span class="faint">Class ${r.level}: ${r.issues.map(esc).join(' · ')}</span></span>
+      </div>`).join('')}
+      ${bad.length>40?`<div class="text-xs faint mt-8">Showing first 40 of ${bad.length} issues.</div>`:''}
+    </div>` : `<div class="card mb-12"><b>✅ No internal syllabus consistency problems found.</b><div class="text-xs muted mt-5">This checks Pragati's own database only.</div></div>`}
+    <div class="text-xs muted mb-12">Exam mapping rule: Physics/Chemistry → CBSE + NEET + JEE; Biology → CBSE + NEET; Maths → CBSE + JEE. Custom lessons inherit the same eligibility rules.</div>
+    <div class="flex gap-8 flex-wrap">
+      <button class="btn btn-primary" onclick="closeModal();openMissingContentReport()">🚩 Report Missing Content</button>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  `, true);
+}
+function openMissingContentReport(subject){
+  const subs=subject?[subject]:Object.keys(DATA.subjects||{});
+  const defaultSub=subject||subs[0]||'Physics';
+  openModal(`
+    <div class="card-head"><h3>🚩 Report Missing Chapter / Topic</h3></div>
+    <div class="text-sm muted mb-12">Use this when a lesson, topic or exam-specific item is missing. Nothing is silently treated as official; the report is saved so you can review it later.</div>
+    <div class="grid grid-2">
+      <label>Subject<select id="mcrSubject">${subs.map(s=>`<option ${s===defaultSub?'selected':''}>${esc(s)}</option>`).join('')}</select></label>
+      <label>Class<select id="mcrClass"><option value="11">Class 11</option><option value="12" selected>Class 12</option></select></label>
+      <label>Exam<select id="mcrExam"><option>CBSE</option><option>NEET</option><option>JEE</option></select></label>
+      <label>Type<select id="mcrType"><option>Chapter</option><option>Topic</option><option>Exam mapping</option><option>Other</option></select></label>
+    </div>
+    <label class="mt-12">Missing item<input id="mcrName" placeholder="e.g. Linear Programming"></label>
+    <label class="mt-12">Notes / where you noticed it<textarea id="mcrNotes" rows="4" placeholder="Optional"></textarea></label>
+    <div class="flex gap-8 mt-14">
+      <button class="btn btn-primary" onclick="saveMissingContentReport()">Save Report</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `, true);
+}
+function saveMissingContentReport(){
+  const name=(document.getElementById('mcrName')?.value||'').trim();
+  if(!name)return toast('Enter the missing item.');
+  DATA.missingContentReports=Array.isArray(DATA.missingContentReports)?DATA.missingContentReports:[];
+  DATA.missingContentReports.push({
+    id:uid(), date:todayStr(),
+    subject:document.getElementById('mcrSubject')?.value||'',
+    classLevel:Number(document.getElementById('mcrClass')?.value)||12,
+    exam:document.getElementById('mcrExam')?.value||'CBSE',
+    type:document.getElementById('mcrType')?.value||'Chapter',
+    name, notes:(document.getElementById('mcrNotes')?.value||'').trim(),
+    status:'open'
+  });
+  save(); closeModal(); toast('🚩 Missing-content report saved.');
+}
+function viewMissingContentReports(){
+  const reports=Array.isArray(DATA.missingContentReports)?DATA.missingContentReports:[];
+  return `<div class="card">
+    <div class="card-head"><h3>🚩 Missing Content Reports</h3><span class="tag">${reports.filter(r=>r.status==='open').length} open</span></div>
+    ${reports.length?reports.slice().reverse().map(r=>`<div class="list-item">
+      <span class="txt"><b>${esc(r.name)}</b> · ${esc(r.subject)} · Class ${r.classLevel} · ${esc(r.exam)}<br><span class="faint">${esc(r.type)} · ${esc(r.notes||'No notes')} · ${esc(r.date)}</span></span>
+      <button class="btn btn-soft btn-sm" onclick="resolveMissingContentReport('${r.id}')">${r.status==='open'?'Resolve':'Resolved'}</button>
+    </div>`).join(''):`<div class="empty">No missing-content reports yet.</div>`}
+  </div>`;
+}
+function resolveMissingContentReport(id){
+  const r=(DATA.missingContentReports||[]).find(x=>x.id===id); if(!r)return;
+  r.status=r.status==='open'?'resolved':'open'; save(); render();
+}
+
 function viewSyllabusSync(){
   const chapters = allChapters();
   const att = DATA.attendance;
   const gaps = gapDetectorList();
   const cols = [['school','School'],['aakash','Aakash'],['vedantu','Vedantu'],['selfStudy','Self Study'],['revisionSync','Revision']];
   return `
-  <div class="section-desc" style="margin-bottom:16px;">One row per chapter — track how far School, Aakash, Vedantu, self-study and revision each are, plus your real understanding.</div>
+  <div class="section-desc" style="margin-bottom:16px;">
+  One master chapter database powers the Subject Trackers, Today's Planner, Backlog, Syllabus Sync, chapter selectors and Smart Plan.
+  Class 11/12 and exam eligibility are kept separate.
+</div>
+<div class="card mb-16">
+  <div class="card-head">
+    <div><h3>🧭 Syllabus Audit</h3><div class="text-xs muted">Internal completeness check — not an official CBSE/NEET/JEE syllabus verification.</div></div>
+    <div class="flex gap-8">
+      <button class="btn btn-soft btn-sm" onclick="openSyllabusAudit()">Run Audit</button>
+      <button class="btn btn-outline btn-sm" onclick="openMissingContentReport()">🚩 Missing Content</button>
+    </div>
+  </div>
+  <div class="text-xs muted">
+    Checks Class 11/12 separation, invalid exam mappings, duplicate lessons, missing topic lists and custom additions.
+  </div>
+</div>
 
   ${gaps.length ? `
   <div class="card mb-16">
@@ -12023,7 +12372,9 @@ function viewSyllabusSync(){
       }).join('')}
     </table>
     </div>
-  </div>  `;
+  </div>
+  ${viewMissingContentReports()}
+  `;
 }
 
 /* ============================================================
@@ -12762,6 +13113,249 @@ if(typeof oldRender==='function'){
   document.addEventListener('click',e=>{if(e.target.closest('#epv-save'))window.saveVisibleExamPriority();});
   document.addEventListener('DOMContentLoaded',()=>setTimeout(window.renderVisibleExamPriority,150));
 })();
+</script>
+
+<script id="study-log-weekly-js">
+function pslEnsure(){
+  DATA.studySessionLogs=Array.isArray(DATA.studySessionLogs)?DATA.studySessionLogs:[];
+}
+function pslSaveSession(){
+  pslEnsure();
+  const subject=document.getElementById('pslSubject')?.value||'';
+  const chapter=(document.getElementById('pslChapter')?.value||'').trim();
+  const topic=(document.getElementById('pslTopic')?.value||'').trim();
+  const type=document.getElementById('pslType')?.value||'Concept';
+  const minutes=Math.max(0,Number(document.getElementById('pslMinutes')?.value)||0);
+  const questions=Math.max(0,Number(document.getElementById('pslQuestions')?.value)||0);
+  const correct=Math.max(0,Number(document.getElementById('pslCorrect')?.value)||0);
+  const note=(document.getElementById('pslNote')?.value||'').trim();
+  if(!subject||!chapter||!minutes)return toast('Add subject, chapter and actual study time.');
+  DATA.studySessionLogs.push({
+    id:uid(),date:todayStr(),subject,chapter,topic,type,minutes,questions,correct,
+    accuracy:questions?Math.round(correct/questions*100):null,note
+  });
+  save();closeModal();render();toast('📚 Study session logged.');
+}
+function pslOpenLog(){
+  pslEnsure();
+  const subs=Object.keys(DATA.subjects||{});
+  openModal(`<div class="card-head"><h3>📚 Study Session Log</h3></div>
+    <div class="text-sm muted">Record what you actually studied — separate from what was planned.</div>
+    <div class="psl-form">
+      <label>Subject<select id="pslSubject">${subs.map(s=>`<option>${esc(s)}</option>`).join('')}</select></label>
+      <label>Chapter<select id="pslChapter"><option value="">Select chapter</option></select></label>
+      <label>Topic<input id="pslTopic" placeholder="Optional topic"></label>
+      <label>Work type<select id="pslType"><option>Concept</option><option>NCERT</option><option>Questions</option><option>PYQ</option><option>Revision</option><option>Mistake correction</option></select></label>
+      <label>Actual minutes<input id="pslMinutes" type="number" min="1" placeholder="45"></label>
+      <label>Questions completed<input id="pslQuestions" type="number" min="0" placeholder="20"></label>
+      <label>Correct<input id="pslCorrect" type="number" min="0" placeholder="16"></label>
+    </div>
+    <label style="display:block;margin-top:10px;font-size:10px;color:var(--ink-soft)">Notes<textarea id="pslNote" rows="3" placeholder="What did you learn / what remains confusing?"></textarea></label>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="pslSaveSession()">Save Study Session</button>`,true);
+}
+function pslWeeklyData(){
+  pslEnsure();
+  const end=new Date();end.setHours(0,0,0,0);
+  const start=new Date(end);start.setDate(start.getDate()-6);
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const a=DATA.studySessionLogs.filter(x=>x.date>=iso(start)&&x.date<=iso(end));
+  const planned=(DATA.plannerEvents||[]).filter(x=>x.date>=iso(start)&&x.date<=iso(end));
+  const done=planned.filter(x=>x.done);
+  const actualMin=a.reduce((n,x)=>n+Number(x.minutes||0),0);
+  const q=a.reduce((n,x)=>n+Number(x.questions||0),0);
+  const correct=a.reduce((n,x)=>n+Number(x.correct||0),0);
+  const plannedMin=planned.reduce((n,x)=>n+Number(x.duration||0),0);
+  const completedMin=done.reduce((n,x)=>n+Number(x.duration||0),0);
+  const bySubject={};
+  a.forEach(x=>bySubject[x.subject]=(bySubject[x.subject]||0)+Number(x.minutes||0));
+  const top=Object.entries(bySubject).sort((x,y)=>y[1]-x[1])[0];
+  return {a,plannedMin,completedMin,actualMin,q,correct,accuracy:q?Math.round(correct/q*100):0,completion:plannedMin?Math.round(completedMin/plannedMin*100):0,top};
+}
+function pslWeeklyReport(){
+  const r=pslWeeklyData();
+  return `<div class="psl-card">
+    <div class="psl-title">📅 Weekly Reality Report</div>
+    <div class="psl-sub">What you planned versus what you actually did, using both planner completion and your Study Session Log.</div>
+    <div class="psl-grid">
+      <div class="psl-stat">Planned time<b>${(r.plannedMin/60).toFixed(1)}h</b></div>
+      <div class="psl-stat">Planner completed<b>${(r.completedMin/60).toFixed(1)}h</b></div>
+      <div class="psl-stat">Actual logged<b>${(r.actualMin/60).toFixed(1)}h</b></div>
+      <div class="psl-stat">Plan completion<b>${r.completion}%</b></div>
+      <div class="psl-stat">Questions<b>${r.q}</b></div>
+      <div class="psl-stat">Accuracy<b>${r.accuracy}%</b></div>
+      <div class="psl-stat">Sessions<b>${r.a.length}</b></div>
+      <div class="psl-stat">Top subject<b>${r.top?esc(r.top[0]):'—'}</b></div>
+    </div>
+    <div class="psl-sub" style="margin-top:9px">Use “Study Session Log” for hard-copy work and unplanned study. It won't falsely mark a planner block as completed.</div>
+  </div>`;
+}
+function pslLogList(){
+  pslEnsure();
+  const rows=DATA.studySessionLogs.slice().reverse().slice(0,15);
+  return `<div class="psl-card"><div class="psl-title">📚 Recent Study Sessions</div>
+    ${rows.length?rows.map(x=>`<div class="psl-entry"><b>${esc(x.subject)} → ${esc(x.chapter)}</b>${x.topic?' · '+esc(x.topic):''}<br>
+    ${esc(x.type)} · ${x.minutes} min · ${x.questions||0} questions${x.questions?' · '+(x.accuracy??0)+'% accuracy':''}${x.note?' · '+esc(x.note):''}
+    <span style="float:right">${esc(x.date)}</span></div>`).join(''):`<div class="psl-sub">No study sessions logged yet.</div>`}
+  </div>`;
+}
+function pslRender(){
+  pslEnsure();
+  return `<div class="psl-card"><div class="psl-title">📚 Study Session Log</div>
+    <div class="psl-sub">Log actual study separately from planned blocks. This is ideal for hard-copy practice, NCERT reading or extra study you did outside the planner.</div>
+    <button class="btn btn-primary" style="margin-top:10px" onclick="pslOpenLog()">＋ Log Study Session</button>
+  </div>${pslWeeklyReport()}${pslLogList()}`;
+}
+</script>
+
+<script id="one-tap-plan-js">
+/* ============================================================
+   ONE-TAP PLAN MY DAY
+   Uses the existing planner engine; it does not create a second
+   planner or duplicate the user's existing generation workflow.
+   ============================================================ */
+function otpEnsure(){
+  DATA.oneTapPlan=DATA.oneTapPlan||{lastGenerated:'',lastSummary:null};
+  DATA.oneTapPlan.lastSummary ||= null;
+}
+function otpTomorrow(){
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function otpUpcomingExams(){
+  return (DATA.upcomingTests||[]).filter(t=>String(t.date||'').slice(0,10)>=todayStr())
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+}
+function otpTomorrowExams(){
+  return otpUpcomingExams().filter(t=>String(t.date||'').slice(0,10)===otpTomorrow());
+}
+function otpAvailableMinutes(){
+  const pref=typeof examPlanPreferredWindow==='function'?examPlanPreferredWindow():{};
+  if(pref.start&&pref.end&&typeof toMin==='function'){
+    let a=toMin(pref.start),b=toMin(pref.end);if(b<a)b+=1440;
+    return Math.max(0,b-a);
+  }
+  // Fall back to existing free-slot calculator when no preferred window is set.
+  try{
+    if(typeof getAvailableStudyMinutes==='function')return Math.max(0,getAvailableStudyMinutes(todayStr()));
+  }catch(e){}
+  return 120;
+}
+function otpExamWeight(test){
+  const weights=DATA.examPlanWeights||{};
+  return Math.max(0,Number(weights[test.id]??test.planWeight??0));
+}
+function otpPickTopics(){
+  const mode=DATA.prgPack?.mode||'CBSE';
+  const rows=[];
+  Object.entries(DATA.subjects||{}).forEach(([subject,s])=>{
+    if(typeof prgPackAllowed==='function'&&!prgPackAllowed(subject,mode))return;
+    (s.chapters||[]).forEach(ch=>{
+      const risk=typeof prgRisk==='function'?prgRisk(subject,ch.name):{days:0};
+      const mistakes=(DATA.mistakes||[]).filter(m=>!m.mastered&&m.subject===subject&&m.chapter===ch.name).length;
+      const stateStates=(DATA.topicStates||{});
+      const lowState=Object.values(stateStates).some(v=>typeof v==='string'&&/learning|understanding|practicing|error/i.test(v));
+      const priority=(100-(typeof prgChapterReadiness==='function'?prgChapterReadiness(subject,ch):0))
+        +mistakes*8+(risk.days>7?20:risk.days>2?8:0)+(lowState?3:0);
+      rows.push({subject,chapter:ch.name,priority});
+    });
+  });
+  return rows.sort((a,b)=>b.priority-a.priority);
+}
+function otpBuildSelection(){
+  const exams=otpUpcomingExams(),tom=otpTomorrowExams(),rows=otpPickTopics();
+  const selected=[];
+  // Tomorrow's exam chapters always come first.
+  tom.forEach(t=>(t.chapters||[]).forEach(c=>{
+    selected.push({subject:c.subject,chapter:c.chapter,reason:'Exam tomorrow',exam:t.name});
+  }));
+  rows.forEach(r=>{
+    if(!selected.some(x=>x.subject===r.subject&&x.chapter===r.chapter))selected.push({...r,reason:'Weak / unfinished'});
+  });
+  return {exams,tomorrow:tom,selected};
+}
+function otpShowPreview(){
+  otpEnsure();
+  const x=otpBuildSelection(), mins=otpAvailableMinutes();
+  const weights=x.exams.map(t=>otpExamWeight(t));
+  const total=weights.reduce((a,b)=>a+b,0);
+  const rows=x.selected.slice(0,8);
+  openModal(`<div class="card-head"><h3>🪄 Plan My Day</h3></div>
+    <div class="text-sm muted mb-10">Pragati will use today's available time, your preferred timing, upcoming exams, percentages, fixed commitments, backlog and weak/unfinished topics.</div>
+    <div class="otpp-preview">
+      <div class="otpp-row"><b>Available study time</b><span>${mins} min</span></div>
+      <div class="otpp-row"><b>Preferred timing</b><span>${esc((DATA.examPreferredWindow||{}).start||'Automatic')} → ${esc((DATA.examPreferredWindow||{}).end||'Automatic')}</span></div>
+      <div class="otpp-row"><b>Tomorrow's exams</b><span>${x.tomorrow.length||'None'}</span></div>
+      <div class="otpp-row"><b>Exam allocation</b><span>${total?weights.join(' / ')+'%':'Use urgency + weakness'}</span></div>
+    </div>
+    <div class="mt-10"><b>Priority topics</b>
+      ${rows.length?rows.map(r=>`<div class="otpp-row"><span>${esc(r.subject)} → ${esc(r.chapter)}</span><span>${esc(r.reason||'Priority')}</span></div>`).join(''):'<div class="text-sm muted">No chapter data available.</div>'}
+    </div>
+    <div class="flex gap-8 mt-14">
+      <button class="btn btn-primary" onclick="otpGenerate()">🪄 Generate My Day</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>`,true);
+}
+function otpGenerate(){
+  closeModal();
+  // Reuse the existing generator so selected topics, preferred timings,
+  // fixed blocks and swap/edit functionality remain compatible.
+  try{
+    if(typeof generateTodaysPlan==='function'){
+      generateTodaysPlan();
+      otpEnsure();DATA.oneTapPlan.lastGenerated=todayStr();DATA.oneTapPlan.lastSummary=otpBuildSelection();
+      save();
+      return;
+    }
+  }catch(e){console.warn('Existing planner generator failed; using safe fallback.',e);}
+  toast('Open Generate Today’s Plan once to initialize the planner, then use Plan My Day again.');
+}
+function otpRenderButton(){
+  otpEnsure();
+  const tom=otpTomorrowExams();
+  return `<div class="one-tap-plan">
+    <h3>🪄 Plan My Day</h3>
+    <div class="sub">One tap. Pragati checks tomorrow's exam, exam percentages, preferred timings, school/tuition/coaching, backlog, weak topics and today's available time.</div>
+    ${tom.length?`<div class="otpp-preview">🔴 <b>Exam tomorrow:</b> ${tom.map(t=>esc(t.name||'Exam')).join(', ')}</div>`:''}
+    <button class="btn btn-primary one-tap-plan-btn" onclick="otpShowPreview()">🪄 PLAN MY DAY</button>
+    <div class="sub" style="margin-top:7px">You can still swap, resize, move, lock or skip every generated block.</div>
+  </div>`;
+}
+</script>
+
+<script id="study-log-chapter-list-fix">
+function pslPopulateChapterList(){
+  const sub=document.getElementById('pslSubject');
+  const sel=document.getElementById('pslChapter');
+  if(!sub||!sel)return;
+  const data=DATA.subjects?.[sub.value];
+  const chapters=Array.isArray(data?.chapters)?data.chapters:[];
+  const c11=chapters.filter(c=>String(chapterClassLevel(sub.value,c))==='11');
+  const c12=chapters.filter(c=>String(chapterClassLevel(sub.value,c))==='12');
+  sel.innerHTML='<option value="">Select chapter</option>';
+  const add=(label,arr)=>{
+    if(!arr.length)return;
+    const g=document.createElement('optgroup');g.label=label;
+    arr.forEach(c=>{
+      const o=document.createElement('option');
+      o.value=c.name;o.textContent=c.name;g.appendChild(o);
+    });
+    sel.appendChild(g);
+  };
+  add('📘 Class 11',c11); add('📕 Class 12',c12);
+  if(!c11.length&&!c12.length){
+    chapters.forEach(c=>{const o=document.createElement('option');o.value=c.name;o.textContent=c.name;sel.appendChild(o);});
+  }
+}
+document.addEventListener('change',e=>{
+  if(e.target?.id==='pslSubject')pslPopulateChapterList();
+});
+const oldPslOpenLog=window.pslOpenLog;
+if(typeof oldPslOpenLog==='function'){
+  window.pslOpenLog=function(){
+    oldPslOpenLog.apply(this,arguments);
+    setTimeout(pslPopulateChapterList,0);
+  };
+}
 </script>
 </body>
 </html>
