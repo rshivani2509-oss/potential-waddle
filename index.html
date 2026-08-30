@@ -1209,6 +1209,27 @@ html[data-theme="dark"] .modal .icon-btn{color:#4c463d!important;background:#f6f
 .otpp-row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--card-border)}
 .otpp-row:last-child{border-bottom:0}
 </style>
+
+<style id="aakash-skip-diagnostic-css">
+.aakash-skip-note{padding:10px 12px;border:1px solid var(--sage);background:var(--sage-soft);border-radius:11px;margin-bottom:12px;font-size:12px;color:var(--ink)}
+</style>
+<script id="aakash-skip-diagnostic-js">
+function aakashSkipPlannerNotice(){
+  const d=plannerViewDate||todayStr(), ov=(DATA.scheduleOverrides||{})[d]||{};
+  if(!ov.noAakash)return '';
+  const fixed=(typeof getFixedBlocksForDate==='function'?getFixedBlocksForDate(d):[]).filter(b=>/aakash/i.test(String(b.label||'')));
+  return `<div class="aakash-skip-note">🟢 <b>Aakash skipped for this day.</b> Its scheduled time is released for study. ${fixed.length?'If you still see an Aakash block, tap <b>Generate Today’s Plan</b> again to rebuild the timeline.':''}</div>`;
+}
+</script>
+
+<style id="planner-addons-css">
+.planner-addon{border:1px solid var(--card-border);border-radius:16px;background:var(--card);padding:15px;margin-bottom:14px}
+.planner-addon h3{margin:0 0 4px;font-size:17px}.planner-addon-sub{font-size:11px;color:var(--ink-soft);line-height:1.5}
+.planner-addon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-top:10px}
+.planner-addon-stat{padding:10px;border:1px solid var(--card-border);border-radius:10px;background:var(--bg-soft)}
+.planner-addon-stat b{display:block;font-size:18px;margin-top:2px}
+.paf-chip{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--sage-soft);color:var(--ink);font-size:10px;font-weight:700;margin:3px}
+</style>
 </head>
 <body>
 <div id="app">
@@ -2493,7 +2514,10 @@ function migrateData(d){
   merged.prgPack ||= {mode:'CBSE',achievements:{},snapshots:[]};
   merged.practiceCounts ||= {};
   merged.oneTapPlan ||= {lastGenerated:'',lastSummary:null};
+  merged.paf ||= {lastAutoReplan:'',lastClean:''};
+  if(!Array.isArray(merged.studyCompletions)) merged.studyCompletions=[];
   if(!Array.isArray(merged.studySessionLogs)) merged.studySessionLogs=[];
+  if(!merged.prashnSync) merged.prashnSync={};
   merged.revisionQueue ||= [];
   if(!merged.examRecords) merged.examRecords = [];
   if(!merged.upcomingTests) merged.upcomingTests = [];
@@ -4158,13 +4182,81 @@ function prashnBridgeData(){return DATA.prashnSync?.data||null}
 function prashnBridgeSummary(){
   const d=prashnBridgeData();
   if(!d)return {attempts:0,wrong:0,skipped:0,pyqs:0,accuracy:0,chapters:[],mistakes:[]};
-  const logs=d.attemptLog||[];
+  const logs=Array.isArray(d.attemptLog)?d.attemptLog:Object.values(d.attemptLog||{});
   const attempted=logs.filter(x=>!x.skipped).length, correct=logs.filter(x=>!x.skipped&&x.correct).length;
   const wrong=logs.filter(x=>!x.skipped&&!x.correct).length;
   const skipped=logs.filter(x=>x.skipped).length;
   const pyqs=logs.filter(x=>x.pyq).length;
   const chapters=Object.values(d.chapterStats||{}).map(x=>({...x,accuracy:x.attempts?Math.round(100*x.correct/x.attempts):0})).sort((a,b)=>a.accuracy-b.accuracy).slice(0,8);
-  return {attempts:attempted,wrong,skipped,pyqs,accuracy:attempted?Math.round(100*correct/attempted):0,chapters,mistakes:d.mistakeQuestions||[]};
+  return {attempts:attempted,wrong,skipped,pyqs,accuracy:attempted?Math.round(100*correct/attempted):0,chapters,mistakes:Array.isArray(d.mistakeQuestions)?d.mistakeQuestions:Object.values(d.mistakeQuestions||{})};
+}
+
+/* Convert a Prashn wrong-question record into Pragati's native mistake schema.
+   A stable prashnId prevents duplicate notebook entries when Firebase updates. */
+function syncPrashnMistakesIntoNotebook(d){
+  if(!d)return {added:0,updated:0};
+  DATA.mistakes=Array.isArray(DATA.mistakes)?DATA.mistakes:[];
+  const source=[];
+  const mq=Array.isArray(d.mistakeQuestions)?d.mistakeQuestions:Object.values(d.mistakeQuestions||{});
+  mq.forEach((q,i)=>{
+    if(!q)return;
+    source.push({
+      prashnId:String(q.id||q.questionId||q.qid||q.key||`mq-${i}`),
+      subject:q.subject||q.sub||'',
+      chapter:q.chapter||q.ch||'',
+      topic:q.topic||'',
+      question:q.q||q.question||q.text||q.prompt||'',
+      reason:q.reason||q.mistakeReason||'Prashn wrong attempt',
+      correctConcept:q.correctConcept||q.explanation||q.solution||'',
+      examSource:q.exam||q.examSource||q.source||'Prashn',
+      date:q.date||q.createdAt||todayStr(),
+      wrongCount:Number(q.wrongCount||q.attempts||1),
+      nextReview:q.nextReview||''
+    });
+  });
+
+  // Also catch wrong attempts even when Prashn hasn't created a mistakeQuestions
+  // entry yet. This makes a wrong answer itself sufficient to reach the notebook.
+  const logs=Array.isArray(d.attemptLog)?d.attemptLog:Object.values(d.attemptLog||{});
+  logs.filter(x=>!x.skipped&&!x.correct).forEach((q,i)=>{
+    const id=String(q.id||q.questionId||q.qid||q.key||`attempt-${q.date||''}-${i}`);
+    if(source.some(x=>x.prashnId===id))return;
+    source.push({
+      prashnId:id,
+      subject:q.subject||q.sub||'',
+      chapter:q.chapter||q.ch||'',
+      topic:q.topic||'',
+      question:q.q||q.question||q.text||q.prompt||'',
+      reason:q.reason||q.mistakeReason||'Prashn wrong attempt',
+      correctConcept:q.correctConcept||q.explanation||q.solution||'',
+      examSource:q.exam||q.examSource||q.source||'Prashn',
+      date:q.date||q.createdAt||todayStr(),
+      wrongCount:1,
+      nextReview:q.nextReview||''
+    });
+  });
+
+  let added=0,updated=0;
+  source.forEach(q=>{
+    if(!q.question||!q.subject||!q.chapter)return;
+    let m=DATA.mistakes.find(x=>x.source==='Prashn'&&String(x.prashnId)===q.prashnId);
+    if(!m){
+      m={id:uid(),source:'Prashn',prashnId:q.prashnId,subject:q.subject,chapter:q.chapter,topic:q.topic,
+         question:q.question,reason:q.reason,examSource:q.examSource,correctConcept:q.correctConcept,
+         date:String(q.date).slice(0,10)||todayStr(),revisionDates:[],wrongCount:q.wrongCount||1,
+         nextReview:q.nextReview||'',mastered:false};
+      DATA.mistakes.push(m);added++;
+    }else{
+      m.subject=q.subject||m.subject;m.chapter=q.chapter||m.chapter;m.topic=q.topic||m.topic;
+      m.question=q.question||m.question;m.reason=q.reason||m.reason;m.examSource=q.examSource||m.examSource;
+      m.correctConcept=q.correctConcept||m.correctConcept;m.nextReview=q.nextReview||m.nextReview;
+      m.wrongCount=Math.max(Number(m.wrongCount||1),Number(q.wrongCount||1));
+      m.lastSynced=todayStr();updated++;
+    }
+    const ch=DATA.subjects[q.subject]?.chapters?.find(c=>c.name===q.chapter);
+    if(ch)ch.mistakes=(DATA.mistakes||[]).filter(x=>x.subject===q.subject&&x.chapter===q.chapter).length;
+  });
+  return {added,updated};
 }
 function prashnBridgeHTML(){
   const s=prashnBridgeSummary(), d=prashnBridgeData();
@@ -4177,8 +4269,7 @@ function prashnBridgeHTML(){
       <div class="prashn-stat"><div class="text-xs faint">Wrong</div><b style="font-size:21px;">${s.wrong}</b></div>
       <div class="prashn-stat"><div class="text-xs faint">PYQs</div><b style="font-size:21px;">${s.pyqs}</b></div>
     </div>
-    ${s.chapters.length?`<div class="mt-12"><div class="card-sub mb-8">Weakest question-practice chapters</div>${s.chapters.slice(0,5).map(c=>`<div class="flex-between text-xs mb-6"><span>${esc(c.subject)} · ${esc(c.chapter)}</span><span class="tag ${c.accuracy<50?'tag-high':c.accuracy<70?'tag-med':'tag-low'}">${c.accuracy}% · ${c.attempts} attempts</span></div>`).join('')}</div>`:''}
-    ${s.mistakes.length?`<div class="mt-12"><div class="card-sub mb-8">📒 Active mistake questions from Prashn</div>${s.mistakes.slice(0,4).map(q=>`<div class="prashn-mini-q mb-6"><div class="flex-between gap-8"><b class="text-xs">${esc(q.subject)} · ${esc(q.chapter)}</b><span class="tag tag-high">Wrong</span></div><div class="text-xs mt-5">${esc(q.q).slice(0,220)}${q.q.length>220?'…':''}</div><div class="text-xs faint mt-4">${esc(q.exam||'')} ${q.year?'· '+q.year:''} · next review ${q.nextReview||'—'}</div></div>`).join('')}</div>`:''}
+    ${s.mistakes.length?`<div class="mt-12"><div class="card-sub mb-8">📒 Active mistake questions from Prashn</div>${s.mistakes.slice(0,6).map(q=>`<div class="prashn-mini-q mb-6"><div class="flex-between gap-8"><b class="text-xs">${esc(q.subject)} · ${esc(q.chapter)}</b><span class="tag tag-high">Wrong</span></div><div class="text-xs mt-5">${esc(q.q||q.question||'').slice(0,220)}${(q.q||q.question||'').length>220?'…':''}</div><div class="text-xs faint mt-4">${esc(q.exam||q.examSource||'')} ${q.year?'· '+q.year:''} · next review ${q.nextReview||'—'}</div></div>`).join('')}</div>`:''}
   </div>`;
 }
 function initPrashnBridge(){
@@ -4186,7 +4277,14 @@ function initPrashnBridge(){
   try{
     prashnBridgeRef=firebaseDb.ref(`users/${cloudUser.uid}/prashn`);
     if(prashnBridgeListener)prashnBridgeRef.off('value',prashnBridgeListener);
-    prashnBridgeListener=snap=>{const d=snap.val();DATA.prashnSync={connected:!!d,updatedAt:d?.updatedAt||null,data:d||null};saveLocalOnly();render();};
+    prashnBridgeListener=snap=>{
+      const d=snap.val()||{};
+      const sync=syncPrashnMistakesIntoNotebook(d);
+      DATA.prashnSync={connected:!!snap.val(),updatedAt:d.updatedAt||null,data:d};
+      saveLocalOnly();
+      render();
+      if(sync.added) toast(`📒 ${sync.added} Prashn mistake${sync.added===1?'':'s'} added to Mistake Notebook.`);
+    };
     prashnBridgeRef.on('value',prashnBridgeListener);
   }catch(e){console.error('Prashn bridge failed',e)}
 }
@@ -4535,7 +4633,15 @@ function getFreeSlots(date, extraBusy){
   // manual blocks, locked blocks, and already-completed blocks are never overwritten or double-booked.
   // During generation, incomplete generated blocks are cleared first, so they don't constrain the new plan.
   const existingBusy = (DATA.plannerEvents||[])
-    .filter(b=>b.date===date && b.subject!=='Fixed' && b.startTime && b.endTime)
+    .filter(b=>{
+      if(b.date!==date || b.subject==='Fixed' || !b.startTime || !b.endTime) return false;
+      const label=String(b.activity||b.title||b.name||'');
+      const ov=(DATA.scheduleOverrides||{})[date]||{};
+      if(ov.noAakash && /aakash/i.test(label)) return false;
+      if(ov.noTuition && /math tuition|tuition/i.test(label)) return false;
+      if(ov.noVedantu && /vedantu/i.test(label)) return false;
+      return true;
+    })
     .map(b=>({start:b.startTime, end:b.endTime}));
   const merged = mergeBusyBlocks([...getFixedBlocksForDate(date), ...existingBusy, ...(extraBusy||[])]);
   const free = []; let cursor = dayStart;
@@ -5641,6 +5747,24 @@ function examPlanAllocationPick(remaining, level, state){
 
 function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOverride, timeWindow){
   date = date || plannerViewDate || todayStr();
+
+  // One-off schedule overrides are authoritative. If Aakash/tuition/Vedantu is
+  // skipped today, remove EVERY old generated/locked copy of that commitment before
+  // calculating free time. This fixes older plans where a commitment had been saved
+  // with a different subject/locked flag and continued blocking the timeline.
+  const dayOv = (DATA.scheduleOverrides||{})[date] || {};
+  if(dayOv.holiday || dayOv.noAakash || dayOv.noTuition || dayOv.noVedantu){
+    DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>{
+      if(b.date!==date) return true;
+      const label=String(b.activity||b.title||b.name||'');
+      if(dayOv.holiday && (b.generated || b.locked || b.subject==='Fixed')) return false;
+      if(dayOv.noAakash && /aakash/i.test(label)) return false;
+      if(dayOv.noTuition && /math tuition|tuition/i.test(label)) return false;
+      if(dayOv.noVedantu && /vedantu/i.test(label)) return false;
+      return true;
+    });
+  }
+
   let selectedSet = null;
   const durationMap = new Map(); // chapter key -> array of {type, duration} steps
   const selectedTopicMap = new Map(); // chapter key -> exact topics chosen in the plan generator
@@ -5955,9 +6079,10 @@ function saveScheduleOverride(date){
   if(!DATA.scheduleOverrides) DATA.scheduleOverrides = {};
   DATA.scheduleOverrides[date] = ov;
   save(); closeModal();
-  if((DATA.plannerEvents||[]).some(b=>b.date===date && b.generated)) generateTodaysPlan(date);
-  else render();
-  toast('Schedule adjusted for this day.');
+  // Always rebuild this date after an override. This removes stale generated
+  // commitment blocks and recalculates the newly available study time.
+  generateTodaysPlan(date);
+  toast('Schedule adjusted for this day — available study time recalculated.');
 }
 function clearScheduleOverride(date){
   if(!DATA.scheduleOverrides) return;
@@ -6711,6 +6836,10 @@ function viewPlanner(){
   const studyHours = nonRestBlocks.reduce((a,b)=>a+blockDurationHours(b),0);
   const studyH = Math.floor(studyHours), studyM = Math.round((studyHours-studyH)*60);
   return `
+  ${pafRenderTools()}
+
+  ${aakashSkipPlannerNotice()}
+
   ${otpRenderButton()}
 
   ${pslRender()}
@@ -9650,7 +9779,7 @@ function viewMistakes(){
       <button class="btn btn-primary" onclick="openMistakeForm()">+ Log Mistake</button>
     </div>
   </div>
-  <div class="section-desc" style="margin-top:0;">Every ${mistakeTab} chapter gets its own folder — click to expand and review.</div>
+  <div class="section-desc" style="margin-top:0;">Every ${mistakeTab} chapter gets its own folder — click to expand and review. <b>📒 Wrong questions from Prashn are automatically added here when the same Firebase/Google account is connected.</b></div>
   ${chapters.map(ch => chapterMistakeFolderHTML(mistakeTab, ch)).join('')}
   `;
 }
@@ -9679,7 +9808,7 @@ function chapterMistakeFolderHTML(subj, ch){
         ${items.length ? items.map(m=>`
           <div class="mb-12" style="padding-bottom:10px; border-bottom:1px solid var(--card-border);">
             <div class="flex-between">
-              <span class="tag ${mistakeReasonTag(m.reason)}">${esc(m.reason)}</span>
+              <span class="tag ${mistakeReasonTag(m.reason)}">${esc(m.reason)}</span>${m.source==='Prashn'?'<span class="tag tag-info">Prashn</span>':''}
               <div class="flex gap-8"><span class="text-xs faint">${fmtDate(m.date)}${m.examSource?' · '+esc(m.examSource):''}</span><button class="icon-btn" onclick="event.stopPropagation(); deleteMistake('${m.id}')">✕</button></div>
             </div>
             <div class="mt-8 text-sm"><strong>Q:</strong> ${esc(m.question)}</div>
@@ -13355,6 +13484,231 @@ if(typeof oldPslOpenLog==='function'){
     oldPslOpenLog.apply(this,arguments);
     setTimeout(pslPopulateChapterList,0);
   };
+}
+</script>
+
+<script id="mistake-capture-chapter-fix">
+function populateManualMistakeChapters(){
+  const sub=document.getElementById('mm-subject'), sel=document.getElementById('mm-chapter');
+  if(!sub||!sel)return;
+  const rows=DATA.subjects?.[sub.value]?.chapters||[];
+  const c11=rows.filter(c=>typeof chapterClassLevel==='function' ? chapterClassLevel(sub.value,c)===11 : true);
+  const c12=rows.filter(c=>typeof chapterClassLevel==='function' ? chapterClassLevel(sub.value,c)===12 : false);
+  sel.innerHTML='<option value="">Select chapter</option>';
+  const add=(label,a)=>{
+    if(!a.length)return;
+    const g=document.createElement('optgroup');g.label=label;
+    a.forEach(c=>{const o=document.createElement('option');o.value=c.name;o.textContent=c.name;g.appendChild(o);});
+    sel.appendChild(g);
+  };
+  add('📘 Class 11',c11);add('📕 Class 12',c12);
+}
+document.addEventListener('change',e=>{
+  if(e.target?.id==='mm-subject')populateManualMistakeChapters();
+});
+const oldMistakeForm=window.openManualMistakeForm;
+if(typeof oldMistakeForm==='function'){
+  window.openManualMistakeForm=function(){oldMistakeForm.apply(this,arguments);setTimeout(populateManualMistakeChapters,0);}
+}
+</script>
+
+<script id="planner-addons-js">
+/* ============================================================
+   PRAGATI PLANNER ADD-ONS
+   Included:
+   1. Auto-Replan After Skip
+   2. What Can I Finish In X Time?
+   3. Topic Completion Picker
+   4. Smart Swap with Class 11/12 + exam filters
+   5. Hard-copy Practice Counter
+   6. Clean My Plan
+   7. Only X Hours Today
+   Excluded by request: Exam-Eve Mode and Exam-Morning Mode.
+   ============================================================ */
+function pafEnsure(){
+  DATA.paf=DATA.paf||{};
+  DATA.paf.lastAutoReplan ||= '';
+  DATA.paf.lastClean ||= '';
+}
+function pafTomorrow(){
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function pafTimeToMin(s){
+  if(typeof toMin==='function')return toMin(s);
+  const m=String(s||'').match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):0;
+}
+function pafTodayFree(){
+  try{
+    if(typeof getAvailableStudyMinutes==='function')return Math.max(0,getAvailableStudyMinutes(todayStr()));
+  }catch(e){}
+  const p=DATA.examPreferredWindow||{};
+  if(p.start&&p.end){
+    let a=pafTimeToMin(p.start),b=pafTimeToMin(p.end);if(b<a)b+=1440;return Math.max(0,b-a);
+  }
+  return 120;
+}
+function pafAllowedSubjects(exam){
+  if(exam==='NEET')return ['Physics','Chemistry','Biology'];
+  if(exam==='JEE')return ['Physics','Chemistry','Maths'];
+  return ['Physics','Chemistry','Maths','Biology'];
+}
+function pafExamMode(){
+  return DATA.prgPack?.mode||'CBSE';
+}
+function pafChapterOptions(exam='CBSE',subject=''){
+  const subs=subject?[subject]:pafAllowedSubjects(exam);
+  const out=[];
+  subs.forEach(s=>{
+    const chs=DATA.subjects?.[s]?.chapters||[];
+    const c11=chs.filter(c=>String(chapterClassLevel(s,c))==='11');
+    const c12=chs.filter(c=>String(chapterClassLevel(s,c))==='12');
+    if(c11.length)out.push({group:`${s} · Class 11`,items:c11});
+    if(c12.length)out.push({group:`${s} · Class 12`,items:c12});
+  });
+  return out;
+}
+function pafTopicStatePicker(subject,chapter){
+  const c=(DATA.subjects?.[subject]?.chapters||[]).find(x=>x.name===chapter);
+  const topics=c?.topics||[];
+  if(!topics.length)return `<div class="planner-addon-sub">No topics listed yet. Add topics from the Subject Tracker.</div>`;
+  return topics.map(t=>`<label class="paf-chip"><input type="checkbox" value="${esc(t)}" style="margin-right:4px"> ${esc(t)}</label>`).join('');
+}
+function pafOpenCompletion(){
+  const subs=Object.keys(DATA.subjects||{});
+  openModal(`<div class="card-head"><h3>✅ Complete a Topic</h3></div>
+    <div class="planner-addon-sub">Choose exactly what you completed. This updates the selected topic's study record without assuming the whole chapter is finished.</div>
+    <label class="mt-10">Subject<select id="pafCS">${subs.map(s=>`<option>${esc(s)}</option>`).join('')}</select></label>
+    <label class="mt-10">Chapter<select id="pafCC"><option value="">Select chapter</option></select></label>
+    <div id="pafCT" class="mt-10"></div>
+    <label class="mt-10">Result<select id="pafCR"><option value="done">Completed</option><option value="practice">Practiced</option><option value="pyq">PYQ completed</option><option value="revision">Revised</option><option value="error">Needs improvement</option></select></label>
+    <button class="btn btn-primary mt-12" onclick="pafSaveCompletion()">Save</button>`,true);
+  setTimeout(()=>pafPopulateCompletionChapters(),0);
+}
+function pafPopulateCompletionChapters(){
+  const s=document.getElementById('pafCS'),c=document.getElementById('pafCC');if(!s||!c)return;
+  const groups=pafChapterOptions('CBSE',s.value);
+  c.innerHTML='<option value="">Select chapter</option>'+groups.map(g=>`<optgroup label="${esc(g.group)}">${g.items.map(x=>`<option value="${esc(x.name)}">${esc(x.name)}</option>`).join('')}</optgroup>`).join('');
+  document.getElementById('pafCT').innerHTML='';
+}
+function pafPopulateTopics(){
+  const s=document.getElementById('pafCS')?.value,c=document.getElementById('pafCC')?.value;
+  const el=document.getElementById('pafCT');if(el)el.innerHTML=pafTopicStatePicker(s,c);
+}
+document.addEventListener('change',e=>{
+  if(e.target?.id==='pafCS')pafPopulateCompletionChapters();
+  if(e.target?.id==='pafCC')pafPopulateTopics();
+});
+function pafSaveCompletion(){
+  const s=pafCS?.value,c=pafCC?.value, result=pafCR?.value;
+  if(!s||!c)return toast('Choose a subject and chapter.');
+  const topics=[...document.querySelectorAll('#pafCT input[type=checkbox]:checked')].map(x=>x.value);
+  DATA.studyCompletions=Array.isArray(DATA.studyCompletions)?DATA.studyCompletions:[];
+  DATA.studyCompletions.push({id:uid(),date:todayStr(),subject:s,chapter:c,topics,result});
+  save();closeModal();render();toast('✅ Completion recorded for the selected topic(s).');
+}
+function pafOpenTimeFit(){
+  openModal(`<div class="card-head"><h3>⏱️ What Can I Finish?</h3></div>
+    <div class="planner-addon-sub">Tell Pragati how much time you have. It will select the highest-priority work that can fit without pretending you have more time.</div>
+    <label class="mt-10">Available minutes<input id="pafMinutes" type="number" min="10" step="5" value="60"></label>
+    <button class="btn btn-primary mt-12" onclick="pafTimeFit()">Find best work</button>`,true);
+}
+function pafTimeFit(){
+  const mins=Math.max(10,Number(document.getElementById('pafMinutes')?.value)||60);
+  const rows=[];
+  Object.entries(DATA.subjects||{}).forEach(([s,x])=>{
+    if(!pafAllowedSubjects(pafExamMode()).includes(s))return;
+    (x.chapters||[]).forEach(c=>{
+      const risk=typeof prgRisk==='function'?prgRisk(s,c.name):{days:0};
+      const mistakes=(DATA.mistakes||[]).filter(m=>!m.mastered&&m.subject===s&&m.chapter===c.name).length;
+      rows.push({s,c:c.name,score:mistakes*10+(risk.days>7?20:risk.days>2?8:0)});
+    });
+  });
+  const best=rows.sort((a,b)=>b.score-a.score).slice(0,Math.max(1,Math.floor(mins/30)));
+  closeModal();
+  openModal(`<div class="card-head"><h3>⏱️ Best Use of ${mins} Minutes</h3></div>
+    ${best.map((x,i)=>`<div class="list-item"><span class="txt"><b>${i+1}. ${esc(x.s)} → ${esc(x.c)}</b><br><span class="faint">Suggested ~${Math.min(45,Math.max(20,mins-best.slice(0,i).reduce((n)=>n,0)))} min</span></span></div>`).join('')}
+    <button class="btn btn-outline mt-12" onclick="closeModal()">Close</button>`,true);
+}
+function pafSmartSwap(){
+  const mode=pafExamMode();
+  const groups=pafChapterOptions(mode);
+  openModal(`<div class="card-head"><h3>🔀 Smart Swap</h3></div>
+    <div class="planner-addon-sub">All eligible chapters are separated by subject and Class 11/12. Choose a chapter to replace a planner block.</div>
+    <label class="mt-10">Exam mode<select id="pafSwapExam"><option>CBSE</option><option>NEET</option><option>JEE</option></select></label>
+    <label class="mt-10">Chapter<select id="pafSwapChapter"><option value="">Select chapter</option></select></label>
+    <button class="btn btn-primary mt-12" onclick="pafChooseSwap()">Use This Chapter</button>`,true);
+  setTimeout(()=>pafPopulateSwap(),0);
+}
+function pafPopulateSwap(){
+  const e=document.getElementById('pafSwapExam'),s=document.getElementById('pafSwapChapter');if(!e||!s)return;
+  const groups=pafChapterOptions(e.value);
+  s.innerHTML='<option value="">Select chapter</option>'+groups.map(g=>`<optgroup label="${esc(g.group)}">${g.items.map(x=>`<option value="${esc(g.items.map?x.name:x)}">${esc(x.name)}</option>`).join('')}</optgroup>`).join('');
+}
+function pafChooseSwap(){
+  const c=document.getElementById('pafSwapChapter')?.value;
+  if(!c)return toast('Choose a chapter.');
+  closeModal();
+  // Preserve the user's existing block swap mechanism; store the requested chapter
+  // so the next swap control can use it.
+  DATA.pendingSmartSwap={chapter:c,date:todayStr()};
+  save();toast(`🔀 ${c} selected. Use Swap on the target block to apply it.`);
+}
+document.addEventListener('change',e=>{if(e.target?.id==='pafSwapExam')pafPopulateSwap()});
+function pafPractice(){
+  if(typeof prgPractice==='function'){const s=Object.keys(DATA.subjects||{})[0]||'Physics';return prgPractice(s,prompt('Chapter name'));} 
+  toast('Practice Counter is available from the Subject Tracker.');
+}
+function pafCleanPlan(){
+  const date=plannerViewDate||todayStr();
+  const before=(DATA.plannerEvents||[]).length;
+  DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>{
+    if(b.date!==date)return true;
+    const label=String(b.activity||b.title||b.name||'');
+    const empty=!label.trim()&&!b.subject;
+    const generated=b.generated===true||b.source==='ai'||b.source==='generated';
+    return !(empty||generated&&(!b.locked&&!b.done));
+  });
+  const after=DATA.plannerEvents.length;
+  pafEnsure();DATA.paf.lastClean=date;save();render();toast(`🧹 Cleaned ${before-after} stale/duplicate generated block${before-after===1?'':'s'}.`);
+}
+function pafAutoReplanAfterSkip(){
+  const date=plannerViewDate||todayStr(),ov=(DATA.scheduleOverrides||{})[date]||{};
+  if(!(ov.noAakash||ov.noTuition||ov.noVedantu||ov.holiday))return toast('No skipped commitment found for this day.');
+  try{
+    if(typeof generateTodaysPlan==='function'){generateTodaysPlan();pafEnsure();DATA.paf.lastAutoReplan=date;save();toast('🔄 Day replanned using the new available time.');return;}
+  }catch(e){}
+  toast('Use Plan My Day to rebuild the remaining schedule.');
+}
+function pafLimitedDay(){
+  openModal(`<div class="card-head"><h3>🛟 I Have Only X Hours Today</h3></div>
+    <div class="planner-addon-sub">Pragati will prioritize the most important work and avoid trying to fit your entire backlog into a short day.</div>
+    <label class="mt-10">Hours available<input id="pafHours" type="number" min="0.5" step="0.5" value="2"></label>
+    <button class="btn btn-primary mt-12" onclick="pafGenerateLimited()">Build priority plan</button>`,true);
+}
+function pafGenerateLimited(){
+  const h=Math.max(.5,Number(document.getElementById('pafHours')?.value)||2);
+  closeModal();
+  DATA.limitedPlanMinutes=Math.round(h*60);
+  save();
+  try{if(typeof generateTodaysPlan==='function'){generateTodaysPlan();toast(`🛟 Plan rebuilt for ${h} hours of available study time.`);return;}}catch(e){}
+  toast('Your time limit was saved. Generate Today’s Plan to apply it.');
+}
+function pafRenderTools(){
+  pafEnsure();
+  return `<div class="planner-addon">
+    <h3>🛠️ Planner Controls</h3>
+    <div class="planner-addon-sub">Small controls for real-life changes — no Exam-Eve or Exam-Morning modes.</div>
+    <div class="planner-addon-grid">
+      <button class="btn btn-soft" onclick="pafAutoReplanAfterSkip()">🔄 Replan After Skip</button>
+      <button class="btn btn-soft" onclick="pafOpenTimeFit()">⏱️ What Can I Finish?</button>
+      <button class="btn btn-soft" onclick="pafOpenCompletion()">✅ Complete Topic</button>
+      <button class="btn btn-soft" onclick="pafSmartSwap()">🔀 Smart Swap</button>
+      <button class="btn btn-soft" onclick="pafPractice()">🔢 Practice Counter</button>
+      <button class="btn btn-soft" onclick="pafCleanPlan()">🧹 Clean My Plan</button>
+      <button class="btn btn-primary" onclick="pafLimitedDay()">🛟 I Have Only X Hours</button>
+    </div>
+  </div>`;
 }
 </script>
 </body>
