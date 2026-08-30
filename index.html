@@ -2517,7 +2517,6 @@ function migrateData(d){
   merged.paf ||= {lastAutoReplan:'',lastClean:''};
   if(!Array.isArray(merged.studyCompletions)) merged.studyCompletions=[];
   if(!Array.isArray(merged.studySessionLogs)) merged.studySessionLogs=[];
-  if(!merged.prashnSync) merged.prashnSync={};
   merged.revisionQueue ||= [];
   if(!merged.examRecords) merged.examRecords = [];
   if(!merged.upcomingTests) merged.upcomingTests = [];
@@ -4177,118 +4176,189 @@ function chapterReadinessTableHTML(){
    Firebase authenticated user. Pragati remains the planning app;
    Prashn remains the question database/practice app.
    ============================================================ */
-let prashnBridgeRef=null, prashnBridgeListener=null;
+let prashnBridgeRef=null, prashnBridgeListener=null, prashnBridgeBusy=false;
 function prashnBridgeData(){return DATA.prashnSync?.data||null}
+
+function prashnMistakeKey(m){
+  if(!m) return '';
+  if(m.qid!=null) return 'qid:'+String(m.qid);
+  if(m.id!=null) return 'id:'+String(m.id);
+  if(m.manualId!=null) return 'manual:'+String(m.manualId);
+  return 'text:'+String(m.subject||'')+'|'+String(m.chapter||'')+'|'+String(m.q||m.question||'');
+}
+
+function normalizePrashnMistake(q){
+  if(!q) return null;
+  const question=String(q.q||q.question||q.text||'').trim();
+  if(!question) return null;
+  const subject=String(q.subject||q.subj||'').trim();
+  const chapter=String(q.chapter||q.ch||'').trim();
+  const key=prashnMistakeKey(q);
+  if(!key) return null;
+  return {
+    source:'Prashn', prashnKey:key,
+    id:'prashn-'+key.replace(/[^a-zA-Z0-9:_-]/g,'_'),
+    qid:q.qid??q.id??null, manualId:q.manualId??null,
+    subject, chapter, topic:String(q.topic||'').trim(), question,
+    reason:String(q.mistake||q.reason||'Wrong attempt').trim(),
+    examSource:String(q.exam||q.examSource||'Prashn').trim(),
+    year:q.year??'', difficulty:String(q.difficulty||'').trim(),
+    correctConcept:String(q.formula||q.correctConcept||q.explanation||q.solution||'').trim(),
+    date:q.date||todayStr(), nextReview:q.nextReview||null,
+    stage:Number.isFinite(Number(q.stage))?Number(q.stage):0,
+    mastered:false, revisionDates:[]
+  };
+}
+
+/* Import ACTIVE Prashn mistakes into Pragati's native Mistake Notebook.
+   This is deliberately idempotent: the same wrong question never creates
+   duplicate notebook entries. Manual Pragati mistakes are never touched. */
+function syncPrashnMistakesIntoPragati(remote){
+  if(!remote || typeof remote!=='object') return 0;
+  let incoming=Array.isArray(remote.mistakeQuestions)?remote.mistakeQuestions.slice():[];
+
+  // Backward compatibility with older Prashn bridge payloads.
+  if(!incoming.length && Array.isArray(remote.mistakes)){
+    incoming=remote.mistakes.filter(m=>!m.mastered && (m.q||m.question));
+  }
+
+  const normalized=incoming.map(normalizePrashnMistake).filter(Boolean).slice(0,300);
+  const incomingKeys=new Set(normalized.map(m=>m.prashnKey));
+  const old=Array.isArray(DATA.mistakes)?DATA.mistakes:[];
+
+  // Remove only Prashn entries that disappeared from Prashn's ACTIVE list.
+  DATA.mistakes=old.filter(m=>m.source!=='Prashn' || incomingKeys.has(m.prashnKey));
+  const byKey=new Map(DATA.mistakes.filter(m=>m.source==='Prashn'&&m.prashnKey).map(m=>[m.prashnKey,m]));
+
+  normalized.forEach(item=>{
+    const existing=byKey.get(item.prashnKey);
+    if(existing){
+      const keepId=existing.id;
+      const keepRevisionDates=existing.revisionDates||[];
+      Object.assign(existing,item,{id:keepId,revisionDates:keepRevisionDates});
+    }else{
+      DATA.mistakes.push(item);
+      byKey.set(item.prashnKey,item);
+    }
+  });
+
+  // Recalculate chapter mistake counters from the notebook so Prashn-synced
+  // mistakes are visible everywhere in Pragati's readiness/planner logic.
+  Object.entries(DATA.subjects||{}).forEach(([subjectKey,sub])=>{
+    (sub.chapters||[]).forEach(ch=>{
+      ch.mistakes=DATA.mistakes.filter(m=>m.subject===subjectKey && m.chapter===ch.name).length;
+    });
+  });
+  return normalized.length;
+}
+
 function prashnBridgeSummary(){
   const d=prashnBridgeData();
   if(!d)return {attempts:0,wrong:0,skipped:0,pyqs:0,accuracy:0,chapters:[],mistakes:[]};
-  const logs=Array.isArray(d.attemptLog)?d.attemptLog:Object.values(d.attemptLog||{});
-  const attempted=logs.filter(x=>!x.skipped).length, correct=logs.filter(x=>!x.skipped&&x.correct).length;
+  const logs=Array.isArray(d.attemptLog)?d.attemptLog:[];
+  const attempted=logs.filter(x=>!x.skipped).length;
+  const correct=logs.filter(x=>!x.skipped&&x.correct).length;
   const wrong=logs.filter(x=>!x.skipped&&!x.correct).length;
   const skipped=logs.filter(x=>x.skipped).length;
   const pyqs=logs.filter(x=>x.pyq).length;
   const chapters=Object.values(d.chapterStats||{}).map(x=>({...x,accuracy:x.attempts?Math.round(100*x.correct/x.attempts):0})).sort((a,b)=>a.accuracy-b.accuracy).slice(0,8);
-  return {attempts:attempted,wrong,skipped,pyqs,accuracy:attempted?Math.round(100*correct/attempted):0,chapters,mistakes:Array.isArray(d.mistakeQuestions)?d.mistakeQuestions:Object.values(d.mistakeQuestions||{})};
-}
-
-/* Convert a Prashn wrong-question record into Pragati's native mistake schema.
-   A stable prashnId prevents duplicate notebook entries when Firebase updates. */
-function syncPrashnMistakesIntoNotebook(d){
-  if(!d)return {added:0,updated:0};
-  DATA.mistakes=Array.isArray(DATA.mistakes)?DATA.mistakes:[];
-  const source=[];
-  const mq=Array.isArray(d.mistakeQuestions)?d.mistakeQuestions:Object.values(d.mistakeQuestions||{});
-  mq.forEach((q,i)=>{
-    if(!q)return;
-    source.push({
-      prashnId:String(q.id||q.questionId||q.qid||q.key||`mq-${i}`),
-      subject:q.subject||q.sub||'',
-      chapter:q.chapter||q.ch||'',
-      topic:q.topic||'',
-      question:q.q||q.question||q.text||q.prompt||'',
-      reason:q.reason||q.mistakeReason||'Prashn wrong attempt',
-      correctConcept:q.correctConcept||q.explanation||q.solution||'',
-      examSource:q.exam||q.examSource||q.source||'Prashn',
-      date:q.date||q.createdAt||todayStr(),
-      wrongCount:Number(q.wrongCount||q.attempts||1),
-      nextReview:q.nextReview||''
-    });
-  });
-
-  // Also catch wrong attempts even when Prashn hasn't created a mistakeQuestions
-  // entry yet. This makes a wrong answer itself sufficient to reach the notebook.
-  const logs=Array.isArray(d.attemptLog)?d.attemptLog:Object.values(d.attemptLog||{});
-  logs.filter(x=>!x.skipped&&!x.correct).forEach((q,i)=>{
-    const id=String(q.id||q.questionId||q.qid||q.key||`attempt-${q.date||''}-${i}`);
-    if(source.some(x=>x.prashnId===id))return;
-    source.push({
-      prashnId:id,
-      subject:q.subject||q.sub||'',
-      chapter:q.chapter||q.ch||'',
-      topic:q.topic||'',
-      question:q.q||q.question||q.text||q.prompt||'',
-      reason:q.reason||q.mistakeReason||'Prashn wrong attempt',
-      correctConcept:q.correctConcept||q.explanation||q.solution||'',
-      examSource:q.exam||q.examSource||q.source||'Prashn',
-      date:q.date||q.createdAt||todayStr(),
-      wrongCount:1,
-      nextReview:q.nextReview||''
-    });
-  });
-
-  let added=0,updated=0;
-  source.forEach(q=>{
-    if(!q.question||!q.subject||!q.chapter)return;
-    let m=DATA.mistakes.find(x=>x.source==='Prashn'&&String(x.prashnId)===q.prashnId);
-    if(!m){
-      m={id:uid(),source:'Prashn',prashnId:q.prashnId,subject:q.subject,chapter:q.chapter,topic:q.topic,
-         question:q.question,reason:q.reason,examSource:q.examSource,correctConcept:q.correctConcept,
-         date:String(q.date).slice(0,10)||todayStr(),revisionDates:[],wrongCount:q.wrongCount||1,
-         nextReview:q.nextReview||'',mastered:false};
-      DATA.mistakes.push(m);added++;
-    }else{
-      m.subject=q.subject||m.subject;m.chapter=q.chapter||m.chapter;m.topic=q.topic||m.topic;
-      m.question=q.question||m.question;m.reason=q.reason||m.reason;m.examSource=q.examSource||m.examSource;
-      m.correctConcept=q.correctConcept||m.correctConcept;m.nextReview=q.nextReview||m.nextReview;
-      m.wrongCount=Math.max(Number(m.wrongCount||1),Number(q.wrongCount||1));
-      m.lastSynced=todayStr();updated++;
-    }
-    const ch=DATA.subjects[q.subject]?.chapters?.find(c=>c.name===q.chapter);
-    if(ch)ch.mistakes=(DATA.mistakes||[]).filter(x=>x.subject===q.subject&&x.chapter===q.chapter).length;
-  });
-  return {added,updated};
+  const mistakes=Array.isArray(d.mistakeQuestions)?d.mistakeQuestions.filter(x=>!x.mastered):[];
+  return {attempts:attempted,wrong,skipped,pyqs,accuracy:attempted?Math.round(100*correct/attempted):0,chapters,mistakes};
 }
 function prashnBridgeHTML(){
   const s=prashnBridgeSummary(), d=prashnBridgeData();
-  if(!d)return `<div class="card prashn-bridge-card mb-16"><div class="flex-between flex-wrap gap-10"><div><div class="eyebrow">🔗 PRASHN ↔ PRAGATI</div><h3 style="margin:3px 0 0;">Connect your Question Practice data</h3><div class="text-xs muted mt-4">Once Prashn is signed into the same Firebase/Google account, wrong attempts, skips, PYQs and weak chapters appear here automatically.</div></div><span class="tag tag-med">Not connected</span></div></div>`;
+  if(!d)return `<div class="card prashn-bridge-card mb-16"><div class="flex-between flex-wrap gap-10"><div><div class="eyebrow">🔗 PRASHN ↔ PRAGATI</div><h3 style="margin:3px 0 0;">Connect your Question Practice data</h3><div class="text-xs muted mt-4">Sign into Prashn with the same Firebase/Google account. Wrong questions will then be copied into Pragati's Mistake Book automatically.</div></div><span class="tag tag-med">Not connected</span></div><div class="mt-10"><button class="btn btn-outline btn-sm" onclick="syncPrashnNow()">🔄 Check Prashn now</button></div></div>`;
   return `<div class="card prashn-bridge-card mb-16">
     <div class="flex-between flex-wrap gap-10"><div><div class="eyebrow">🔗 PRASHN PERFORMANCE</div><h3 style="margin:3px 0 0;">Question practice is feeding your planner.</h3><div class="text-xs muted mt-4">Last sync: ${d.updatedAt?fmtDate(String(d.updatedAt).slice(0,10)):'—'} · ${esc(d.profile||'Prashn profile')}</div></div><span class="tag tag-low">☁️ Connected</span></div>
-    <div class="grid grid-4 mt-12">
-      <div class="prashn-stat"><div class="text-xs faint">Questions</div><b style="font-size:21px;">${s.attempts}</b></div>
-      <div class="prashn-stat"><div class="text-xs faint">Accuracy</div><b style="font-size:21px;">${s.accuracy}%</b></div>
-      <div class="prashn-stat"><div class="text-xs faint">Wrong</div><b style="font-size:21px;">${s.wrong}</b></div>
-      <div class="prashn-stat"><div class="text-xs faint">PYQs</div><b style="font-size:21px;">${s.pyqs}</b></div>
-    </div>
-    ${s.mistakes.length?`<div class="mt-12"><div class="card-sub mb-8">📒 Active mistake questions from Prashn</div>${s.mistakes.slice(0,6).map(q=>`<div class="prashn-mini-q mb-6"><div class="flex-between gap-8"><b class="text-xs">${esc(q.subject)} · ${esc(q.chapter)}</b><span class="tag tag-high">Wrong</span></div><div class="text-xs mt-5">${esc(q.q||q.question||'').slice(0,220)}${(q.q||q.question||'').length>220?'…':''}</div><div class="text-xs faint mt-4">${esc(q.exam||q.examSource||'')} ${q.year?'· '+q.year:''} · next review ${q.nextReview||'—'}</div></div>`).join('')}</div>`:''}
+    <div class="grid grid-4 mt-12"><div class="prashn-stat"><div class="text-xs faint">Questions</div><b style="font-size:21px;">${s.attempts}</b></div><div class="prashn-stat"><div class="text-xs faint">Accuracy</div><b style="font-size:21px;">${s.accuracy}%</b></div><div class="prashn-stat"><div class="text-xs faint">Wrong</div><b style="font-size:21px;">${s.wrong}</b></div><div class="prashn-stat"><div class="text-xs faint">PYQs</div><b style="font-size:21px;">${s.pyqs}</b></div></div>
+    <div class="flex-between flex-wrap gap-8 mt-10"><div class="text-xs muted">📒 <b>${s.mistakes.length}</b> active Prashn mistake question${s.mistakes.length===1?'':'s'} synced into the Pragati Mistake Book.</div><button class="btn btn-soft btn-sm" onclick="syncPrashnNow()">🔄 Sync mistakes now</button></div>
+    ${s.chapters.length?`<div class="mt-12"><div class="card-sub mb-8">Weakest question-practice chapters</div>${s.chapters.slice(0,5).map(c=>`<div class="flex-between text-xs mb-6"><span>${esc(c.subject)} · ${esc(c.chapter)}</span><span class="tag ${c.accuracy<50?'tag-high':c.accuracy<70?'tag-med':'tag-low'}">${c.accuracy}% · ${c.attempts} attempts</span></div>`).join('')}</div>`:''}
+    ${s.mistakes.length?`<div class="mt-12"><div class="card-sub mb-8">📒 Active mistake questions from Prashn</div>${s.mistakes.slice(0,4).map(q=>`<div class="prashn-mini-q mb-6"><div class="flex-between gap-8"><b class="text-xs">${esc(q.subject)} · ${esc(q.chapter)}</b><span class="tag tag-high">Wrong</span></div><div class="text-xs mt-5">${esc(q.q||q.question||'').slice(0,220)}${String(q.q||q.question||'').length>220?'…':''}</div><div class="text-xs faint mt-4">${esc(q.exam||'')} ${q.year?'· '+q.year:''} · next review ${q.nextReview||'—'}</div></div>`).join('')}</div>`:''}
   </div>`;
 }
-function initPrashnBridge(){
-  if(typeof firebase==='undefined' || !cloudUser || !firebaseDb)return;
+
+async function syncPrashnNow(){
+  if(prashnBridgeBusy)return;
+  prashnBridgeBusy=true;
   try{
-    prashnBridgeRef=firebaseDb.ref(`users/${cloudUser.uid}/prashn`);
-    if(prashnBridgeListener)prashnBridgeRef.off('value',prashnBridgeListener);
-    prashnBridgeListener=snap=>{
-      const d=snap.val()||{};
-      const sync=syncPrashnMistakesIntoNotebook(d);
-      DATA.prashnSync={connected:!!snap.val(),updatedAt:d.updatedAt||null,data:d};
-      saveLocalOnly();
-      render();
-      if(sync.added) toast(`📒 ${sync.added} Prashn mistake${sync.added===1?'':'s'} added to Mistake Notebook.`);
-    };
-    prashnBridgeRef.on('value',prashnBridgeListener);
-  }catch(e){console.error('Prashn bridge failed',e)}
+    const localCount=importPrashnLocalProfiles();
+    if(localCount){ render(); toast(`✅ Imported ${localCount} Prashn mistake${localCount===1?'':'s'} from local Prashn data.`); return; }
+    if(typeof firebase==='undefined') throw new Error('Firebase library is not loaded.');
+    const user=cloudUser || firebase.auth().currentUser;
+    if(!user) throw new Error('Pragati is not signed into Firebase. Sign in first.');
+    if(!firebaseDb) firebaseDb=firebase.database();
+    const ref=firebaseDb.ref(`users/${user.uid}/prashn`);
+    const snap=await ref.once('value');
+    const d=snap.val();
+    if(!d) throw new Error('No Prashn data exists at /users/'+user.uid+'/prashn. Open Prashn, sign in with the same Google account, and press Sync Now there once.');
+    const count=syncPrashnMistakesIntoPragati(d);
+    DATA.prashnSync={connected:true,updatedAt:d.updatedAt||null,data:d};
+    saveLocalOnly();
+    render();
+    toast(count?`✅ Imported ${count} active Prashn mistake${count===1?'':'s'} into Pragati.`:'ℹ️ Prashn connected, but there are no active mistake questions.');
+  }catch(e){
+    console.error('Pragati ← Prashn sync failed:',e);
+    toast('⚠️ Prashn sync failed: '+(e.message||e),6000);
+  }finally{prashnBridgeBusy=false;}
 }
+
+function initPrashnBridge(){
+  try{
+    const localCount=importPrashnLocalProfiles();
+    if(localCount){render();}
+  }catch(e){}
+  if(typeof firebase==='undefined')return;
+  try{
+    const user=cloudUser || firebase.auth().currentUser;
+    if(!user || !firebaseDb)return;
+    const nextRef=firebaseDb.ref(`users/${user.uid}/prashn`);
+    if(prashnBridgeRef && prashnBridgeListener){try{prashnBridgeRef.off('value',prashnBridgeListener);}catch(e){}}
+    prashnBridgeRef=nextRef;
+    prashnBridgeListener=snap=>{
+      try{
+        const d=snap.val();
+        if(!d){DATA.prashnSync={connected:false,updatedAt:null,data:null};saveLocalOnly();render();return;}
+        const count=syncPrashnMistakesIntoPragati(d);
+        DATA.prashnSync={connected:true,updatedAt:d.updatedAt||null,data:d};
+        saveLocalOnly();
+        render();
+        console.debug('[Prashn→Pragati] synced',count,'active mistakes');
+      }catch(e){console.error('Prashn bridge value handler failed:',e);}
+    };
+    prashnBridgeRef.once('value').then(prashnBridgeListener).catch(e=>{console.error('Prashn initial sync failed',e);toast('⚠️ Could not read Prashn data: '+(e.message||e),6000);});
+    prashnBridgeRef.on('value',prashnBridgeListener);
+  }catch(e){console.error('Prashn bridge failed',e);}
+}
+function importPrashnLocalProfiles(){
+  let best=null, bestUpdated=0;
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||'';
+      if(!key.startsWith('prashn:profile:')) continue;
+      try{
+        const x=JSON.parse(localStorage.getItem(key)||'null');
+        if(!x) continue;
+        const updated=Date.parse(x.updatedAt||x.lastSavedAt||'')||0;
+        const hasMistakes=Array.isArray(x.mistakeQuestions)&&x.mistakeQuestions.length;
+        const hasLegacy=Array.isArray(x.mistakes)&&x.mistakes.some(m=>!m.mastered&&(m.q||m.question));
+        if(hasMistakes||hasLegacy){ if(!best||updated>=bestUpdated){best=x;bestUpdated=updated;} }
+      }catch(e){}
+    }
+  }catch(e){}
+  if(!best)return 0;
+  const count=syncPrashnMistakesIntoPragati(best);
+  if(count){
+    DATA.prashnSync={connected:true,localOnly:true,updatedAt:best.updatedAt||null,data:best};
+    saveLocalOnly();
+  }
+  return count;
+}
+
 function saveLocalOnly(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(DATA))}catch(e){}}
+
+// Local-file fallback: if Prashn and Pragati are opened as HTML files in the
+// same browser storage origin, no Firebase round-trip is needed for mistakes.
+try{ window.addEventListener('storage',e=>{if((e.key||'').startsWith('prashn:profile:')){const n=importPrashnLocalProfiles();if(n){render();toast(`✅ ${n} Prashn mistake${n===1?'':'s'} imported locally.`);}}}); }catch(e){}
 
 function dayReviewDashboardCard(){
   const d=todayStr();
@@ -9779,7 +9849,7 @@ function viewMistakes(){
       <button class="btn btn-primary" onclick="openMistakeForm()">+ Log Mistake</button>
     </div>
   </div>
-  <div class="section-desc" style="margin-top:0;">Every ${mistakeTab} chapter gets its own folder — click to expand and review. <b>📒 Wrong questions from Prashn are automatically added here when the same Firebase/Google account is connected.</b></div>
+  <div class="section-desc" style="margin-top:0;">Every ${mistakeTab} chapter gets its own folder — click to expand and review.</div>
   ${chapters.map(ch => chapterMistakeFolderHTML(mistakeTab, ch)).join('')}
   `;
 }
@@ -9808,8 +9878,8 @@ function chapterMistakeFolderHTML(subj, ch){
         ${items.length ? items.map(m=>`
           <div class="mb-12" style="padding-bottom:10px; border-bottom:1px solid var(--card-border);">
             <div class="flex-between">
-              <span class="tag ${mistakeReasonTag(m.reason)}">${esc(m.reason)}</span>${m.source==='Prashn'?'<span class="tag tag-info">Prashn</span>':''}
-              <div class="flex gap-8"><span class="text-xs faint">${fmtDate(m.date)}${m.examSource?' · '+esc(m.examSource):''}</span><button class="icon-btn" onclick="event.stopPropagation(); deleteMistake('${m.id}')">✕</button></div>
+              <span class="tag ${mistakeReasonTag(m.reason)}">${esc(m.reason)}</span>
+              <div class="flex gap-8" style="align-items:center;"><span class="text-xs faint">${m.source==='Prashn'?'🔗 Prashn sync · ':''}${fmtDate(m.date)}${m.examSource?' · '+esc(m.examSource):''}</span><button class="icon-btn" onclick="event.stopPropagation(); deleteMistake('${m.id}')">✕</button></div>
             </div>
             <div class="mt-8 text-sm"><strong>Q:</strong> ${esc(m.question)}</div>
             ${m.correctConcept ? `<div class="mt-8 text-sm" style="color:#3E5A3B;"><strong>Correct concept:</strong> ${esc(m.correctConcept)}</div>` : ''}
