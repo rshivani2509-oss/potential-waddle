@@ -5511,7 +5511,13 @@ function openGeneratePlanModal(date){
   const c11Enabled = DATA.routine.class11Enabled !== false;
   const c11OptionsHtml = c11.options.map(o=>`<option value="${esc(o.subject+'::'+o.chapter)}">${o.linked?'🔗 ':''}${esc(o.chapter)} (${esc(o.subject)})</option>`).join('');
   const ved = vedantuModalInfo(date);
-  const genWindow = DATA.smartPlanTimeWindow || {enabled:false,start:'10:00',end:'12:00'};
+  const dayOvForModal = (DATA.scheduleOverrides||{})[date] || {};
+  // The "restrict generation to a time window" checkbox is a sticky global preference — if it
+  // was left on from a previous (non-holiday) day, it would otherwise silently keep clamping
+  // every future Generate, including a holiday, down to that same narrow window. A holiday
+  // implies "use the whole free day," so default this off here regardless of the saved global
+  // value; the student can still turn it back on by hand if they genuinely want a narrower window.
+  const genWindow = dayOvForModal.holiday ? {enabled:false,start:'10:00',end:'12:00'} : (DATA.smartPlanTimeWindow || {enabled:false,start:'10:00',end:'12:00'});
   const vedHtml = ved ? `<div class="mb-16" style="border:1px solid var(--card-border);border-radius:10px;padding:10px 12px;">
     <div class="text-xs" style="font-weight:600;margin-bottom:6px;">🟣 Today's Vedantu Lecture${ved.slots.length>1?'s':''}</div>
     <div class="text-xs faint mb-8">${esc(ved.reason)}</div>
@@ -9867,6 +9873,8 @@ function chapterMistakeFolderHTML(subj, ch){
             </div>
             <div class="mt-8 text-sm"><strong>Q:</strong> ${esc(m.question)}</div>
             ${m.correctConcept ? `<div class="mt-8 text-sm" style="color:#3E5A3B;"><strong>Correct concept:</strong> ${esc(m.correctConcept)}</div>` : ''}
+            ${Array.isArray(m.images) && m.images.length ? `<div class="flex gap-6 mt-8" style="flex-wrap:wrap;">${m.images.map((src,i)=>`<img src="${src}" onclick="event.stopPropagation(); openMistakeImageLightbox('${m.id}',${i})" style="width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--card-border);" alt="Mistake photo">`).join('')}</div>` : ''}
+            <button class="btn btn-soft btn-sm mt-8" onclick="event.stopPropagation(); addPhotoToExistingMistake('${m.id}')">📷 ${Array.isArray(m.images)&&m.images.length?'Add another photo':'Add photo'}</button>
           </div>
         `).join('') : `<div class="empty text-sm" style="padding:14px;">No mistakes logged for this chapter yet.</div>`}
         <button class="btn btn-soft btn-sm" onclick="event.stopPropagation(); openMistakeForm('${subj.replace(/'/g,"\\'")}','${ch.name.replace(/'/g,"\\'")}')">+ Add mistake for this chapter</button>
@@ -9888,6 +9896,7 @@ function updateChapterSelect(subjSelectId, chapterSelectId){
 function openMistakeForm(presetSubj, presetChapter){
   const subs = allSubjectTabs();
   const subj = presetSubj || mistakeTab || subs[0];
+  mistakeFormPendingImages = [];
   openModal(`
     <div class="modal-head"><h3>Log a Mistake</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="field-row">
@@ -9900,24 +9909,114 @@ function openMistakeForm(presetSubj, presetChapter){
       <div class="field"><label>Exam source</label><input id="f_exam" placeholder="e.g. AIATS-3"></div>
     </div>
     <div class="field"><label>Correct concept / explanation</label><textarea id="f_correct" placeholder="What's the right approach?"></textarea></div>
+    <div class="field">
+      <label>Photos (optional) — question, working, answer key</label>
+      <input type="file" id="f_images" accept="image/*" multiple onchange="handleMistakeImageSelect(event)">
+      <div id="f_images_preview" class="flex gap-6 mt-8" style="flex-wrap:wrap;"></div>
+    </div>
     <button class="btn btn-primary w-full" onclick="saveMistake()">Save Mistake</button>
   `);
   if(presetChapter){ setTimeout(()=>{ const sel=document.getElementById('f_chapter'); if(sel) sel.value = presetChapter; }, 0); }
+}
+// Client-side only (localStorage-backed), so photos are resized/compressed to a reasonable
+// JPEG before being stored as base64 — keeps a handful of mistake photos from bloating storage.
+function readImageCompressed(file, maxDim=1280, quality=0.72){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w>maxDim || h>maxDim){
+          if(w>h){ h = Math.round(h*maxDim/w); w = maxDim; } else { w = Math.round(w*maxDim/h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+let mistakeFormPendingImages = [];
+async function handleMistakeImageSelect(evt){
+  const files = [...evt.target.files];
+  evt.target.value = '';
+  if(!files.length) return;
+  for(const file of files){
+    try{ mistakeFormPendingImages.push(await readImageCompressed(file)); }
+    catch(e){ toast('⚠️ Could not read one of the photos.'); }
+  }
+  renderMistakeImagePreview();
+}
+function removeMistakePendingImage(idx){
+  mistakeFormPendingImages.splice(idx,1);
+  renderMistakeImagePreview();
+}
+function renderMistakeImagePreview(){
+  const host = document.getElementById('f_images_preview');
+  if(!host) return;
+  host.innerHTML = mistakeFormPendingImages.map((src,i)=>`
+    <div style="position:relative;">
+      <img src="${src}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--card-border);">
+      <button class="icon-btn" onclick="removeMistakePendingImage(${i})" style="position:absolute; top:-8px; right:-8px; background:var(--card-bg); border-radius:50%;">✕</button>
+    </div>`).join('');
 }
 function saveMistake(){
   const question = document.getElementById('f_question').value.trim();
   if(!question) return toast('Please describe the question.');
   const subj = document.getElementById('f_subject').value;
   const chapter = document.getElementById('f_chapter').value;
-  DATA.mistakes.push({id:uid(), subject:subj, chapter, question, reason:document.getElementById('f_reason').value, examSource:document.getElementById('f_exam').value, correctConcept:document.getElementById('f_correct').value, date:todayStr(), revisionDates:[]});
+  DATA.mistakes.push({id:uid(), subject:subj, chapter, question, reason:document.getElementById('f_reason').value, examSource:document.getElementById('f_exam').value, correctConcept:document.getElementById('f_correct').value, date:todayStr(), revisionDates:[], images:mistakeFormPendingImages.slice()});
   const ch = DATA.subjects[subj]?.chapters.find(c=>c.name===chapter);
   if(ch) ch.mistakes = (ch.mistakes||0)+1;
   mistakeTab = subj;
   mistakeExpanded[subj+'::'+chapter] = true;
+  mistakeFormPendingImages = [];
   addXP('mistake');
   save(); closeModal(); render(); toast('Mistake logged.');
 }
 function deleteMistake(id){ DATA.mistakes = DATA.mistakes.filter(m=>m.id!==id); save(); render(); }
+// Attach one or more photos to a mistake that's already been logged (e.g. a scanned answer
+// sheet you get back later, or a clearer photo of the question than what you typed).
+function addPhotoToExistingMistake(id){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
+  input.onchange = async ()=>{
+    const m = DATA.mistakes.find(x=>x.id===id);
+    if(!m) return;
+    if(!Array.isArray(m.images)) m.images = [];
+    let added = 0;
+    for(const file of [...input.files]){
+      try{ m.images.push(await readImageCompressed(file)); added++; }
+      catch(e){ /* skip unreadable file */ }
+    }
+    if(added){ save(); render(); toast(`📷 ${added} photo${added===1?'':'s'} added.`); }
+  };
+  input.click();
+}
+function openMistakeImageLightbox(mistakeId, idx){
+  const m = DATA.mistakes.find(x=>x.id===mistakeId);
+  if(!m || !Array.isArray(m.images) || !m.images[idx]) return;
+  openModal(`
+    <div class="modal-head"><h3>Mistake photo</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <img src="${m.images[idx]}" style="width:100%; border-radius:10px; display:block;">
+    <div class="flex-between mt-12">
+      <span class="text-xs faint">${idx+1} of ${m.images.length}</span>
+      <button class="btn btn-outline btn-sm" onclick="deleteMistakeImage('${mistakeId}',${idx})">🗑 Remove this photo</button>
+    </div>
+  `, true);
+}
+function deleteMistakeImage(mistakeId, idx){
+  const m = DATA.mistakes.find(x=>x.id===mistakeId);
+  if(!m || !Array.isArray(m.images)) return;
+  m.images.splice(idx,1);
+  save(); closeModal(); render(); toast('Photo removed.');
+}
 
 /* ============================================================
    VIEW: CONCEPT NOTEBOOK
