@@ -2606,6 +2606,7 @@ const ROUTES = [
   {id:'routine', label:'Master Schedule', icon:'⚙️', group:'Overview'},
   {id:'backlog', label:'Class 11 Backlog', icon:'🔥', group:'Overview'},
   {id:'highyield', label:'High-Yield Priorities', icon:'🔥', group:'Overview'},
+  {id:'prashn', label:'Prashn Sync', icon:'🔗', group:'Overview'},
 
   {id:'subject-Physics', label:'Physics', icon:'⚛️', group:'Subjects'},
   {id:'subject-Chemistry', label:'Chemistry', icon:'🧪', group:'Subjects'},
@@ -4198,17 +4199,25 @@ function prashnBridgeSummary(){
 /* Convert a Prashn wrong-question record into Pragati's native mistake schema.
    A stable prashnId prevents duplicate notebook entries when Firebase updates. */
 function syncPrashnMistakesIntoNotebook(d){
-  if(!d)return {added:0,updated:0};
+  if(!d)return {added:0,updated:0,dropped:0};
   DATA.mistakes=Array.isArray(DATA.mistakes)?DATA.mistakes:[];
   const source=[];
+  let droppedIncomplete=0;
   const pushRecord=(q,key)=>{
     if(!q)return;
     const question=String(q.q||q.question||q.text||q.prompt||'').trim();
     const subject=String(q.subject||q.sub||'').trim();
     const chapter=String(q.chapter||q.ch||'').trim();
-    if(!question||!subject||!chapter)return;
+    if(!question||!subject||!chapter){ droppedIncomplete++; return; }
+    // Prefer an explicit id from Prashn's record. If there isn't one AND the caller couldn't
+    // supply a key either (e.g. Prashn wrote prashnMistakes as a plain array with no per-item
+    // id — no Firebase key exists in that case), fall back to a content-based id instead of an
+    // empty string. An empty prashnId used to make the de-dupe step below silently drop the
+    // record entirely, which is why a "connected" sync could still show zero new mistakes.
+    const explicitId=String(q.sourceId||q.prashnId||q.id||q.questionId||q.qid||'').trim();
+    const fallbackId=(key!==undefined && key!==null && String(key).trim()) ? String(key).trim() : `${subject}::${chapter}::${question}`.slice(0,160);
     source.push({
-      prashnId:String(q.sourceId||q.prashnId||q.id||q.questionId||q.qid||key||'').trim(),
+      prashnId:explicitId||fallbackId,
       subject, chapter,
       topic:String(q.topic||q.chapterTopic||'').trim(),
       question,
@@ -4236,11 +4245,13 @@ function syncPrashnMistakesIntoNotebook(d){
   const logs=Array.isArray(d.attemptLog)?d.attemptLog:Object.values(d.attemptLog||{});
   logs.filter(x=>x&&!x.skipped&&!x.correct).forEach((q,i)=>pushRecord(q,`attempt-${q.date||''}-${i}`));
 
-  // De-duplicate the incoming records before touching DATA.
+  // De-duplicate the incoming records before touching DATA. Every record now always has a
+  // non-empty prashnId (explicit or content-based fallback), so nothing gets silently dropped here.
   const unique=new Map();
   source.forEach(q=>{
     if(q.prashnId) unique.set(q.prashnId,q);
   });
+  if(droppedIncomplete) console.warn(`Prashn sync: skipped ${droppedIncomplete} record(s) missing question/subject/chapter.`);
 
   let added=0,updated=0;
   unique.forEach(q=>{
@@ -4269,7 +4280,7 @@ function syncPrashnMistakesIntoNotebook(d){
     const ch=subj?.chapters?.find(c=>c.name===q.chapter);
     if(ch)ch.mistakes=DATA.mistakes.filter(x=>x.subject===q.subject&&x.chapter===q.chapter&&!x.mastered).length;
   });
-  return {added,updated};
+  return {added,updated,dropped:droppedIncomplete};
 }
 
 function prashnBridgeHTML(){
@@ -4285,6 +4296,54 @@ function prashnBridgeHTML(){
     </div>
     ${s.mistakes.length?`<div class="mt-12"><div class="card-sub mb-8">📒 Active mistake questions from Prashn</div>${s.mistakes.slice(0,6).map(q=>`<div class="prashn-mini-q mb-6"><div class="flex-between gap-8"><b class="text-xs">${esc(q.subject)} · ${esc(q.chapter)}</b><span class="tag tag-high">Wrong</span></div><div class="text-xs mt-5">${esc(q.q||q.question||'').slice(0,220)}${(q.q||q.question||'').length>220?'…':''}</div><div class="text-xs faint mt-4">${esc(q.exam||q.examSource||'')} ${q.year?'· '+q.year:''} · next review ${q.nextReview||'—'}</div></div>`).join('')}</div>`:''}
   </div>`;
+}
+/* ============================================================
+   VIEW: PRASHN SYNC (Overview)
+   Dedicated page for the Prashn ↔ Pragati bridge — connection status,
+   full stats, weak chapters from Prashn, and every synced mistake.
+   ============================================================ */
+function viewPrashn(){
+  const s=prashnBridgeSummary(), d=prashnBridgeData();
+  const connected=!!d;
+  return `
+  <div class="notebook-hero mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">🔗 PRASHN SYNC</div>
+        <h2 style="margin:4px 0 0;">Question practice ↔ Pragati bridge</h2>
+        <div class="text-xs muted mt-4">Prashn is your question-practice app. Once it's signed into the same Firebase/Google account, wrong attempts, skips, PYQs and weak chapters flow into your Mistake Notebook and planner automatically.</div>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-soft" onclick="initPrashnBridge(); toast('🔄 Reconnecting to Prashn…');">🔄 Reconnect</button>
+        ${!cloudUser?`<button class="btn btn-primary" onclick="initFirebaseCloud(); signInWithGoogle();">🔐 Sign in with Google</button>`:''}
+      </div>
+    </div>
+    <div class="grid grid-3 mt-12" style="gap:8px;">
+      <div class="notebook-stat"><div class="eyebrow">Account</div><b style="font-size:14px;">${cloudUser?esc(cloudUser.email||'Signed in'):'Not signed in'}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Bridge status</div><b style="font-size:14px;">${connected?'☁️ Connected':'Not connected'}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Mistake collection</div><b style="font-size:14px;">${DATA.prashnSync?.mistakeCollectionConnected?'Connected ✓':'Waiting for Prashn'}</b></div>
+    </div>
+  </div>
+  ${!connected ? `<div class="card"><div class="empty"><div class="big">🔗</div><p>No Prashn data yet. Make sure you're signed into Prashn with the same Google account as Pragati, then answer a few questions there — this page updates automatically once data arrives.</p></div></div>` : `
+  <div class="card mb-16">
+    <div class="card-sub mb-8">Overview</div>
+    <div class="grid grid-4" style="gap:8px;">
+      <div class="prashn-stat"><div class="text-xs faint">Questions attempted</div><b style="font-size:21px;">${s.attempts}</b></div>
+      <div class="prashn-stat"><div class="text-xs faint">Accuracy</div><b style="font-size:21px;">${s.accuracy}%</b></div>
+      <div class="prashn-stat"><div class="text-xs faint">Wrong</div><b style="font-size:21px;">${s.wrong}</b></div>
+      <div class="prashn-stat"><div class="text-xs faint">PYQs seen</div><b style="font-size:21px;">${s.pyqs}</b></div>
+    </div>
+    <div class="text-xs faint mt-8">Last sync: ${d.updatedAt?fmtDate(String(d.updatedAt).slice(0,10)):'—'} · ${esc(d.profile||'Prashn profile')}</div>
+  </div>
+  ${s.chapters.length?`<div class="card mb-16">
+    <div class="card-sub mb-8">📉 Weakest chapters (from Prashn)</div>
+    ${s.chapters.map(c=>`<div class="flex-between text-sm mb-6" style="padding-bottom:6px; border-bottom:1px solid var(--card-border);"><span>${esc(c.subject||c.chapter||'Chapter')}${c.chapter&&c.subject?` · ${esc(c.chapter)}`:''}</span><span class="tag ${c.accuracy<40?'tag-high':c.accuracy<70?'tag-med':'tag-low'}">${c.accuracy}% · ${c.attempts||0} attempts</span></div>`).join('')}
+  </div>`:''}
+  <div class="card">
+    <div class="card-sub mb-8">📒 All active mistake questions from Prashn (${s.mistakes.length})</div>
+    ${s.mistakes.length?s.mistakes.map(q=>`<div class="prashn-mini-q mb-8"><div class="flex-between gap-8"><b class="text-xs">${esc(q.subject)} · ${esc(q.chapter)}</b><span class="tag tag-high">Wrong</span></div><div class="text-xs mt-5">${esc(q.q||q.question||'')}</div><div class="text-xs faint mt-4">${esc(q.exam||q.examSource||'')} ${q.year?'· '+q.year:''} · next review ${q.nextReview||'—'}</div></div>`).join('') : `<div class="empty text-sm" style="padding:14px;">No active mistake questions synced yet.</div>`}
+  </div>`}
+  `;
 }
 function initPrashnBridge(){
   if(typeof firebase==='undefined'||!cloudUser||!firebaseDb)return;
@@ -4303,6 +4362,7 @@ function initPrashnBridge(){
       saveLocalOnly();
       if(sync.added||sync.updated)render();
       if(sync.added)toast(`📒 ${sync.added} Prashn mistake${sync.added===1?'':'s'} added to Mistake Notebook.`);
+      else if(sync.dropped)toast(`⚠️ Prashn sync connected, but ${sync.dropped} record${sync.dropped===1?'':'s'} were missing a question/subject/chapter and couldn't be added. Check Prashn's data format.`);
     };
     prashnBridgeRef.on('value',prashnBridgeListener);
 
@@ -4318,6 +4378,7 @@ function initPrashnBridge(){
       saveLocalOnly();
       if(sync.added||sync.updated)render();
       if(sync.added)toast(`📒 ${sync.added} new Prashn mistake${sync.added===1?'':'s'} added.`);
+      else if(sync.dropped)toast(`⚠️ Prashn sync connected, but ${sync.dropped} record${sync.dropped===1?'':'s'} were missing a question/subject/chapter and couldn't be added. Check Prashn's data format.`);
     };
     window.prashnMistakeRef.on('value',window.prashnMistakeListener);
   }catch(e){
@@ -6073,7 +6134,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       }
     }
   });
-  const finalGeneratedEvents = examPlanApplyPreferredWindow(events);
+  const finalGeneratedEvents = examPlanApplyPreferredWindow(events, date);
   DATA.plannerEvents = [...DATA.plannerEvents, ...finalGeneratedEvents];
   plannerViewDate = date;
   save(); render();
@@ -6573,9 +6634,17 @@ function examPlanWeightedTasks(baseTasks, totalMinutes){
     .forEach(task=>result.push({...task,_examWeight:0}));
   return result;
 }
-function examPlanApplyPreferredWindow(events){
+function examPlanApplyPreferredWindow(events, date){
   const w=examPlanPreferredWindow();
   if(!w.start||!w.end)return events;
+  // This window is meant to accompany active "Exam Priority for Today" weighting — it shouldn't
+  // keep silently deleting blocks forever just because it was set once for a past exam. Only
+  // enforce it when there's actually an upcoming test with a nonzero weight assigned today,
+  // and never on a day explicitly marked a holiday (which should use the whole free day).
+  const dayOv = date ? ((DATA.scheduleOverrides||{})[date] || {}) : {};
+  if(dayOv.holiday) return events;
+  const hasActiveWeighting = examPlanTests().some(t=>examPlanWeightFor(t)>0);
+  if(!hasActiveWeighting) return events;
   const ws=toMin(w.start), we=toMin(w.end);
   if(!Number.isFinite(ws)||!Number.isFinite(we)||we<=ws)return events;
   // The main generator already clips its free slots to this window. Do not re-time
@@ -6729,10 +6798,6 @@ function smartExamGenerateRecovery(){
   });
   save();render();
   toast(`🔄 Redistributed ${Math.min(rec.minutes,(end-start))} minutes into your preferred window.`);
-}
-function toMin(t){
-  if(!t)return 0;
-  const [h,m]=String(t).split(':').map(Number);return h*60+m;
 }
 function minToTime(n){
   n=((n%1440)+1440)%1440;
@@ -10184,6 +10249,7 @@ function viewFormulas(){
       </div>
       <div class="flex gap-8">
         <button class="btn btn-soft" onclick="openFormulaQuiz()" ${DATA.formulas.length?'':'disabled'}>🧠 Quiz ${dueCount?`· ${dueCount} due`:''}</button>
+        <button class="btn btn-soft" onclick="openFormulaBulkImport()">📥 Bulk Import</button>
         <button class="btn btn-primary" onclick="openFormulaForm()">+ Add Formula</button>
       </div>
     </div>
@@ -10197,6 +10263,7 @@ function viewFormulas(){
     <div class="section-desc" style="margin:0;">Quick-search formula & fact reference.</div>
     <div class="flex gap-8">
       <button class="btn btn-soft" onclick="openFormulaQuiz()" ${DATA.formulas.length?'':'disabled'}>🧠 Quiz Mode ${dueCount?`(${dueCount} due)`:''}</button>
+      <button class="btn btn-soft" onclick="openFormulaBulkImport()">📥 Bulk Import</button>
       <button class="btn btn-primary" onclick="openFormulaForm()">+ Add Formula</button>
     </div>
   </div>
@@ -10318,6 +10385,76 @@ function saveFormula(){
   save(); closeModal(); render(); toast('Formula saved.');
 }
 function deleteFormula(id){ DATA.formulas = DATA.formulas.filter(f=>f.id!==id); save(); render(); }
+// Bulk import: paste a whole set of formulas at once instead of adding one by one.
+// Accepts a pasted table (tab-separated, e.g. copied straight out of Excel/Sheets) or
+// simple typed lines using '::' or '|' as a separator: Title :: Formula :: Notes(optional).
+function openFormulaBulkImport(subj, chapter){
+  openModal(`
+    <div class="modal-head"><h3>📥 Bulk Import Formulas</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs faint mb-8">Paste one formula per line. Works with rows copied from Excel/Google Sheets (tab-separated), or typed lines like <span class="mono">Title :: Formula :: Notes</span>. Notes are optional. Subject and chapter below apply to every row you paste — you can always edit an individual formula's chapter afterward.</div>
+    <div class="field-row">
+      <div class="field"><label>Subject (applies to all)</label><select id="f_bulk_subject">${subjectNames().map(s=>`<option ${s===subj?'selected':''}>${s}</option>`).join('')}<option>Physical Chemistry</option><option>Organic Chemistry</option><option>Inorganic Chemistry</option></select></div>
+      <div class="field"><label>Chapter (applies to all, optional)</label><input id="f_bulk_chapter" placeholder="Optional" value="${chapter?esc(chapter):''}"></div>
+    </div>
+    <div class="field">
+      <label>Formulas</label>
+      <textarea id="f_bulk_text" rows="10" style="width:100%; border:1px solid var(--card-border); border-radius:10px; padding:8px 10px; resize:vertical; font-family:monospace; font-size:13px;" placeholder="Coulomb's Law :: F = kq1q2/r² :: Valid in vacuum; use k for a medium
+Ohm's Law :: V = IR
+Kinetic energy :: KE = 1/2 mv²"></textarea>
+    </div>
+    <div id="f_bulk_preview" class="text-xs faint mt-8"></div>
+    <button class="btn btn-primary w-full mt-8" onclick="importBulkFormulas()">Import All</button>
+  `, true);
+  const ta = document.getElementById('f_bulk_text');
+  if(ta) ta.addEventListener('input', ()=>{
+    const {rows} = parseBulkFormulaText(ta.value);
+    const prev = document.getElementById('f_bulk_preview');
+    if(prev) prev.textContent = ta.value.trim() ? `${rows.length} formula${rows.length===1?'':'s'} detected.` : '';
+  });
+}
+// Splits one line into [title, formula, notes]. Tries, in order: a real tab (pasted from a
+// spreadsheet), '::', then '|'. If none of those are present, treats the whole line as the
+// formula itself and derives a short title from it, so a plain one-column paste still works.
+function parseBulkFormulaLine(line){
+  let parts;
+  if(line.includes('\t')) parts = line.split('\t');
+  else if(line.includes('::')) parts = line.split('::');
+  else if(line.includes('|')) parts = line.split('|');
+  else parts = null;
+  if(parts){
+    parts = parts.map(p=>p.trim());
+    const [title, formula, notes] = parts;
+    if(!title || !formula) return null;
+    return {title, formula, notes: notes||''};
+  }
+  const trimmed = line.trim();
+  if(!trimmed) return null;
+  const shortTitle = trimmed.length>40 ? trimmed.slice(0,40)+'…' : trimmed;
+  return {title: shortTitle, formula: trimmed, notes:''};
+}
+function parseBulkFormulaText(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const rows = [];
+  let skipped = 0;
+  lines.forEach(line=>{
+    const parsed = parseBulkFormulaLine(line);
+    if(parsed) rows.push(parsed); else skipped++;
+  });
+  return {rows, skipped};
+}
+function importBulkFormulas(){
+  const text = document.getElementById('f_bulk_text').value;
+  if(!text.trim()) return toast('Paste at least one formula first.');
+  const subject = document.getElementById('f_bulk_subject').value;
+  const chapter = document.getElementById('f_bulk_chapter').value.trim();
+  const {rows, skipped} = parseBulkFormulaText(text);
+  if(!rows.length) return toast('⚠️ Could not read any formulas from that text.');
+  rows.forEach(r=>{
+    DATA.formulas.push({id:uid(), subject, chapter, title:r.title, formula:r.formula, notes:r.notes});
+  });
+  save(); closeModal(); render();
+  toast(`📥 Imported ${rows.length} formula${rows.length===1?'':'s'}.${skipped?` (${skipped} line${skipped===1?'':'s'} skipped — couldn't tell title from formula.)`:''}`);
+}
 
 /* ============================================================
    VIEW: DOUBT CORNER
@@ -12925,6 +13062,7 @@ const VIEW_RENDERERS = {
   routine: viewRoutine,
   backlog: viewBacklog,
   highyield: viewHighYield,
+  prashn: viewPrashn,
   todos: viewTodos,
   due: viewDue,
   calendar: viewCalendar,
@@ -13340,9 +13478,9 @@ function renderTomorrowExamAlert(){
   }catch(e){console.warn('Tomorrow exam alert:',e);}
 }
 document.addEventListener('DOMContentLoaded',()=>setTimeout(renderTomorrowExamAlert,100));
-const oldRender=window.render;
-if(typeof oldRender==='function'){
-  window.render=function(){const r=oldRender.apply(this,arguments);setTimeout(renderTomorrowExamAlert,0);return r;};
+const oldRenderTEA=window.render;
+if(typeof oldRenderTEA==='function'){
+  window.render=function(){const r=oldRenderTEA.apply(this,arguments);setTimeout(renderTomorrowExamAlert,0);return r;};
 }
 </script>
 
