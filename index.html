@@ -5792,11 +5792,16 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
   // calculating free time. This fixes older plans where a commitment had been saved
   // with a different subject/locked flag and continued blocking the timeline.
   const dayOv = (DATA.scheduleOverrides||{})[date] || {};
+  const FIXED_LABEL_RE = /school|get ready|travel to school|travel home|dinner\s*&\s*rest|math tuition|aakash/i;
   if(dayOv.holiday || dayOv.noAakash || dayOv.noTuition || dayOv.noVedantu){
     DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>{
       if(b.date!==date) return true;
       const label=String(b.activity||b.title||b.name||'');
-      if(dayOv.holiday && (b.generated || b.locked || b.subject==='Fixed')) return false;
+      // Catch stale blocks by their flags (normal case) AND by label text (in case older saved
+      // data predates these flags being set consistently — this is what leaves duplicate/orphaned
+      // "School" or "Vedantu" blocks behind even after a day is marked a holiday).
+      if(dayOv.holiday && (b.generated || b.locked || b.subject==='Fixed' || FIXED_LABEL_RE.test(label))) return false;
+      if(dayOv.holiday && b.subject==='Vedantu') return false;
       if(dayOv.noAakash && /aakash/i.test(label)) return false;
       if(dayOv.noTuition && /math tuition|tuition/i.test(label)) return false;
       if(dayOv.noVedantu && /vedantu/i.test(label)) return false;
