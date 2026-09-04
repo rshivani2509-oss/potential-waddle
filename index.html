@@ -5382,7 +5382,8 @@ function pickChapterForEnergy(remaining, level){
 // at a sane ~50 min/chapter (study chunk + its breather).
 function estimateFreePlanningMinutes(date){
   const busyExtra = [];
-  const vd = (((DATA.scheduleOverrides||{})[date]||{}).noVedantu) ? null : vedantuDecision(date);
+  const ovEst = (DATA.scheduleOverrides||{})[date] || {};
+  const vd = (ovEst.holiday || ovEst.noVedantu) ? null : vedantuDecision(date);
   if(vd){
     const r = DATA.routine;
     busyExtra.push({start:r.vedantuSlot1Start, end:r.vedantuSlot1End});
@@ -5390,7 +5391,7 @@ function estimateFreePlanningMinutes(date){
   }
   const free = getFreeSlots(date, busyExtra);
   let mins = free.reduce((a,s)=>a+(s.end-s.start),0);
-  if(getSlipTestSubject(date)) mins = Math.max(0, mins-30);
+  if(!ovEst.holiday && getSlipTestSubject(date)) mins = Math.max(0, mins-30);
   return mins;
 }
 // ---- Realistic capacity, grounded in actual follow-through, not just today's stated energy ----
@@ -5833,7 +5834,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
   getFixedBlocksForDate(date).forEach(b=>{
     events.push({id:uid(), date, startTime:b.start, endTime:b.end, subject:'Fixed', activity:b.label, done:false, generated:true, locked:true});
   });
-  const vd = (((DATA.scheduleOverrides||{})[date]||{}).noVedantu) ? null : vedantuDecision(date);
+  const vd = (dayOv.holiday || dayOv.noVedantu) ? null : vedantuDecision(date);
   if(vd){
     const r = DATA.routine;
     // Each slot keeps subject:'Vedantu' (so the completion tracker still groups them together),
@@ -5851,6 +5852,12 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
     }
   }
   let free = getFreeSlots(date, busyExtra);
+  // Holiday: no school/travel/tuition either way. If this is an implicit/automatic regeneration
+  // (no chapters explicitly chosen), leave the day empty so the student can build it themselves.
+  // But if the student DID pick chapters via the plan modal and hit Generate, honour that —
+  // build a realistic full-day plan across all the free time a holiday opens up.
+  const explicitSelection = Array.isArray(selectedChapters) && selectedChapters.length > 0;
+  if(dayOv.holiday && !explicitSelection) free = [];
   // Optional strict generation window: selected/generated study blocks may use only this interval.
   // Fixed commitments (school, tuition, Vedantu, etc.) are never moved by this setting.
   if(timeWindow && timeWindow.enabled){
@@ -5862,7 +5869,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
   }
   // Daily slip test: dedicate the first chunk of the earliest free slot (usually the pre-school
   // morning window) to targeted prep, since the test itself happens early in the school day.
-  const slipSubjectRaw = getSlipTestSubject(date);
+  const slipSubjectRaw = dayOv.holiday ? null : getSlipTestSubject(date);
   if(slipSubjectRaw && free.length){
     const first = free[0];
     const dur = Math.min(30, first.end - first.start);
@@ -6064,8 +6071,12 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
   }
   const lockedCount = DATA.plannerEvents.filter(b=>b.date===date && b.locked).length;
   const prereqWarnings = collectPrereqWarningsForEvents(finalGeneratedEvents);
+  if(dayOv.holiday && !explicitSelection){
+    toast(`🎉 ${fmtDate(date)} is marked a holiday — day left free of school, tuition, Vedantu and auto-study blocks. Add your own plan, or pick chapters and Generate to fill the day.`);
+    return;
+  }
   toast((selectedSet
-    ? `🤖 Generated ${finalGeneratedEvents.length} blocks for ${fmtDate(date)} — ${selectedSet.size} chapter${selectedSet.size===1?'':'s'} you chose, at a realistic pace${timeWindow&&timeWindow.enabled?` inside ${fmtTime(timeWindow.start)}–${fmtTime(timeWindow.end)}`:''}.`
+    ? `🤖 Generated ${finalGeneratedEvents.length} blocks for ${fmtDate(date)} — ${selectedSet.size} chapter${selectedSet.size===1?'':'s'} you chose, at a realistic pace${dayOv.holiday?' across the whole holiday':''}${timeWindow&&timeWindow.enabled?` inside ${fmtTime(timeWindow.start)}–${fmtTime(timeWindow.end)}`:''}.`
     : `🤖 Generated ${finalGeneratedEvents.length} blocks for ${fmtDate(date)}.`) + (lockedCount ? ` 🔒 ${lockedCount} locked block${lockedCount===1?'':'s'} left untouched.` : '') + (taper ? ` ⏳ Taper mode — consolidation only, ${taper.key} in ${taper.days}d.` : '') + (recap ? ` 📉 Recap ramp-down block added — ${recap.key} in ${recap.days}d.` : '') + (prereqWarnings.length ? ` ⚠️ Scheduled ahead of a prerequisite: ${prereqWarnings.slice(0,2).join(', ')}.` : ''));
 }
 function scheduleOverrideSummary(date){
