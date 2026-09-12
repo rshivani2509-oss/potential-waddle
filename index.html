@@ -1250,6 +1250,10 @@ function aakashSkipPlannerNotice(){
    ============================================================ */
 
 const STORAGE_KEY = 'pragati_tracker_v1';
+// Bump this string every time this file is edited/deployed. Shown in Settings and in the
+// sidebar footer — the fastest way to confirm a GitHub Pages deploy actually went live,
+// instead of guessing after a hard refresh (see: the entire holiday-plan debugging saga).
+const APP_BUILD = '2026-09-04.10 — Study Buddy section';
 const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
 const todayStr = () => new Date().toISOString().slice(0,10);
 const daysBetween = (a,b) => Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -1822,6 +1826,8 @@ function freshData(){
     habitList: ['Wake before 6','Exercise','NCERT reading','Solve PYQs','Revision','Sleep before 10'],
     health: {},          // date -> {sleep,water,exercise,meditation,mood,screenTime,stressActivities:[]}
     formulas: [],
+    reactions: [], // [{id,category,chapter,name,equation,conditions,notes}]
+    studyBuddy: {name:'Friend', sessions:[]}, // [{id,date,minutes,subject,type,notes}]
     resources: [],
     flashcards: [], // [{id,subject,chapter,front,back,tags,due,interval,streak}]
     flashcardSettings: {dailyLimit:20},
@@ -2617,6 +2623,7 @@ const ROUTES = [
   {id:'notes', label:'Notes', icon:'📝', group:'Notebooks'},
   {id:'ncert', label:'NCERT Tracker', icon:'📖', group:'Notebooks'},
   {id:'formulas', label:'Formula Book', icon:'📐', group:'Notebooks'},
+  {id:'reactions', label:'Reactions', icon:'⚗️', group:'Notebooks'},
   {id:'doubts', label:'Doubt Corner', icon:'💡', group:'Notebooks'},
 
   {id:'revision', label:'Revision System', icon:'🔁', group:'Practice'},
@@ -2636,6 +2643,7 @@ const ROUTES = [
   {id:'achievements', label:'Achievements', icon:'🏆', group:'Insights'},
 
   {id:'health', label:'Health Tracker', icon:'💧', group:'Life'},
+  {id:'buddy', label:'Study Buddy', icon:'🤝', group:'Life'},
   {id:'resources', label:'Resource Library', icon:'📚', group:'Life'},
   {id:'settings', label:'Settings', icon:'⚙️', group:'Life'},
 ];
@@ -2688,6 +2696,7 @@ function renderSidebar(){
   html += `</div>
     <div id="sidebarFooter">
       <div class="streak-pill">🔥 <span>${DATA.streak.current}-day streak</span></div>
+      <div class="text-xs faint mt-6" style="opacity:.6; cursor:pointer;" onclick="location.hash='#settings'; render();" title="Tap to open Settings">build ${esc(APP_BUILD.split(' — ')[0])}</div>
     </div>`;
   document.getElementById('sidebar').innerHTML = html;
 }
@@ -6217,6 +6226,18 @@ function clearGeneratedPlan(date){
   DATA.plannerEvents = (DATA.plannerEvents||[]).filter(b => !(b.date===date && b.generated && !b.locked));
   save(); render(); toast('Cleared the AI-generated plan for this day — locked blocks were kept.');
 }
+// Full wipe for one day: removes EVERY block regardless of locked/generated/fixed status.
+// "Adjust Schedule" and "Clear override" only ever remove blocks matching certain flags — if a day's
+// timeline still looks stuck or wrong no matter what you try, this is the guaranteed-clean-slate
+// option. It does not touch the day's holiday/override settings, only the actual time blocks.
+function confirmResetDay(date){
+  const count = (DATA.plannerEvents||[]).filter(b=>b.date===date).length;
+  if(!count) return toast('Nothing to reset — this day has no blocks yet.');
+  if(!confirm(`Reset ${fmtDate(date)}? This permanently removes all ${count} block${count===1?'':'s'} on this day — including locked and manually-added ones. This can't be undone. Continue?`)) return;
+  DATA.plannerEvents = (DATA.plannerEvents||[]).filter(b=>b.date!==date);
+  save(); render();
+  toast(`🧹 ${fmtDate(date)} reset — ${count} block${count===1?'':'s'} removed. Generate a fresh plan or add blocks manually.`);
+}
 // Compact "how are you today" strip at the top of the planner — same energy state that drives
 // Generate Plan's realistic chapter count, editable right here so the whole page (priority list,
 // MIT Top 3, generate plan) stays in sync without a trip to the Health tab. Also surfaces the
@@ -7026,6 +7047,7 @@ function viewPlanner(){
       <button class="btn btn-outline" onclick="openScheduleOverrideForm('${date}')">⚡ Adjust Schedule</button>
       <button class="btn btn-outline" onclick="copyPlanToDate('${date}')">📋 Copy to next day</button>
       <button class="btn btn-outline" onclick="openWeeklyRetrospective()">📊 Weekly Retrospective</button>
+      <button class="btn btn-outline" onclick="confirmResetDay('${date}')" title="Wipe every block on this day and start clean — use this if a day's schedule looks stuck or wrong no matter what you do">🧹 Reset This Day</button>
       <button class="btn btn-primary" onclick="openPlannerForm('${date}')">+ Add Time Block</button>
     </div>
   </div>
@@ -10235,22 +10257,36 @@ function saveFlashcardFromNote(noteId){
 /* ============================================================
    VIEW: FORMULA BOOK
    ============================================================ */
+let formulaTab = null;
+let formulaExpanded = {};
+let formulaSearchQuery = '';
+// Formula subject is a free choice (the 4 tracked subjects, plus the 3 Chemistry sub-splits used
+// when adding a formula), and chapter is free text rather than tied to the tracker's chapter list —
+// so tabs/folders are built from whatever the student has actually typed, not from DATA.subjects.
+function formulaSubjectTabs(){ return ['Physics','Chemistry','Biology','Maths','Physical Chemistry','Organic Chemistry','Inorganic Chemistry']; }
 function viewFormulas(){
+  const tabs = formulaSubjectTabs();
+  if(!formulaTab || !tabs.includes(formulaTab)){
+    formulaTab = tabs.find(t=>DATA.formulas.some(f=>f.subject===t)) || tabs[0];
+  }
   const groups = {};
   DATA.formulas.forEach(f => { groups[f.subject] = groups[f.subject]||[]; groups[f.subject].push(f); });
   const dueCount = DATA.formulas.filter(f=>!f.srDue || f.srDue<=todayStr()).length;
+  let list = DATA.formulas.filter(f=>f.subject===formulaTab);
+  if(formulaSearchQuery) list = list.filter(f => (f.title+f.formula+f.subject+(f.chapter||'')+(f.notes||'')).toLowerCase().includes(formulaSearchQuery.toLowerCase()));
+  const chapterNames = [...new Set(list.map(f=>f.chapter&&f.chapter.trim() ? f.chapter.trim() : 'General'))].sort((a,b)=> a==='General'?1:b==='General'?-1:a.localeCompare(b));
   return `
   <div class="notebook-hero mb-16">
     <div class="flex-between flex-wrap gap-10">
       <div>
         <div class="eyebrow">📐 FORMULA BOOK</div>
         <h2 style="margin:4px 0 0;">Formulas + instant recall</h2>
-        <div class="text-xs muted mt-4">Keep formulas clean and searchable. Use Quiz Mode for active recall instead of rereading the formula list.</div>
+        <div class="text-xs muted mt-4">Organized chapter by chapter. Use Quiz Mode for active recall instead of rereading the list.</div>
       </div>
       <div class="flex gap-8">
         <button class="btn btn-soft" onclick="openFormulaQuiz()" ${DATA.formulas.length?'':'disabled'}>🧠 Quiz ${dueCount?`· ${dueCount} due`:''}</button>
-        <button class="btn btn-soft" onclick="openFormulaBulkImport()">📥 Bulk Import</button>
-        <button class="btn btn-primary" onclick="openFormulaForm()">+ Add Formula</button>
+        <button class="btn btn-soft" onclick="openFormulaBulkImport(formulaTab)">📥 Bulk Import</button>
+        <button class="btn btn-primary" onclick="openFormulaForm(formulaTab)">+ Add Formula</button>
       </div>
     </div>
     <div class="grid grid-3 mt-12" style="gap:8px;">
@@ -10260,32 +10296,44 @@ function viewFormulas(){
     </div>
   </div>
   <div class="flex-between mb-12 flex-wrap gap-10">
-    <div class="section-desc" style="margin:0;">Quick-search formula & fact reference.</div>
-    <div class="flex gap-8">
-      <button class="btn btn-soft" onclick="openFormulaQuiz()" ${DATA.formulas.length?'':'disabled'}>🧠 Quiz Mode ${dueCount?`(${dueCount} due)`:''}</button>
-      <button class="btn btn-soft" onclick="openFormulaBulkImport()">📥 Bulk Import</button>
-      <button class="btn btn-primary" onclick="openFormulaForm()">+ Add Formula</button>
+    <div class="flex gap-8 flex-wrap">
+      ${tabs.map(t=>`<button class="btn ${formulaTab===t?'btn-primary':'btn-outline'} btn-sm" onclick="formulaTab='${t.replace(/'/g,"\\'")}'; render();">${t}${groups[t]?.length?` (${groups[t].length})`:''}</button>`).join('')}
     </div>
+    <input placeholder="🔍 Search formulas…" value="${esc(formulaSearchQuery)}" oninput="formulaSearchQuery=this.value; render();" style="border:1px solid var(--card-border); border-radius:8px; padding:7px 10px; font-size:13px;">
   </div>
-  <div class="field mb-16"><input placeholder="🔍 Search formulas..." oninput="formulaSearch(this.value)"></div>
-  <div class="formula-highlight mb-16">
-    <div class="flex-between flex-wrap gap-10">
-      <div>
-        <div class="eyebrow">⚡ FORMULA RECALL</div>
-        <h3 style="margin:3px 0 0;">Don't memorize by staring.</h3>
-        <div class="text-xs muted mt-4">Quiz yourself on formulas and rate them. Due formulas return through spaced review.</div>
-      </div>
-      <button class="btn btn-outline btn-sm" onclick="openFormulaQuiz()" ${DATA.formulas.length?'':'disabled'}>Start recall</button>
-    </div>
-    <div class="grid grid-3 mt-10" style="gap:8px;">
-      <div class="notebook-stat"><div class="eyebrow">Again</div><div class="text-xs muted mt-3">Relearn weak formulas</div></div>
-      <div class="notebook-stat"><div class="eyebrow">Hard</div><div class="text-xs muted mt-3">Short-interval review</div></div>
-      <div class="notebook-stat"><div class="eyebrow">Easy</div><div class="text-xs muted mt-3">Longer review interval</div></div>
-    </div>
-  </div>
-  <div id="formulaResults">${formulaListHTML(DATA.formulas)}</div>
+  <div class="section-desc" style="margin-top:0;">Every ${formulaTab} chapter gets its own folder — click to expand.</div>
+  ${chapterNames.length ? chapterNames.map(ch => chapterFormulaFolderHTML(formulaTab, ch, list.filter(f=>(f.chapter&&f.chapter.trim()?f.chapter.trim():'General')===ch))).join('') : `<div class="empty"><div class="big">📐</div><p>No ${formulaTab} formulas yet.</p></div>`}
   `;
 }
+function chapterFormulaFolderHTML(subj, chapterName, items){
+  const key = subj+'::'+chapterName;
+  items = items.slice().sort((a,b)=>a.title.localeCompare(b.title));
+  const expanded = !!formulaExpanded[key] || (formulaSearchQuery && items.length>0);
+  return `
+  <div class="card mb-12">
+    <div class="flex-between" style="cursor:pointer;" onclick="toggleFormulaFolder('${key.replace(/'/g,"\\'")}')">
+      <div class="flex gap-10" style="align-items:center;">
+        <span style="font-size:12px;">${expanded?'▾':'▸'}</span>
+        <strong class="text-sm">${esc(chapterName)}</strong>
+      </div>
+      <span class="tag tag-info">${items.length} formula${items.length===1?'':'s'}</span>
+    </div>
+    ${expanded ? `
+      <div class="mt-12" style="border-top:1px solid var(--card-border); padding-top:10px;">
+        ${items.length ? `<div class="grid grid-2">${items.map(f=>`
+          <div class="card" style="box-shadow:none; border:1px solid var(--card-border);">
+            <div class="flex-between mb-8"><h4 style="font-size:14px; margin:0;">${esc(f.title)}</h4><button class="icon-btn" onclick="event.stopPropagation(); deleteFormula('${f.id}')">✕</button></div>
+            <div class="mono mt-4" style="background:var(--bg-soft); padding:8px 10px; border-radius:8px; font-size:13px;">${esc(f.formula)}</div>
+            ${f.notes?`<div class="text-xs faint mt-8">${esc(f.notes)}</div>`:''}
+          </div>
+        `).join('')}</div>` : `<div class="empty text-sm" style="padding:14px;">No formulas here yet.</div>`}
+        <button class="btn btn-soft btn-sm mt-12" onclick="event.stopPropagation(); openFormulaForm('${subj.replace(/'/g,"\\'")}','${chapterName==='General'?'':chapterName.replace(/'/g,"\\'")}')">+ Add formula for this chapter</button>
+      </div>
+    ` : ''}
+  </div>`;
+}
+function toggleFormulaFolder(key){ formulaExpanded[key] = !formulaExpanded[key]; render(); }
+
 // ---- Formula Flashcard Quiz Mode (spaced repetition, lightweight SM-2-style) ----
 let formulaQuiz = { queue: [], idx: 0, revealed: false, correctCount: 0 };
 function openFormulaQuiz(){
@@ -10369,7 +10417,7 @@ function openFormulaForm(subj, chapter){
   openModal(`
     <div class="modal-head"><h3>Add Formula${chapter?` — ${esc(chapter)}`:''}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="field-row">
-      <div class="field"><label>Subject</label><select id="f_subject">${subjectNames().map(s=>`<option ${s===subj?'selected':''}>${s}</option>`).join('')}<option>Physical Chemistry</option><option>Organic Chemistry</option><option>Inorganic Chemistry</option></select></div>
+      <div class="field"><label>Subject</label><select id="f_subject">${formulaSubjectTabs().map(s=>`<option ${s===subj?'selected':''}>${s}</option>`).join('')}</select></div>
       <div class="field"><label>Chapter</label><input id="f_chapter" placeholder="Optional" value="${chapter?esc(chapter):''}"></div>
     </div>
     <div class="field"><label>Title</label><input id="f_title" placeholder="e.g. Coulomb's Law"></div>
@@ -10381,7 +10429,11 @@ function openFormulaForm(subj, chapter){
 function saveFormula(){
   const title = document.getElementById('f_title').value.trim();
   if(!title) return toast('Please add a title.');
-  DATA.formulas.push({id:uid(), subject:document.getElementById('f_subject').value, chapter:document.getElementById('f_chapter').value.trim(), title, formula:document.getElementById('f_formula').value, notes:document.getElementById('f_notes').value});
+  const subject = document.getElementById('f_subject').value;
+  const chapter = document.getElementById('f_chapter').value.trim();
+  DATA.formulas.push({id:uid(), subject, chapter, title, formula:document.getElementById('f_formula').value, notes:document.getElementById('f_notes').value});
+  formulaTab = subject;
+  formulaExpanded[subject+'::'+(chapter||'General')] = true;
   save(); closeModal(); render(); toast('Formula saved.');
 }
 function deleteFormula(id){ DATA.formulas = DATA.formulas.filter(f=>f.id!==id); save(); render(); }
@@ -10393,7 +10445,7 @@ function openFormulaBulkImport(subj, chapter){
     <div class="modal-head"><h3>📥 Bulk Import Formulas</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
     <div class="text-xs faint mb-8">Paste one formula per line. Works with rows copied from Excel/Google Sheets (tab-separated), or typed lines like <span class="mono">Title :: Formula :: Notes</span>. Notes are optional. Subject and chapter below apply to every row you paste — you can always edit an individual formula's chapter afterward.</div>
     <div class="field-row">
-      <div class="field"><label>Subject (applies to all)</label><select id="f_bulk_subject">${subjectNames().map(s=>`<option ${s===subj?'selected':''}>${s}</option>`).join('')}<option>Physical Chemistry</option><option>Organic Chemistry</option><option>Inorganic Chemistry</option></select></div>
+      <div class="field"><label>Subject (applies to all)</label><select id="f_bulk_subject">${formulaSubjectTabs().map(s=>`<option ${s===subj?'selected':''}>${s}</option>`).join('')}</select></div>
       <div class="field"><label>Chapter (applies to all, optional)</label><input id="f_bulk_chapter" placeholder="Optional" value="${chapter?esc(chapter):''}"></div>
     </div>
     <div class="field">
@@ -10452,8 +10504,195 @@ function importBulkFormulas(){
   rows.forEach(r=>{
     DATA.formulas.push({id:uid(), subject, chapter, title:r.title, formula:r.formula, notes:r.notes});
   });
+  formulaTab = subject;
+  formulaExpanded[subject+'::'+(chapter||'General')] = true;
   save(); closeModal(); render();
   toast(`📥 Imported ${rows.length} formula${rows.length===1?'':'s'}.${skipped?` (${skipped} line${skipped===1?'':'s'} skipped — couldn't tell title from formula.)`:''}`);
+}
+
+/* ============================================================
+   VIEW: CHEMICAL REACTIONS
+   Mirrors the Formula Book, but for named reactions — equation,
+   conditions/reagents, and mechanism notes are tracked separately
+   since conditions matter as much as the equation itself for NEET/JEE.
+   ============================================================ */
+const REACTION_CATEGORIES = ['Organic Chemistry','Inorganic Chemistry','Physical Chemistry'];
+let reactionTab = null;
+let reactionExpanded = {};
+let reactionSearchQuery = '';
+function viewReactions(){
+  if(!reactionTab || !REACTION_CATEGORIES.includes(reactionTab)){
+    reactionTab = REACTION_CATEGORIES.find(c=>DATA.reactions.some(r=>r.category===c)) || REACTION_CATEGORIES[0];
+  }
+  const groups = {};
+  DATA.reactions.forEach(r => { groups[r.category] = groups[r.category]||[]; groups[r.category].push(r); });
+  let list = DATA.reactions.filter(r=>r.category===reactionTab);
+  if(reactionSearchQuery) list = list.filter(r => (r.name+r.equation+(r.conditions||'')+r.category+(r.chapter||'')+(r.notes||'')).toLowerCase().includes(reactionSearchQuery.toLowerCase()));
+  const chapterNames = [...new Set(list.map(r=>r.chapter&&r.chapter.trim() ? r.chapter.trim() : 'General'))].sort((a,b)=> a==='General'?1:b==='General'?-1:a.localeCompare(b));
+  return `
+  <div class="notebook-hero mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">⚗️ REACTIONS</div>
+        <h2 style="margin:4px 0 0;">Named reactions + conditions</h2>
+        <div class="text-xs muted mt-4">Track the equation, reagents/conditions, and any exceptions or mechanism notes — the conditions are usually what trips people up in exams, not the equation itself.</div>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-soft" onclick="openReactionBulkImport(reactionTab)">📥 Bulk Import</button>
+        <button class="btn btn-primary" onclick="openReactionForm(reactionTab)">+ Add Reaction</button>
+      </div>
+    </div>
+    <div class="grid grid-3 mt-12" style="gap:8px;">
+      <div class="notebook-stat"><div class="eyebrow">Reactions</div><b style="font-size:20px;">${DATA.reactions.length}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Chapters covered</div><b style="font-size:20px;">${new Set(DATA.reactions.map(r=>r.chapter).filter(Boolean)).size}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Categories</div><b style="font-size:20px;">${Object.keys(groups).length}</b></div>
+    </div>
+  </div>
+  <div class="flex-between mb-12 flex-wrap gap-10">
+    <div class="flex gap-8 flex-wrap">
+      ${REACTION_CATEGORIES.map(c=>`<button class="btn ${reactionTab===c?'btn-primary':'btn-outline'} btn-sm" onclick="reactionTab='${c.replace(/'/g,"\\'")}'; render();">${c}${groups[c]?.length?` (${groups[c].length})`:''}</button>`).join('')}
+    </div>
+    <input placeholder="🔍 Search reactions…" value="${esc(reactionSearchQuery)}" oninput="reactionSearchQuery=this.value; render();" style="border:1px solid var(--card-border); border-radius:8px; padding:7px 10px; font-size:13px;">
+  </div>
+  <div class="section-desc" style="margin-top:0;">Every ${reactionTab} chapter gets its own folder — click to expand.</div>
+  ${chapterNames.length ? chapterNames.map(ch => chapterReactionFolderHTML(reactionTab, ch, list.filter(r=>(r.chapter&&r.chapter.trim()?r.chapter.trim():'General')===ch))).join('') : `<div class="empty"><div class="big">⚗️</div><p>No ${reactionTab} reactions yet. ${reactionTab==='Organic Chemistry' ? 'Start with Hydrocarbons, Alcohols/Phenols/Ethers, Aldehydes/Ketones/Carboxylic Acids, or Amines — highest yield for named reactions.' : reactionTab==='Inorganic Chemistry' ? 'Start with d/f-Block Elements, Coordination Compounds, or p-Block prep reactions.' : 'A few key redox/electrode reactions from Electrochemistry or Equilibrium are a good start here.'}</p></div>`}
+  `;
+}
+function chapterReactionFolderHTML(category, chapterName, items){
+  const key = category+'::'+chapterName;
+  items = items.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const expanded = !!reactionExpanded[key] || (reactionSearchQuery && items.length>0);
+  return `
+  <div class="card mb-12">
+    <div class="flex-between" style="cursor:pointer;" onclick="toggleReactionFolder('${key.replace(/'/g,"\\'")}')">
+      <div class="flex gap-10" style="align-items:center;">
+        <span style="font-size:12px;">${expanded?'▾':'▸'}</span>
+        <strong class="text-sm">${esc(chapterName)}</strong>
+      </div>
+      <span class="tag tag-info">${items.length} reaction${items.length===1?'':'s'}</span>
+    </div>
+    ${expanded ? `
+      <div class="mt-12" style="border-top:1px solid var(--card-border); padding-top:10px;">
+        ${items.length ? `<div class="grid grid-2">${items.map(r=>`
+          <div class="card" style="box-shadow:none; border:1px solid var(--card-border);">
+            <div class="flex-between mb-8"><h4 style="font-size:14px; margin:0;">${esc(r.name)}</h4><button class="icon-btn" onclick="event.stopPropagation(); deleteReaction('${r.id}')">✕</button></div>
+            <div class="mono mt-4" style="background:var(--bg-soft); padding:8px 10px; border-radius:8px; font-size:13px; overflow-x:auto; white-space:nowrap;">${esc(r.equation)}</div>
+            ${r.conditions?`<div class="text-xs mt-8"><b>Conditions:</b> ${esc(r.conditions)}</div>`:''}
+            ${r.notes?`<div class="text-xs faint mt-8">${esc(r.notes)}</div>`:''}
+          </div>
+        `).join('')}</div>` : `<div class="empty text-sm" style="padding:14px;">No reactions here yet.</div>`}
+        <button class="btn btn-soft btn-sm mt-12" onclick="event.stopPropagation(); openReactionForm('${category.replace(/'/g,"\\'")}','${chapterName==='General'?'':chapterName.replace(/'/g,"\\'")}')">+ Add reaction for this chapter</button>
+      </div>
+    ` : ''}
+  </div>`;
+}
+function toggleReactionFolder(key){ reactionExpanded[key] = !reactionExpanded[key]; render(); }
+function reactionChapterOptionsFor(category){
+  // Chapter free-text is intentional (reaction chapter names don't always match the tracker's
+  // chapter list one-to-one — e.g. a reaction might span two chapters), but we still suggest the
+  // real Chemistry chapters as a datalist so most entries stay consistent for filtering/search.
+  return (DATA.subjects.Chemistry?.chapters || []).map(c=>`<option value="${esc(c.name)}">`).join('');
+}
+function openReactionForm(category, chapter){
+  openModal(`
+    <div class="modal-head"><h3>Add Reaction${chapter?` — ${esc(chapter)}`:''}</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="field-row">
+      <div class="field"><label>Category</label><select id="r_category">${REACTION_CATEGORIES.map(c=>`<option ${c===category?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Chapter</label><input id="r_chapter" list="r_chapter_list" placeholder="Optional" value="${chapter?esc(chapter):''}"><datalist id="r_chapter_list">${reactionChapterOptionsFor(category)}</datalist></div>
+    </div>
+    <div class="field"><label>Reaction name</label><input id="r_name" placeholder="e.g. Friedel–Crafts Alkylation"></div>
+    <div class="field"><label>Equation</label><textarea id="r_equation" placeholder="C6H6 + CH3Cl → C6H5CH3 + HCl"></textarea></div>
+    <div class="field"><label>Conditions / reagents</label><input id="r_conditions" placeholder="e.g. anhydrous AlCl3, dry ether"></div>
+    <div class="field"><label>Notes</label><textarea id="r_notes" placeholder="Mechanism note, exceptions, or common mistakes"></textarea></div>
+    <button class="btn btn-primary w-full" onclick="saveReaction()">Save</button>
+  `);
+  if(chapter){ setTimeout(()=>{ const el=document.getElementById('r_chapter'); if(el) el.value = chapter; }, 0); }
+}
+function saveReaction(){
+  const name = document.getElementById('r_name').value.trim();
+  const equation = document.getElementById('r_equation').value.trim();
+  if(!name) return toast('Please add a reaction name.');
+  if(!equation) return toast('Please add the equation.');
+  const category = document.getElementById('r_category').value;
+  const chapter = document.getElementById('r_chapter').value.trim();
+  DATA.reactions.push({
+    id:uid(), category, chapter, name, equation,
+    conditions:document.getElementById('r_conditions').value.trim(),
+    notes:document.getElementById('r_notes').value.trim()
+  });
+  reactionTab = category;
+  reactionExpanded[category+'::'+(chapter||'General')] = true;
+  save(); closeModal(); render(); toast('Reaction saved.');
+}
+function deleteReaction(id){ DATA.reactions = DATA.reactions.filter(r=>r.id!==id); save(); render(); }
+// Bulk import: same idea as the Formula Book's, but with an extra 'conditions' column since
+// reagents/conditions are usually the part actually tested, not just the equation.
+// Accepts: Name :: Equation :: Conditions :: Notes   (conditions and notes both optional)
+// or a 3-column paste (Name :: Equation :: Notes, conditions left blank) or tab-separated rows.
+function openReactionBulkImport(category, chapter){
+  openModal(`
+    <div class="modal-head"><h3>📥 Bulk Import Reactions</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs faint mb-8">Paste one reaction per line. Works with rows copied from Excel/Google Sheets (tab-separated: Name, Equation, Conditions, Notes), or typed lines like <span class="mono">Name :: Equation :: Conditions :: Notes</span>. Conditions and Notes are optional — a 3-part line is read as Name :: Equation :: Notes. Category and chapter below apply to every row.</div>
+    <div class="field-row">
+      <div class="field"><label>Category (applies to all)</label><select id="r_bulk_category">${REACTION_CATEGORIES.map(c=>`<option ${c===category?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Chapter (applies to all, optional)</label><input id="r_bulk_chapter" list="r_bulk_chapter_list" placeholder="Optional" value="${chapter?esc(chapter):''}"><datalist id="r_bulk_chapter_list">${reactionChapterOptionsFor(category)}</datalist></div>
+    </div>
+    <div class="field">
+      <label>Reactions</label>
+      <textarea id="r_bulk_text" rows="10" style="width:100%; border:1px solid var(--card-border); border-radius:10px; padding:8px 10px; resize:vertical; font-family:monospace; font-size:13px;" placeholder="Friedel-Crafts Alkylation :: C6H6 + CH3Cl → C6H5CH3 + HCl :: anhydrous AlCl3 :: Polyalkylation is a common side reaction
+Wurtz Reaction :: 2RX + 2Na → R-R + 2NaX :: dry ether, Na metal
+Cannizzaro Reaction :: 2HCHO + NaOH → CH3OH + HCOONa :: conc. NaOH, no alpha-H needed"></textarea>
+    </div>
+    <div id="r_bulk_preview" class="text-xs faint mt-8"></div>
+    <button class="btn btn-primary w-full mt-8" onclick="importBulkReactions()">Import All</button>
+  `, true);
+  const ta = document.getElementById('r_bulk_text');
+  if(ta) ta.addEventListener('input', ()=>{
+    const {rows} = parseBulkReactionText(ta.value);
+    const prev = document.getElementById('r_bulk_preview');
+    if(prev) prev.textContent = ta.value.trim() ? `${rows.length} reaction${rows.length===1?'':'s'} detected.` : '';
+  });
+}
+function parseBulkReactionLine(line){
+  let parts;
+  if(line.includes('\t')) parts = line.split('\t');
+  else if(line.includes('::')) parts = line.split('::');
+  else if(line.includes('|')) parts = line.split('|');
+  else parts = null;
+  if(parts){
+    parts = parts.map(p=>p.trim());
+    const [name, equation, third, fourth] = parts;
+    if(!name || !equation) return null;
+    // 3 columns => (name, equation, notes); 4+ columns => (name, equation, conditions, notes)
+    if(parts.length >= 4) return {name, equation, conditions: third||'', notes: fourth||''};
+    return {name, equation, conditions:'', notes: third||''};
+  }
+  return null; // unlike formulas, a reaction genuinely needs both a name and an equation to be useful
+}
+function parseBulkReactionText(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const rows = [];
+  let skipped = 0;
+  lines.forEach(line=>{
+    const parsed = parseBulkReactionLine(line);
+    if(parsed) rows.push(parsed); else skipped++;
+  });
+  return {rows, skipped};
+}
+function importBulkReactions(){
+  const text = document.getElementById('r_bulk_text').value;
+  if(!text.trim()) return toast('Paste at least one reaction first.');
+  const category = document.getElementById('r_bulk_category').value;
+  const chapter = document.getElementById('r_bulk_chapter').value.trim();
+  const {rows, skipped} = parseBulkReactionText(text);
+  if(!rows.length) return toast('⚠️ Could not read any reactions from that text — make sure each line has at least a name and an equation, separated by :: or a tab.');
+  rows.forEach(r=>{
+    DATA.reactions.push({id:uid(), category, chapter, name:r.name, equation:r.equation, conditions:r.conditions, notes:r.notes});
+  });
+  reactionTab = category;
+  reactionExpanded[category+'::'+(chapter||'General')] = true;
+  save(); closeModal(); render();
+  toast(`📥 Imported ${rows.length} reaction${rows.length===1?'':'s'}.${skipped?` (${skipped} line${skipped===1?'':'s'} skipped — needs both a name and an equation.)`:''}`);
 }
 
 /* ============================================================
@@ -11762,6 +12001,113 @@ function viewAchievements(){
 }
 
 /* ============================================================
+   VIEW: STUDY BUDDY
+   A private accountability log for studying with someone else — deliberately generic
+   (just a name, no relationship label) since who that person is isn't the app's business.
+   Everything here is local to this device, same as the rest of the tracker; there's no
+   real-time sync between two people's devices, this is a personal log of shared sessions.
+   ============================================================ */
+function buddySessionTypes(){ return ['Studied together','Tested each other','Explained a concept','Silent co-study (body doubling)','Other']; }
+function buddyStreak(){
+  const dates = new Set((DATA.studyBuddy.sessions||[]).map(s=>s.date));
+  if(!dates.size) return 0;
+  let streak = 0;
+  let cur = new Date(todayStr());
+  // today doesn't have to be logged yet for the streak to still be "alive" — check yesterday too
+  if(!dates.has(todayStr())){
+    const y = new Date(cur); y.setDate(y.getDate()-1);
+    if(!dates.has(y.toISOString().slice(0,10))) return 0;
+    cur = y;
+  }
+  while(dates.has(cur.toISOString().slice(0,10))){
+    streak++;
+    cur.setDate(cur.getDate()-1);
+  }
+  return streak;
+}
+function setBuddyName(name){
+  DATA.studyBuddy.name = name.trim() || 'Friend';
+  save(); render();
+}
+function viewBuddy(){
+  const sessions = (DATA.studyBuddy.sessions||[]).slice().sort((a,b)=> b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
+  const totalMin = sessions.reduce((s,x)=>s+(Number(x.minutes)||0),0);
+  const streak = buddyStreak();
+  const name = DATA.studyBuddy.name || 'Friend';
+  return `
+  <div class="notebook-hero mb-16">
+    <div class="flex-between flex-wrap gap-10">
+      <div>
+        <div class="eyebrow">🤝 STUDY BUDDY</div>
+        <h2 style="margin:4px 0 0;">Studying with ${esc(name)}</h2>
+        <div class="text-xs muted mt-4">A log of sessions you study with each other — same space, own material, then test each other at the end. This stays private on this device.</div>
+      </div>
+      <button class="btn btn-primary" onclick="openBuddySessionForm()">+ Log Session</button>
+    </div>
+    <div class="grid grid-3 mt-12" style="gap:8px;">
+      <div class="notebook-stat"><div class="eyebrow">Sessions</div><b style="font-size:20px;">${sessions.length}</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Combined time</div><b style="font-size:20px;">${Math.floor(totalMin/60)}h ${totalMin%60}m</b></div>
+      <div class="notebook-stat"><div class="eyebrow">Streak</div><b style="font-size:20px;">🔥 ${streak}d</b></div>
+    </div>
+  </div>
+  <div class="card mb-16">
+    <div class="card-head"><h3>Who you're studying with</h3></div>
+    <div class="field"><label>Name / nickname shown above</label><input value="${esc(name)}" onchange="setBuddyName(this.value)" placeholder="Friend"></div>
+    <div class="text-xs faint mt-4">Just a label for this log — kept simple and private on purpose.</div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Session log</h3></div>
+    ${sessions.length ? sessions.map(s=>`
+      <div class="mb-12" style="padding-bottom:10px; border-bottom:1px solid var(--card-border);">
+        <div class="flex-between">
+          <div class="flex gap-8" style="align-items:center;">
+            <span class="tag tag-info">${esc(s.type||'Studied together')}</span>
+            ${s.subject?`<span class="tag tag-low">${esc(s.subject)}</span>`:''}
+          </div>
+          <div class="flex gap-8"><span class="text-xs faint">${fmtDate(s.date)} · ${s.minutes||0} min</span><button class="icon-btn" onclick="deleteBuddySession('${s.id}')">✕</button></div>
+        </div>
+        ${s.notes?`<div class="mt-8 text-sm">${esc(s.notes)}</div>`:''}
+      </div>
+    `).join('') : `<div class="empty"><div class="big">🤝</div><p>No sessions logged yet. Log one after your next study session together.</p></div>`}
+  </div>
+  `;
+}
+function openBuddySessionForm(){
+  openModal(`
+    <div class="modal-head"><h3>Log a Study Session</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="field-row">
+      <div class="field"><label>Date</label><input type="date" id="b_date" value="${todayStr()}"></div>
+      <div class="field"><label>Duration (min)</label><input type="number" id="b_minutes" placeholder="90" min="1"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Subject (optional)</label><select id="b_subject"><option value="">—</option>${subjectNames().map(s=>`<option>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>Type</label><select id="b_type">${buddySessionTypes().map(t=>`<option>${t}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Notes (optional)</label><textarea id="b_notes" placeholder="What did you cover? Anything you tested each other on?"></textarea></div>
+    <button class="btn btn-primary w-full" onclick="saveBuddySession()">Save</button>
+  `);
+}
+function saveBuddySession(){
+  const minutes = parseInt(document.getElementById('b_minutes').value)||0;
+  if(!minutes) return toast('Add how many minutes you studied together.');
+  DATA.studyBuddy.sessions = DATA.studyBuddy.sessions||[];
+  DATA.studyBuddy.sessions.push({
+    id:uid(),
+    date:document.getElementById('b_date').value||todayStr(),
+    minutes,
+    subject:document.getElementById('b_subject').value,
+    type:document.getElementById('b_type').value,
+    notes:document.getElementById('b_notes').value.trim(),
+    createdAt:Date.now()
+  });
+  save(); closeModal(); render(); toast('Session logged.');
+}
+function deleteBuddySession(id){
+  DATA.studyBuddy.sessions = (DATA.studyBuddy.sessions||[]).filter(s=>s.id!==id);
+  save(); render();
+}
+
+/* ============================================================
    VIEW: HEALTH TRACKER
    ============================================================ */
 function viewHealth(){
@@ -11918,6 +12264,12 @@ function deleteResource(id){ DATA.resources = DATA.resources.filter(r=>r.id!==id
 function viewSettings(){
   return `
   ${pslWeeklyReport()}
+  <div class="card mb-16" style="background:var(--bg-soft);">
+    <div class="flex-between flex-wrap gap-8" style="align-items:center;">
+      <div><span class="text-xs faint">App build</span> <span class="mono text-xs" style="font-weight:600;">${esc(APP_BUILD)}</span></div>
+      <div class="text-xs faint">If this doesn't match what you just deployed, the live site is still serving an old cached copy — hard-refresh (Ctrl+Shift+R).</div>
+    </div>
+  </div>
 
   <div class="grid grid-2">
     <div class="card">
@@ -13071,6 +13423,7 @@ const VIEW_RENDERERS = {
   notes: viewNotes,
   ncert: viewNcert,
   formulas: viewFormulas,
+  reactions: viewReactions,
   doubts: viewDoubts,
   revision: viewRevision,
   pyq: viewPyq,
@@ -13086,6 +13439,7 @@ const VIEW_RENDERERS = {
   goals: viewGoals,
   achievements: viewAchievements,
   health: viewHealth,
+  buddy: viewBuddy,
   resources: viewResources,
   settings: viewSettings,
 };
