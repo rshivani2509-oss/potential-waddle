@@ -1253,7 +1253,7 @@ const STORAGE_KEY = 'pragati_tracker_v1';
 // Bump this string every time this file is edited/deployed. Shown in Settings and in the
 // sidebar footer — the fastest way to confirm a GitHub Pages deploy actually went live,
 // instead of guessing after a hard refresh (see: the entire holiday-plan debugging saga).
-const APP_BUILD = '2026-09-04.10 — Study Buddy section';
+const APP_BUILD = '2026-09-04.11 — clear cloud sync conflict screen';
 const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
 const todayStr = () => new Date().toISOString().slice(0,10);
 const daysBetween = (a,b) => Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -2323,6 +2323,65 @@ function initFirebaseCloud(showToast=false){
     if(showToast && !cloudUser) signInWithGoogle();
   }catch(e){ console.error('Firebase init failed',e); if(showToast) toast('⚠️ Firebase setup failed — check your config and database URL.'); }
 }
+// Summarize a dataset (local or cloud) into a few human-readable facts, so a sync conflict can be
+// resolved by actually looking at what's in each side instead of guessing what "OK" overwrites.
+function summarizeDatasetForSync(d){
+  if(!d) return null;
+  const count = (arr)=> Array.isArray(arr) ? arr.length : (arr && typeof arr==='object' ? Object.keys(arr).length : 0);
+  const editedAt = d.meta && d.meta.lastLocalEdit ? Number(d.meta.lastLocalEdit) : null;
+  return {
+    editedAt,
+    mistakes: count(d.mistakes),
+    formulas: count(d.formulas),
+    reactions: count(d.reactions),
+    plannerEvents: count(d.plannerEvents),
+    studyLog: count(d.studyLog),
+  };
+}
+function syncSummaryLineHTML(s){
+  if(!s) return `<div class="text-xs faint">No data</div>`;
+  const when = s.editedAt ? new Date(s.editedAt).toLocaleString() : 'Unknown (older app version, no timestamp saved)';
+  return `
+    <div class="text-xs faint mb-6">Last edited: <b>${esc(when)}</b></div>
+    <div class="text-xs">📒 ${s.mistakes} mistakes · 📐 ${s.formulas} formulas · ⚗️ ${s.reactions} reactions</div>
+    <div class="text-xs mt-3">📋 ${s.plannerEvents} planner blocks (all time) · 📊 ${s.studyLog} study log entries</div>
+  `;
+}
+// Replaces the old ambiguous OK/Cancel confirm() — that dialog gave no way to tell which
+// dataset actually had more (or newer) content, which is exactly how data got lost by accident:
+// picking the wrong side of a plain "OK / Cancel" with no details to go on.
+function resolveCloudConflict(cloudData, localData){
+  return new Promise(resolve=>{
+    const cloudSummary = summarizeDatasetForSync(cloudData);
+    const localSummary = summarizeDatasetForSync(localData);
+    const cloudNewer = cloudSummary.editedAt && localSummary.editedAt ? cloudSummary.editedAt > localSummary.editedAt
+      : (cloudSummary.editedAt ? true : (localSummary.editedAt ? false : null));
+    window.__cloudConflictResolve = resolve;
+    openModal(`
+      <div class="modal-head"><h3>☁️ Cloud data found for this account</h3></div>
+      <div class="text-xs muted mb-12">This account already has saved data in the cloud, and this device also has its own data. Pick which one to keep — <b>the other one will be overwritten</b>. Compare them below before choosing.</div>
+      <div class="grid grid-2" style="gap:10px;">
+        <div class="card" style="box-shadow:none; border:2px solid ${cloudNewer===true?'var(--accent, #b8860b)':'var(--card-border)'};">
+          <div class="flex-between mb-6"><b>☁️ Cloud data</b>${cloudNewer===true?'<span class="tag tag-info">Looks newer</span>':''}</div>
+          ${syncSummaryLineHTML(cloudSummary)}
+        </div>
+        <div class="card" style="box-shadow:none; border:2px solid ${cloudNewer===false?'var(--accent, #b8860b)':'var(--card-border)'};">
+          <div class="flex-between mb-6"><b>📱 This device</b>${cloudNewer===false?'<span class="tag tag-info">Looks newer</span>':''}</div>
+          ${syncSummaryLineHTML(localSummary)}
+        </div>
+      </div>
+      <div class="text-xs faint mt-10">${cloudNewer===null ? "Couldn't compare timestamps — check the counts above to see which has more of your work." : ''}</div>
+      <div class="flex gap-8 mt-16">
+        <button class="btn btn-outline w-full" onclick="__resolveCloudConflictChoice(false)">📱 Keep this device's data<br><span class="text-xs faint">Uploads it to the cloud, overwriting the cloud copy</span></button>
+        <button class="btn btn-primary w-full" onclick="__resolveCloudConflictChoice(true)">☁️ Use cloud data<br><span class="text-xs faint">Overwrites this device with the cloud copy</span></button>
+      </div>
+    `, true);
+  });
+}
+function __resolveCloudConflictChoice(useCloud){
+  closeModal();
+  if(window.__cloudConflictResolve){ window.__cloudConflictResolve(useCloud); window.__cloudConflictResolve=null; }
+}
 async function attachCloudUser(user, showToast=false){
   try{
     cloudRef=firebaseDb.ref(`users/${user.uid}/data`);
@@ -2330,7 +2389,7 @@ async function attachCloudUser(user, showToast=false){
     const cloudData=snap.val();
     const localMeaningful = hasMeaningfulLocalData(DATA);
     if(cloudData){
-      const useCloud = confirm('Pragati found cloud data for this account.\n\nOK = use cloud data on this device.\nCancel = keep this device\'s data and upload it to the cloud.');
+      const useCloud = await resolveCloudConflict(cloudData, DATA);
       if(useCloud){
         cloudApplying=true; DATA=migrateData(cloudData); localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); cloudApplying=false;
       } else {
@@ -2574,6 +2633,7 @@ function migrateData(d){
 }
 function save(){
   try{
+    if(DATA.meta) DATA.meta.lastLocalEdit = Date.now();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
     scheduleCloudSave();
   }catch(e){
@@ -12262,6 +12322,7 @@ function deleteResource(id){ DATA.resources = DATA.resources.filter(r=>r.id!==id
    VIEW: SETTINGS
    ============================================================ */
 function viewSettings(){
+  const healthIssues = runDataHealthCheck();
   return `
   ${pslWeeklyReport()}
   <div class="card mb-16" style="background:var(--bg-soft);">
@@ -12314,6 +12375,11 @@ function viewSettings(){
       <div class="card-head"><h3>📱 Countdown Wallpaper</h3></div>
       <p class="text-sm muted mb-12">Days left to your exam + today's Top 3, styled for a quick glance or an actual phone wallpaper.</p>
       <button class="btn btn-primary w-full" onclick="openWallpaperExport()">Create Wallpaper</button>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>🩺 Data Health Check</h3>${healthIssues.length ? `<span class="tag tag-high">${healthIssues.length} issue${healthIssues.length===1?'':'s'}</span>` : `<span class="tag tag-low">All clear</span>`}</div>
+      <p class="text-sm muted mb-12">Scans for the sticky-setting and stale-data issues that cause confusing "it's not working" bugs — a stuck generation time window, duplicate planner blocks, oversized storage — and offers one-tap fixes.</p>
+      <button class="btn btn-primary w-full" onclick="openDataHealthCheck()">Run Check</button>
     </div>
     <div class="card">
       <div class="card-head"><h3>💾 Export / Import Backup</h3></div>
@@ -12600,6 +12666,89 @@ function confirmReset(){
     save(); applyTheme(); render();
     toast('All data reset.');
   }
+}
+// ---- Data Health Check ----
+// Scans for the exact class of bug that's caused the most confusing "it's just not working"
+// reports historically: a sticky global setting silently overriding what the student actually
+// asked for on a given day, or stale/duplicate data piling up unnoticed. Each issue gets a plain-
+// language explanation (not just "flag X is true") and, where safe, a one-tap fix.
+function runDataHealthCheck(){
+  const issues = [];
+  const w = DATA.smartPlanTimeWindow;
+  if(w && w.enabled){
+    issues.push({
+      id:'stuckWindow', severity:'warn',
+      title:`"AI Generation Time Window" is stuck on (${w.start}–${w.end})`,
+      detail:`Every time you hit Generate, blocks are being silently squeezed into just ${w.start}–${w.end} — every day, until this is turned off. This is exactly what caused the "only evening got planned" bug before.`,
+      fixLabel:'Turn it off', fix:()=>{ DATA.smartPlanTimeWindow.enabled=false; }
+    });
+  }
+  const pw = DATA.examPreferredWindow;
+  if(pw && pw.start && pw.end){
+    issues.push({
+      id:'examWindow', severity:'info',
+      title:`Exam Preferred Study Window is set (${pw.start}–${pw.end})`,
+      detail:`On days with an active exam-weighted plan, study time is nudged toward this window (skipped automatically on holidays). Harmless if intentional — clear it if you don't remember setting this on purpose.`,
+      fixLabel:'Clear it', fix:()=>{ DATA.examPreferredWindow={start:'',end:''}; }
+    });
+  }
+  const seen = new Map(); let dupCount=0;
+  (DATA.plannerEvents||[]).forEach(b=>{
+    const key=[b.date,b.startTime,b.subject,b.activity].join('|');
+    seen.set(key,(seen.get(key)||0)+1);
+  });
+  seen.forEach(c=>{ if(c>1) dupCount += c-1; });
+  if(dupCount>0){
+    issues.push({
+      id:'dupEvents', severity:'warn',
+      title:`${dupCount} duplicate planner block${dupCount===1?'':'s'} found`,
+      detail:`Same date, time, subject and activity appearing more than once on the timeline — usually leftover from repeated regenerations. Safe to remove the extras; one copy of each is kept.`,
+      fixLabel:'Remove duplicates', fix:()=>{
+        const seen2=new Set();
+        DATA.plannerEvents=(DATA.plannerEvents||[]).filter(b=>{
+          const key=[b.date,b.startTime,b.subject,b.activity].join('|');
+          if(seen2.has(key)) return false;
+          seen2.add(key); return true;
+        });
+      }
+    });
+  }
+  let sizeKB=0;
+  try{ sizeKB = Math.round(JSON.stringify(DATA).length/1024); }catch(e){}
+  if(sizeKB > 3000){
+    issues.push({
+      id:'storageSize', severity:'warn',
+      title:`Saved data is ${(sizeKB/1024).toFixed(1)}MB`,
+      detail:`Browser storage limits vary (often 5–10MB) — getting close increases the risk of a save silently failing. Mistake-notebook photos are usually the biggest contributor. Export a backup now, and consider trimming a few older photos if this keeps growing.`,
+      fixLabel:null
+    });
+  }
+  return issues;
+}
+function openDataHealthCheck(){
+  const issues = runDataHealthCheck();
+  openModal(`
+    <div class="modal-head"><h3>🩺 Data Health Check</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    ${issues.length ? issues.map(i=>`
+      <div class="card mb-10" style="border:1px solid var(--card-border); box-shadow:none;">
+        <div class="flex-between gap-10" style="align-items:start;">
+          <div>
+            <div class="text-sm" style="font-weight:700;">${i.severity==='warn'?'⚠️':'ℹ️'} ${esc(i.title)}</div>
+            <div class="text-xs muted mt-4">${esc(i.detail)}</div>
+          </div>
+          ${i.fixLabel ? `<button class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="applyHealthFix('${i.id}')">${esc(i.fixLabel)}</button>` : ''}
+        </div>
+      </div>
+    `).join('') : `<div class="empty"><div class="big">✅</div><p>No issues found — nothing stuck, nothing duplicated, storage size looks fine.</p></div>`}
+  `);
+}
+function applyHealthFix(id){
+  const issue = runDataHealthCheck().find(i=>i.id===id);
+  if(!issue || !issue.fix) return;
+  issue.fix();
+  save();
+  toast('✅ Fixed.');
+  openDataHealthCheck();
 }
 
 /* ============================================================
