@@ -1253,7 +1253,7 @@ const STORAGE_KEY = 'pragati_tracker_v1';
 // Bump this string every time this file is edited/deployed. Shown in Settings and in the
 // sidebar footer — the fastest way to confirm a GitHub Pages deploy actually went live,
 // instead of guessing after a hard refresh (see: the entire holiday-plan debugging saga).
-const APP_BUILD = '2026-09-04.11 — clear cloud sync conflict screen';
+const APP_BUILD = '2026-09-20.1 — fixed backwards break logic';
 const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
 const todayStr = () => new Date().toISOString().slice(0,10);
 const daysBetween = (a,b) => Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -6179,14 +6179,19 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       // A breather after every study chunk keeps the day realistic instead of a wall-to-wall grind —
       // longer after a full 45+ min sitting, and longer still after a draining task type (solving
       // questions/numericals) than after a lighter one (watching a lecture or reading NCERT).
+      // Whether a break is deserved depends on the chunk just finished, not on whether there's
+      // room left for MORE study afterward — a 60-min chunk that fills most of the slot still
+      // needs its break; clamp its length to whatever room remains rather than skip it outright.
       const breakLen = smartBreakMinutes(chunk, pick.type, pick.subject);
-      if(slot.end - cursor >= breakLen + 15){
-        const breakLabel = breakLen >= 15 ? '🌿 Recovery break — walk, water, reset'
-          : breakLen >= 10 ? '☕ Longer reset — water + stretch + eye rest'
-          : breakLen >= 8 ? '☕ Reset break — water + eye rest'
+      const roomLeftInSlot = slot.end - cursor;
+      if(roomLeftInSlot >= 5){
+        const actualBreak = Math.min(breakLen, roomLeftInSlot);
+        const breakLabel = actualBreak >= 15 ? '🌿 Recovery break — walk, water, reset'
+          : actualBreak >= 10 ? '☕ Longer reset — water + stretch + eye rest'
+          : actualBreak >= 8 ? '☕ Reset break — water + eye rest'
           : '☕ Short reset — breathe + stretch';
-        events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+breakLen), subject:'Break', activity:`${breakLabel} · ${breakLen} min`, done:false, generated:true});
-        cursor += breakLen;
+        events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+actualBreak), subject:'Break', activity:`${breakLabel} · ${actualBreak} min`, done:false, generated:true});
+        cursor += actualBreak;
       }
     }
     // Whatever's left once real chapters run out becomes revision — capped at 45min chunks
@@ -6196,8 +6201,9 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       const activity = DATA.mistakes.length ? 'Mistake Notebook review' : 'Quick revision / flashcards';
       events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+dur), subject:'Revision', activity, done:false, generated:true});
       cursor += dur;
-      if(slot.end - cursor >= 25){
-        const breakLen = smartBreakMinutes(dur, null, 'Revision');
+      const revRoomLeft = slot.end - cursor;
+      if(revRoomLeft >= 5){
+        const breakLen = Math.min(smartBreakMinutes(dur, null, 'Revision'), revRoomLeft);
         events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+breakLen), subject:'Break', activity:`☕ Revision reset · ${breakLen} min`, done:false, generated:true});
         cursor += breakLen;
       }
