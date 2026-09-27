@@ -1253,7 +1253,7 @@ const STORAGE_KEY = 'pragati_tracker_v1';
 // Bump this string every time this file is edited/deployed. Shown in Settings and in the
 // sidebar footer — the fastest way to confirm a GitHub Pages deploy actually went live,
 // instead of guessing after a hard refresh (see: the entire holiday-plan debugging saga).
-const APP_BUILD = '2026-09-20.1 — fixed backwards break logic';
+const APP_BUILD = '2026-09-20.2 — realistic daily study cap & focus-chunk length';
 const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
 const todayStr = () => new Date().toISOString().slice(0,10);
 const daysBetween = (a,b) => Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -1875,7 +1875,15 @@ function freshData(){
       satAakashStart: '17:45', satAakashEnd: '20:45',
       sunAakashStart: '08:30', sunAakashEnd: '17:30',
       schoolDays: ['Mon','Tue','Wed','Thu','Fri'],
-      subtaskPomodoroMin: 25
+      subtaskPomodoroMin: 25,
+      // How much ACTUAL study/revision to schedule per day, regardless of how much clock-time
+      // free time exists. Without this, the generator fills every free minute between wake and
+      // bedtime — technically free time, but far more than most people can sustain. This is the
+      // realistic ceiling; the rest of a free day just stays open instead of being crammed.
+      dailyStudyCapMinutes: 110,
+      // Longest a single study chunk (Lecture/NCERT/Qns step) gets scheduled before a break,
+      // independent of how long the underlying task theoretically takes — matches real focus span.
+      maxFocusChunkMinutes: 40
     },
     slipTests: {
       enabled: true,
@@ -4691,7 +4699,7 @@ const PLANNER_CATEGORY_ICONS = {
   Physics:'⚛️', Chemistry:'🧪', Biology:'🧬', Maths:'📐',
   Revision:'🔁', PYQs:'🧩', 'Mock Test':'📝', NCERT:'📖',
   Break:'☕', Sleep:'🌙', Reflection:'🌟', Other:'🗂️',
-  Vedantu:'🟣', 'Slip Test':'📝', Dinner:'🍽️', Fixed:'🔵'
+  Vedantu:'🟣', 'Slip Test':'📝', Dinner:'🍽️', Fixed:'🔵', Free:'🌿'
 };
 function plannerCategoryIcon(subject){ return PLANNER_CATEGORY_ICONS[subject] || '📌'; }
 // Whichever of today's blocks is happening right now (used by the "Right Now" bar so the
@@ -6031,6 +6039,13 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
   }
   const priorities = taper ? filterPrioritiesForTaper(priorities0) : priorities0;
   const used = new Set();
+  // How much ACTUAL study/revision (not breaks, not fixed commitments) has been placed so far
+  // today. Capped at routine.dailyStudyCapMinutes — a realistic ceiling on what one day can hold,
+  // independent of how much raw free clock-time exists. Counts everything genuinely studied:
+  // Class 11 recap, chosen chapters, and the revision/backlog filler.
+  let studyMinScheduled = 0;
+  const dailyStudyCap = Math.max(15, Number(DATA.routine.dailyStudyCapMinutes) || 110);
+  const maxFocusChunk = Math.max(15, Number(DATA.routine.maxFocusChunkMinutes) || 40);
   // Guarantee daily coverage: at least one topic each for Aakash and School upcoming exams,
   // scheduled before the weighted priority engine fills the rest of the day.
   ['Aakash','School'].forEach(src=>{
@@ -6073,6 +6088,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       const range = consumeFromSlots(free, c11min);
       if(range){
         used.add(c11pick.subject+'::'+c11pick.chapter);
+        studyMinScheduled += c11min;
         const label = c11pick.linkedTo ? `📘 Class 11 Recap — ${c11pick.chapter} (basics for ${c11pick.linkedTo})` : `📘 Class 11 Recap — ${c11pick.chapter}`;
         events.push({id:uid(), date, startTime:toTimeStr(range.start), endTime:toTimeStr(range.end), subject:c11pick.subject, activity:label, done:false, generated:true, chapter:c11pick.chapter, subtasks:[makeSubtask('ncert'), makeSubtask('qns')]});
       }
@@ -6141,6 +6157,7 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
     const level = slotEnergyLevel(slot.start);
     let usedFallback = false;
     while(slot.end - cursor >= 15){
+      if(studyMinScheduled >= dailyStudyCap) break; // realistic daily ceiling reached — leave the rest of the day open
       let remaining = taskPool.filter(t=>!used.has(t.key) && (remainingMin.get(t.key)||0) > 0);
       // Once the chosen chapters run out but real study time is still left, don't dump it
       // all into one long undifferentiated block — pull the next-priority chapters from the
@@ -6155,9 +6172,11 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
       const pick = examPlanAllocationPick(remaining, level, examAllocationState) || pickChapterForEnergy(remaining, level);
       if(!pick) break;
       const want = remainingMin.get(pick.key) || 40;
-      // Cap a single sitting at 60 min for realistic focus — anything longer continues later in
-      // the day (or after a break) rather than one unbroken marathon block.
-      const chunk = Math.max(15, Math.min(want, slot.end-cursor, 60));
+      // Cap a single sitting at the student's real focus span (routine.maxFocusChunkMinutes,
+      // default 40) — anything longer continues later in the day (or after a break) rather than
+      // one unbroken marathon block. Also never schedule past today's realistic study ceiling.
+      const chunk = Math.max(15, Math.min(want, slot.end-cursor, maxFocusChunk, dailyStudyCap-studyMinScheduled));
+      studyMinScheduled += chunk;
       const chosenTopics = selectedTopicMap.get(pick.subject+'::'+pick.chapter) || [];
       let label = pick.slipScore>0 ? `${pick.chapter} — slip test focus` : (pick.revisionScore>0 ? `Revision (Stage ${pick.revisionStage}): ${pick.chapter}` : (pick.examScore>=30 ? `${pick.chapter} — exam prep` : pick.chapter));
       if(chosenTopics.length) label += ` — ${chosenTopics.join(', ')}`;
@@ -6194,10 +6213,13 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
         cursor += actualBreak;
       }
     }
-    // Whatever's left once real chapters run out becomes revision — capped at 45min chunks
-    // with breathers between, instead of one unrealistic multi-hour undifferentiated block.
-    while(slot.end - cursor >= 15){
-      const dur = Math.min(45, slot.end - cursor);
+    // Whatever's left once real chapters run out becomes revision — capped at the student's
+    // real focus span with breathers between, instead of one unrealistic marathon block, and
+    // stops once today's realistic study ceiling is reached rather than filling every free minute.
+    while(slot.end - cursor >= 15 && studyMinScheduled < dailyStudyCap){
+      const dur = Math.min(maxFocusChunk, slot.end - cursor, dailyStudyCap-studyMinScheduled);
+      if(dur < 15) break;
+      studyMinScheduled += dur;
       const activity = DATA.mistakes.length ? 'Mistake Notebook review' : 'Quick revision / flashcards';
       events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+dur), subject:'Revision', activity, done:false, generated:true});
       cursor += dur;
@@ -6207,6 +6229,12 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
         events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(cursor+breakLen), subject:'Break', activity:`☕ Revision reset · ${breakLen} min`, done:false, generated:true});
         cursor += breakLen;
       }
+    }
+    // Once today's realistic study cap is reached, don't leave a silent unexplained gap on the
+    // timeline (which reads as broken) — mark the rest of this slot as deliberately open.
+    if(slot.end - cursor >= 15 && studyMinScheduled >= dailyStudyCap){
+      events.push({id:uid(), date, startTime:toTimeStr(cursor), endTime:toTimeStr(slot.end), subject:'Free', activity:`🌿 Open time — today's realistic study target (${dailyStudyCap}min) is done. Rest, or add more yourself if you want.`, done:false, generated:true});
+      cursor = slot.end;
     }
   });
   const finalGeneratedEvents = examPlanApplyPreferredWindow(events, date);
@@ -7114,6 +7142,7 @@ function viewPlanner(){
       <button class="btn btn-outline" onclick="copyPlanToDate('${date}')">📋 Copy to next day</button>
       <button class="btn btn-outline" onclick="openWeeklyRetrospective()">📊 Weekly Retrospective</button>
       <button class="btn btn-outline" onclick="confirmResetDay('${date}')" title="Wipe every block on this day and start clean — use this if a day's schedule looks stuck or wrong no matter what you do">🧹 Reset This Day</button>
+      <button class="btn btn-outline" onclick="openScheduleBulkImport('${date}')">📥 Paste Schedule</button>
       <button class="btn btn-primary" onclick="openPlannerForm('${date}')">+ Add Time Block</button>
     </div>
   </div>
@@ -7703,6 +7732,129 @@ function savePlannerBlock(editId){
   save(); closeModal(); render(); toast('Time block saved.');
 }
 
+// ---- Bulk Paste Schedule: paste a whole day (study blocks + breaks) as text and generate
+// every time block in one go — same copy/paste pattern as the Formula Book's Bulk Import. ----
+function openScheduleBulkImport(date){
+  openModal(`
+    <div class="modal-head"><h3>📥 Paste Today's Schedule</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs faint mb-8">Paste one block per line, in the format <span class="mono">Start-End :: Subject :: Activity</span>. Works with rows copied from Excel/Google Sheets (tab-separated) too. Use <span class="mono">Break</span> or <span class="mono">Sleep</span> as the subject for rest periods. Activity is optional.</div>
+    <div class="field"><label>Date</label><input type="date" id="sched_bulk_date" value="${date}"></div>
+    <div class="field">
+      <label>Schedule</label>
+      <textarea id="sched_bulk_text" rows="12" style="width:100%; border:1px solid var(--card-border); border-radius:10px; padding:8px 10px; resize:vertical; font-family:monospace; font-size:13px;" placeholder="06:00-06:30 :: Break :: Wake up + freshen
+06:30-08:00 :: Physics :: Ray Optics revision
+08:00-08:30 :: Break :: Breakfast
+08:30-10:00 :: Chemistry :: Organic - GOC practice
+10:00-10:15 :: Break :: Stretch + water
+10:15-11:30 :: Maths :: Straight Lines PYQs"></textarea>
+    </div>
+    <label class="flex gap-8 mt-8" style="align-items:center;">
+      <input type="checkbox" id="sched_bulk_clear" checked style="width:16px; height:16px; accent-color:var(--sage);">
+      <span class="text-sm">Clear this day's existing blocks first (recommended — avoids duplicates)</span>
+    </label>
+    <div id="sched_bulk_preview" class="text-xs faint mt-8"></div>
+    <button class="btn btn-primary w-full mt-8" onclick="importBulkSchedule()">Generate Blocks</button>
+  `, true);
+  const ta = document.getElementById('sched_bulk_text');
+  if(ta) ta.addEventListener('input', ()=>{
+    const {rows, skipped} = parseBulkScheduleText(ta.value);
+    const prev = document.getElementById('sched_bulk_preview');
+    if(!prev) return;
+    if(!ta.value.trim()){ prev.textContent=''; return; }
+    const breaks = rows.filter(r=>r.subject==='Break'||r.subject==='Sleep').length;
+    prev.textContent = `${rows.length} block${rows.length===1?'':'s'} detected (${breaks} break/sleep, ${rows.length-breaks} study/task)${skipped?` · ${skipped} line${skipped===1?'':'s'} skipped (couldn't find a time range)`:''}.`;
+  });
+}
+// Parses "6:00", "6:00 AM", "06:00", "18:00" etc. into a 24-hour "HH:MM" string, or null.
+function parseTimeFlexible(str){
+  if(!str) return null;
+  const m = String(str).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)?$/i);
+  if(!m) return null;
+  let h = parseInt(m[1],10), min = m[2]?parseInt(m[2],10):0;
+  const ap = m[3] ? m[3].toLowerCase().replace(/\./g,'') : null;
+  if(min>59) return null;
+  if(ap==='pm' && h>=1 && h<12) h+=12;
+  if(ap==='am' && h===12) h=0;
+  if(h>23) return null;
+  return String(h).padStart(2,'0')+':'+String(min).padStart(2,'0');
+}
+// Canonicalizes a free-typed subject/category against the planner's known options, so
+// "physics", "PHYSICS", "break" etc. all map to the exact label the rest of the app expects.
+function canonicalScheduleSubject(raw){
+  const known = [...subjectNames(), 'Revision','PYQs','NCERT','Vedantu','Mock Test','Break','Sleep','Fixed','Reflection','Other'];
+  const hit = known.find(k=>k.toLowerCase()===String(raw||'').trim().toLowerCase());
+  if(hit) return hit;
+  if(/break|rest|snack|meal|breakfast|lunch|dinner/i.test(raw||'')) return 'Break';
+  if(/sleep|nap/i.test(raw||'')) return 'Sleep';
+  return null;
+}
+// Splits one line into {start, end, subject, activity}, or null if no time range is found.
+function parseBulkScheduleLine(line){
+  line = line.trim();
+  if(!line) return null;
+  let start, end, rest;
+  if(line.includes('\t')){
+    const parts = line.split('\t').map(p=>p.trim());
+    start = parseTimeFlexible(parts[0]);
+    end = parseTimeFlexible(parts[1]);
+    rest = parts.slice(2).join(' :: ');
+  }else{
+    const timeRe = /\d{1,2}(?::\d{2})?\s*(?:[ap]\.?m\.?)?/gi;
+    const matches = [...line.matchAll(timeRe)];
+    if(matches.length<2) return null;
+    start = parseTimeFlexible(matches[0][0]);
+    end = parseTimeFlexible(matches[1][0]);
+    rest = line.slice(matches[1].index + matches[1][0].length).replace(/^[\s\-–:|]+/,'');
+  }
+  if(!start || !end) return null;
+  let subjectRaw='', activity='';
+  if(rest.includes('::')){
+    const p = rest.split('::').map(s=>s.trim());
+    subjectRaw = p[0]||''; activity = p.slice(1).join(' :: ').trim();
+  }else if(rest.includes('|')){
+    const p = rest.split('|').map(s=>s.trim());
+    subjectRaw = p[0]||''; activity = p.slice(1).join(' | ').trim();
+  }else{
+    const dash = rest.match(/^([^:\-–]+)[\-–:]\s*(.*)$/);
+    if(dash){ subjectRaw=dash[1].trim(); activity=dash[2].trim(); }
+    else subjectRaw = rest.trim();
+  }
+  if(!subjectRaw) return null;
+  const subject = canonicalScheduleSubject(subjectRaw) || 'Other';
+  if(!canonicalScheduleSubject(subjectRaw) && !activity) activity = subjectRaw; // unrecognized label -> keep as activity text
+  return {start, end, subject, activity};
+}
+function parseBulkScheduleText(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const rows=[]; let skipped=0;
+  lines.forEach(line=>{
+    const parsed = parseBulkScheduleLine(line);
+    if(parsed) rows.push(parsed); else skipped++;
+  });
+  return {rows, skipped};
+}
+function importBulkSchedule(){
+  const date = document.getElementById('sched_bulk_date')?.value;
+  const text = document.getElementById('sched_bulk_text')?.value || '';
+  const clearFirst = document.getElementById('sched_bulk_clear')?.checked;
+  if(!date) return toast('Choose a date.');
+  if(!text.trim()) return toast('Paste at least one schedule line first.');
+  const {rows, skipped} = parseBulkScheduleText(text);
+  if(!rows.length) return toast("Couldn't find any time ranges — use e.g. 06:00-07:00 :: Physics :: Optics.");
+  if(!DATA.plannerEvents) DATA.plannerEvents=[];
+  if(clearFirst) DATA.plannerEvents = DATA.plannerEvents.filter(b=>b.date!==date);
+  rows.forEach(r=>{
+    DATA.plannerEvents.push({
+      id:uid(), date, startTime:r.start, endTime:r.end, subject:r.subject,
+      chapter:'', topic:'', activity:r.activity, goals:[], subtasks:[],
+      done:false, generated:false
+    });
+  });
+  plannerViewDate=date;
+  save(); closeModal(); render();
+  toast(`📥 Generated ${rows.length} block${rows.length===1?'':'s'} for ${date}${skipped?` (${skipped} line${skipped===1?'':'s'} skipped)`:''}.`);
+}
+
 // ---- Actual-time calibration: learn each subject's real pace vs. the estimate ----
 // When a study block is marked done, we ask how long it actually took (optional — cancel/blank
 // just skips it) and fold the ratio into a per-subject running average, so future plan durations
@@ -8208,7 +8360,7 @@ function backlogZeroHTML(){
   </div>`;
 }
 function smartCatchUpHTML(){
-  const pending=(DATA.plannerEvents||[]).filter(b=>b.date===todayStr()&&!b.done&&!b.locked&&b.subject!=='Break');
+  const pending=(DATA.plannerEvents||[]).filter(b=>b.date===todayStr()&&!b.done&&!b.locked&&b.subject!=='Break'&&b.subject!=='Free');
   if(!pending.length) return '';
   const b=pending[0];
   return `<div class="ultimate-panel mb-16">
@@ -8257,7 +8409,7 @@ function eventMinutes(e){
 }
 function weeklyReviewStats(){
   const ev=weeklyPlannerEvents();
-  const study=ev.filter(e=>e.subject!=='Break');
+  const study=ev.filter(e=>e.subject!=='Break'&&e.subject!=='Free');
   const planned=study.reduce((a,e)=>a+eventMinutes(e),0);
   const done=study.filter(e=>e.done).reduce((a,e)=>a+eventMinutes(e),0);
   const breaks=ev.filter(e=>e.subject==='Break').reduce((a,e)=>a+eventMinutes(e),0);
@@ -9718,6 +9870,23 @@ function viewRoutine(){
       <div class="card-head"><h3>🧪 Sunday</h3></div>
       <div class="text-xs muted mb-8">The AI planner reserves this entire window automatically.</div>
       <div class="field-row">${routineField('Aakash start','sunAakashStart')}${routineField('Aakash end','sunAakashEnd')}</div>
+    </div>
+  </div>
+
+  <div class="card mt-16" style="background:var(--bg-soft);">
+    <div class="card-head"><h3>🌿 Realistic Pacing</h3></div>
+    <div class="text-xs muted mb-12">The planner used to fill every free minute between wake and bedtime with study — technically free time, but often far more than anyone can actually sustain. These two settings keep the generated plan matched to how you really study, and leave the rest of a free day open instead of cramming it.</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Realistic daily study target (minutes)</label>
+        <input type="number" min="15" step="5" value="${DATA.routine.dailyStudyCapMinutes||110}" onchange="DATA.routine.dailyStudyCapMinutes=Math.max(15,parseInt(this.value)||110); save(); render();">
+        <div class="text-xs faint mt-4">Once this much real study/revision is scheduled, the rest of the day is left open rather than packed further.</div>
+      </div>
+      <div class="field">
+        <label>Longest single focus block (minutes)</label>
+        <input type="number" min="15" step="5" value="${DATA.routine.maxFocusChunkMinutes||40}" onchange="DATA.routine.maxFocusChunkMinutes=Math.max(15,parseInt(this.value)||40); save(); render();">
+        <div class="text-xs faint mt-4">No single sitting is scheduled longer than this before a break, regardless of how long a task theoretically takes.</div>
+      </div>
     </div>
   </div>
 
