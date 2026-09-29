@@ -10158,6 +10158,7 @@ function viewMistakes(){
     </div>
     <div class="flex gap-10 flex-wrap">
       <input placeholder="Search question…" value="${esc(mistakeSearch)}" oninput="mistakeSearch=this.value; render();" style="border:1px solid var(--card-border); border-radius:8px; padding:7px 10px; font-size:13px;">
+      <button class="btn btn-outline" onclick="openMistakeBulkImport()">📥 Paste Mistakes</button>
       <button class="btn btn-primary" onclick="openMistakeForm()">+ Log Mistake</button>
     </div>
   </div>
@@ -10301,6 +10302,73 @@ function saveMistake(){
   mistakeFormPendingImages = [];
   addXP('mistake');
   save(); closeModal(); render(); toast('Mistake logged.');
+}
+// ---- Bulk Paste Mistakes: paste several wrong questions at once, same copy/paste pattern as
+// the Formula Book's Bulk Import, the planner's Paste Schedule, and Paste Tests. ----
+function openMistakeBulkImport(){
+  const subs = allSubjectTabs();
+  openModal(`
+    <div class="modal-head"><h3>📥 Paste Mistakes</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs faint mb-8">Paste one mistake per line, in the format <span class="mono">Subject :: Chapter :: Question :: Mistake type :: Exam source :: Correct concept</span>. Only Subject, Chapter and Question are required. Mistake type should be one of: Concept mistake, Calculation mistake, Silly mistake, Didn't revise, Guessed — anything else falls back to Concept mistake. Works with rows copied from Excel/Sheets (tab-separated) too. Photos can only be added afterward, per mistake.</div>
+    <div class="text-xs faint mb-8">Your subjects: ${subs.map(s=>esc(s)).join(', ')}</div>
+    <div class="field">
+      <label>Mistakes</label>
+      <textarea id="mist_bulk_text" rows="10" style="width:100%; border:1px solid var(--card-border); border-radius:10px; padding:8px 10px; resize:vertical; font-family:monospace; font-size:13px;" placeholder="Physics :: Ray Optics :: A convex lens forms a real image when... :: Concept mistake :: AIATS-3 :: Real image only when object is beyond focus
+Chemistry :: GOC :: IUPAC name of... :: Silly mistake :: School Test :: Watch numbering direction"></textarea>
+    </div>
+    <div id="mist_bulk_preview" class="text-xs faint mt-8"></div>
+    <button class="btn btn-primary w-full mt-8" onclick="importBulkMistakes()">Import All</button>
+  `, true);
+  const ta = document.getElementById('mist_bulk_text');
+  if(ta) ta.addEventListener('input', ()=>{
+    const {rows, skipped} = parseBulkMistakeText(ta.value);
+    const prev = document.getElementById('mist_bulk_preview');
+    if(!prev) return;
+    if(!ta.value.trim()){ prev.textContent=''; return; }
+    prev.textContent = `${rows.length} mistake${rows.length===1?'':'s'} detected${skipped?` · ${skipped} line${skipped===1?'':'s'} skipped (missing subject/chapter/question, or subject not recognized)`:''}.`;
+  });
+}
+const MISTAKE_REASONS = ['Concept mistake','Calculation mistake','Silly mistake',"Didn't revise",'Guessed'];
+function parseBulkMistakeLine(line){
+  line = line.trim();
+  if(!line) return null;
+  let parts;
+  if(line.includes('\t')) parts = line.split('\t').map(p=>p.trim());
+  else if(line.includes('::')) parts = line.split('::').map(p=>p.trim());
+  else return null;
+  const [subjRaw, chapterRaw, question, reasonRaw, examSource, correctConcept] = parts;
+  if(!subjRaw || !chapterRaw || !question) return null;
+  const subject = allSubjectTabs().find(s=>s.toLowerCase()===subjRaw.toLowerCase());
+  if(!subject) return null;
+  const knownChapter = (DATA.subjects?.[subject]?.chapters||[]).find(c=>c.name.toLowerCase()===chapterRaw.toLowerCase());
+  const chapter = knownChapter ? knownChapter.name : chapterRaw;
+  const reason = MISTAKE_REASONS.find(r=>r.toLowerCase()===String(reasonRaw||'').toLowerCase()) || 'Concept mistake';
+  return {subject, chapter, question, reason, examSource:examSource||'', correctConcept:correctConcept||''};
+}
+function parseBulkMistakeText(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const rows=[]; let skipped=0;
+  lines.forEach(line=>{
+    const r = parseBulkMistakeLine(line);
+    if(r) rows.push(r); else skipped++;
+  });
+  return {rows, skipped};
+}
+function importBulkMistakes(){
+  const text = document.getElementById('mist_bulk_text')?.value || '';
+  if(!text.trim()) return toast('Paste at least one mistake first.');
+  const {rows, skipped} = parseBulkMistakeText(text);
+  if(!rows.length) return toast("Couldn't import — check the format: Subject :: Chapter :: Question.");
+  if(!DATA.mistakes) DATA.mistakes=[];
+  rows.forEach(r=>{
+    DATA.mistakes.push({id:uid(), subject:r.subject, chapter:r.chapter, question:r.question, reason:r.reason, examSource:r.examSource, correctConcept:r.correctConcept, date:todayStr(), revisionDates:[], images:[]});
+    const ch = DATA.subjects[r.subject]?.chapters.find(c=>c.name===r.chapter);
+    if(ch) ch.mistakes = (ch.mistakes||0)+1;
+    addXP('mistake');
+  });
+  mistakeTab = rows[rows.length-1].subject;
+  save(); closeModal(); render();
+  toast(`📥 Logged ${rows.length} mistake${rows.length===1?'':'s'}${skipped?` (${skipped} line${skipped===1?'':'s'} skipped)`:''}.`);
 }
 function deleteMistake(id){ DATA.mistakes = DATA.mistakes.filter(m=>m.id!==id); save(); render(); }
 // Attach one or more photos to a mistake that's already been logged (e.g. a scanned answer
@@ -13590,6 +13658,107 @@ function updateTest(id){
   toast(oldDate!==r.date?`📅 Test date changed to ${fmtDate(r.date)}. Planner updated.`:'✏️ Test updated.');
 }
 function deleteTest(id){DATA.upcomingTests=DATA.upcomingTests.filter(t=>t.id!==id);save();render();toast('Test removed.');}
+
+// ---- Bulk Paste Tests: paste several upcoming tests at once, same copy/paste pattern as the
+// Formula Book's Bulk Import and the planner's Paste Schedule. ----
+function openTestBulkImport(){
+  openModal(`
+    <div class="modal-head"><h3>📥 Paste Tests</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="text-xs faint mb-8">Paste one test per line, in the format <span class="mono">Date :: Test Name :: Chapters :: Source :: Exam :: Type</span>. Only Date, Name and Chapters are required — Source/Exam/Type fall back to School/NEET/Other. Separate multiple chapters with commas; each is matched to its subject automatically. Works with rows copied from Excel/Sheets (tab-separated) too.</div>
+    <div class="field">
+      <label>Tests</label>
+      <textarea id="test_bulk_text" rows="10" style="width:100%; border:1px solid var(--card-border); border-radius:10px; padding:8px 10px; resize:vertical; font-family:monospace; font-size:13px;" placeholder="2026-01-15 :: AIATS-5 :: Mechanics, Thermodynamics :: Aakash :: NEET :: Other
+2026-01-18 :: Periodic Test 2 :: Organic Chemistry - GOC :: School :: CBSE :: Periodic Test
+2026-01-20 :: Weekly Test :: Straight Lines :: School :: NEET :: Weekly Test"></textarea>
+    </div>
+    <div id="test_bulk_preview" class="text-xs faint mt-8"></div>
+    <button class="btn btn-primary w-full mt-8" onclick="importBulkTests()">Import All</button>
+  `, true);
+  const ta = document.getElementById('test_bulk_text');
+  if(ta) ta.addEventListener('input', ()=>{
+    const {rows, skipped, unmatchedTotal} = parseBulkTestText(ta.value);
+    const prev = document.getElementById('test_bulk_preview');
+    if(!prev) return;
+    if(!ta.value.trim()){ prev.textContent=''; return; }
+    prev.textContent = `${rows.length} test${rows.length===1?'':'s'} detected${skipped?` · ${skipped} line${skipped===1?'':'s'} skipped (missing date/name/chapter)`:''}${unmatchedTotal?` · ${unmatchedTotal} chapter name${unmatchedTotal===1?'':'s'} not found and will be ignored`:''}.`;
+  });
+}
+// Accepts "2026-01-15", "15-01-2026", "15/01/2026", or anything Date.parse understands.
+function parseDateFlexible(str){
+  if(!str) return null;
+  const s = String(str).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  const parsed = new Date(s);
+  if(!isNaN(parsed.getTime())) return parsed.toISOString().slice(0,10);
+  return null;
+}
+// Finds which subject a chapter name belongs to (case-insensitive), returning {subject, chapter}
+// with the chapter's exact stored name, or null if no subject has a chapter by that name.
+function findChapterOwner(chapterName){
+  const target = String(chapterName||'').trim().toLowerCase();
+  if(!target) return null;
+  for(const s of subjectNames()){
+    const ch = (DATA.subjects?.[s]?.chapters||[]).find(c=>c.name.toLowerCase()===target);
+    if(ch) return {subject:s, chapter:ch.name};
+  }
+  return null;
+}
+function parseBulkTestLine(line){
+  line = line.trim();
+  if(!line) return null;
+  let parts;
+  if(line.includes('\t')) parts = line.split('\t').map(p=>p.trim());
+  else if(line.includes('::')) parts = line.split('::').map(p=>p.trim());
+  else return {error:true};
+  const [dateRaw, name, chaptersRaw, sourceRaw, examRaw, typeRaw] = parts;
+  if(!dateRaw || !name) return {error:true};
+  const date = parseDateFlexible(dateRaw);
+  if(!date) return {error:true};
+  const chapters = [], unmatched = [];
+  (chaptersRaw||'').split(',').map(c=>c.trim()).filter(Boolean).forEach(cn=>{
+    const hit = findChapterOwner(cn);
+    if(hit) chapters.push(hit); else unmatched.push(cn);
+  });
+  if(!chapters.length) return {error:true, unmatched};
+  const sources=['School','Aakash','Vedantu'];
+  const exams=['CBSE','NEET','JEE','Mixed'];
+  const source = sources.find(s=>s.toLowerCase()===String(sourceRaw||'').toLowerCase()) || 'School';
+  const examType = exams.find(s=>s.toLowerCase()===String(examRaw||'').toLowerCase()) || 'NEET';
+  const testType = TEST_TYPES.find(t=>t.toLowerCase()===String(typeRaw||'').toLowerCase()) || 'Other';
+  return {date, name, chapters, unmatched, source, examType, testType};
+}
+function parseBulkTestText(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const rows=[]; let skipped=0, unmatchedTotal=0;
+  lines.forEach(line=>{
+    const r = parseBulkTestLine(line);
+    if(!r || r.error){ skipped++; unmatchedTotal += (r?.unmatched||[]).length; return; }
+    unmatchedTotal += r.unmatched.length;
+    rows.push(r);
+  });
+  return {rows, skipped, unmatchedTotal};
+}
+function importBulkTests(){
+  const text = document.getElementById('test_bulk_text')?.value || '';
+  if(!text.trim()) return toast('Paste at least one test first.');
+  const {rows, skipped, unmatchedTotal} = parseBulkTestText(text);
+  if(!rows.length) return toast("Couldn't import — check the format: Date :: Test Name :: Chapters.");
+  if(!DATA.upcomingTests) DATA.upcomingTests=[];
+  rows.forEach(r=>{
+    const daysLeft = daysBetween(todayStr(), r.date);
+    DATA.upcomingTests.push({
+      id:uid(), name:r.name, date:r.date, source:r.source, testType:r.testType, examType:r.examType,
+      chapters:r.chapters, status: daysLeft<=3?'red':daysLeft<=7?'yellow':'green',
+      schoolWeekly:(r.source==='School' && r.testType.toLowerCase().includes('weekly')),
+      analysisStatus:'pending', analysisNotes:''
+    });
+  });
+  save(); closeModal(); render();
+  toast(`📥 Imported ${rows.length} test${rows.length===1?'':'s'}${skipped?` (${skipped} line${skipped===1?'':'s'} skipped)`:''}${unmatchedTotal?` · ${unmatchedTotal} chapter name${unmatchedTotal===1?'':'s'} not matched`:''}.`);
+}
 function setTestAnalysisStatus(id,status){
   const t=(DATA.upcomingTests||[]).find(x=>x.id===id);if(!t)return;
   t.analysisStatus=status;
@@ -13679,7 +13848,10 @@ function viewTestCalendar(){
   return `
   <div class="flex-between mb-16">
     <div class="section-desc" style="margin:0;">Every upcoming School / Aakash / Vedantu test in one place, with syllabus overlap analysis.</div>
-    <button class="btn btn-primary" onclick="openTestForm()">+ Add Test</button>
+    <div class="flex gap-8 flex-wrap">
+      <button class="btn btn-outline" onclick="openTestBulkImport()">📥 Paste Tests</button>
+      <button class="btn btn-primary" onclick="openTestForm()">+ Add Test</button>
+    </div>
   </div>
 
   <div class="card mb-16">
