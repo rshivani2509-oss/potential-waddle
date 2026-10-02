@@ -288,6 +288,10 @@ tr:hover td{ background: var(--bg-soft); }
 /* ---------- Toast ---------- */
 #toastHost{ position:fixed; bottom:22px; right:22px; z-index:400; display:flex; flex-direction:column; gap:8px;}
 .toast{ background: var(--ink); color:white; padding:11px 16px; border-radius: var(--radius-sm); font-size:13px; box-shadow: var(--shadow-hover); animation: slideIn .25s ease; }
+.toast-action{ display:flex; align-items:center; gap:12px; }
+.toast-actions{ display:flex; gap:8px; flex-shrink:0; }
+.toast-btn{ background:rgba(255,255,255,.14); color:inherit; border:1px solid rgba(255,255,255,.3); border-radius:6px; padding:4px 9px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.toast-btn:hover{ background:rgba(255,255,255,.24); }
 @keyframes slideIn{ from{ transform:translateY(10px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
 
 /* ---------- Wellness: breathing circle ---------- */
@@ -1867,6 +1871,13 @@ function freshData(){
       schoolStart: '08:00', schoolEnd: '17:30',
       reachHomeTime: '18:00',
       bedtime: '22:30',
+      // Meals are locked out like any other fixed commitment, so the generator never schedules
+      // study over them and never leaves an untouched multi-hour gap spanning a mealtime.
+      // Weekdays use reachHomeTime as the dinner anchor (see getFixedBlocksForDate); dinnerTime
+      // below is only used on Saturday/Sunday, where there's no "reach home" anchor.
+      breakfastTime: '07:00', breakfastDuration: 20,
+      lunchTime: '13:00', lunchDuration: 30,
+      dinnerTime: '20:00', dinnerDuration: 30,
       class11Enabled: true, class11DailyMin: 15,
       vedantuSlot1Start: '18:30', vedantuSlot1End: '20:00',
       vedantuSlot2Start: '20:00', vedantuSlot2End: '22:00',
@@ -2656,6 +2667,75 @@ function toast(msg, ms=2600){
   t.className = 'toast'; t.textContent = msg;
   host.appendChild(t);
   setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, ms);
+}
+// ---- Action toasts: a toast with one or two buttons (Undo, Export backup), used by the
+// bulk-paste importers below so a bad paste is one tap to reverse instead of manual cleanup. ----
+let __toastCallbacks = {};
+function registerToastCallback(fn){
+  const key = 'tc_'+Math.random().toString(36).slice(2);
+  __toastCallbacks[key] = fn;
+  return key;
+}
+function runToastCallback(key){
+  const fn = __toastCallbacks[key];
+  if(fn) fn();
+  delete __toastCallbacks[key];
+}
+function actionToast(msg, {undoFn, showExportNudge}={}, ms){
+  const host = document.getElementById('toastHost');
+  const t = document.createElement('div');
+  t.className = 'toast toast-action';
+  let btns = '';
+  if(undoFn){
+    const key = registerToastCallback(()=>{ undoFn(); t.remove(); });
+    btns += `<button class="toast-btn" onclick="runToastCallback('${key}')">Undo</button>`;
+  }
+  if(showExportNudge) btns += `<button class="toast-btn" onclick="exportData()">Export backup</button>`;
+  t.innerHTML = `<span>${esc(msg)}</span>${btns?`<span class="toast-actions">${btns}</span>`:''}`;
+  host.appendChild(t);
+  const dur = ms || (undoFn ? 8000 : 3400);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, dur);
+}
+// ---- Small Levenshtein-distance fuzzy matcher, used to forgive typos/abbreviations
+// ("Bio", "Chem") when a bulk-paste line names a subject. ----
+function levenshteinDist(a,b){
+  const dp = Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));
+  for(let i=0;i<=a.length;i++) dp[i][0]=i;
+  for(let j=0;j<=b.length;j++) dp[0][j]=j;
+  for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++)
+    dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1]);
+  return dp[a.length][b.length];
+}
+function fuzzyMatchSubject(raw){
+  const target = String(raw||'').trim().toLowerCase().replace(/[^a-z]/g,'');
+  if(!target) return null;
+  const subs = allSubjectTabs();
+  const norm = s => s.toLowerCase().replace(/[^a-z]/g,'');
+  let hit = subs.find(s=>norm(s)===target);
+  if(hit) return hit;
+  if(target.length>=3){
+    const prefixHits = subs.filter(s=>norm(s).startsWith(target));
+    if(prefixHits.length===1) return prefixHits[0];
+  }
+  if(target.length>=3){
+    let best=null, bestDist=Infinity;
+    subs.forEach(s=>{ const d=levenshteinDist(target, norm(s)); if(d<bestDist){bestDist=d;best=s;} });
+    if(best && bestDist<=2) return best;
+  }
+  return null;
+}
+// ---- Generic wiring for a bulk-paste textarea + live preview line, shared by every
+// "Paste ..." bulk importer (Schedule, Tests, Mistakes) so the boilerplate lives in one place. ----
+function wireBulkImportPreview(textareaId, previewId, parseTextFn, formatPreviewFn){
+  const ta = document.getElementById(textareaId);
+  if(!ta) return;
+  ta.addEventListener('input', ()=>{
+    const prev = document.getElementById(previewId);
+    if(!prev) return;
+    if(!ta.value.trim()){ prev.innerHTML=''; return; }
+    const parsed = parseTextFn(ta.value);
+    prev.innerHTML = formatPreviewFn(parsed);
+  });
 }
 
 /* ---------------- Modal ---------------- */
@@ -4766,21 +4846,32 @@ function getSlipTestSubject(date){
 // Fixed/locked commitments for a given date, from the editable Master Schedule
 function getFixedBlocksForDate(date){
   const ov = (DATA.scheduleOverrides||{})[date] || {};
-  if(ov.holiday) return []; // whole day free — no school/travel/tuition blocks
   const r = { ...DATA.routine, ...(ov.schoolStart?{schoolStart:ov.schoolStart}:{}), ...(ov.schoolEnd?{schoolEnd:ov.schoolEnd}:{}) };
   const abbr = dayAbbr(date), dt = dayType(date);
+  const mealEnd = (start, mins) => toTimeStr(toMin(start) + Math.max(5, mins||20));
   const blocks = [];
+  // Meals apply every day, holidays included, so a generated plan never leaves a long "Open
+  // time" gap sitting over breakfast/lunch/dinner untouched.
+  if(r.breakfastTime) blocks.push({start:r.breakfastTime, end:mealEnd(r.breakfastTime, r.breakfastDuration), label:'🍳 Breakfast'});
+  if(r.lunchTime) blocks.push({start:r.lunchTime, end:mealEnd(r.lunchTime, r.lunchDuration), label:'🍲 Lunch'});
+  if(ov.holiday){
+    // Whole day free otherwise — no school/travel/tuition/Aakash blocks — but meals still apply.
+    if(r.dinnerTime) blocks.push({start:r.dinnerTime, end:mealEnd(r.dinnerTime, r.dinnerDuration), label:'🍽️ Dinner'});
+    return blocks.filter(b=>b.start && b.end && toMin(b.end) > toMin(b.start));
+  }
   if(dt==='weekday'){
     blocks.push({start:r.morningStudyEnd, end:r.getReadyEnd, label:'Get Ready'});
     blocks.push({start:r.getReadyEnd, end:r.schoolStart, label:'🚌 Travel to School'});
     blocks.push({start:r.schoolStart, end:r.schoolEnd, label:'🏫 School'});
     blocks.push({start:r.schoolEnd, end:r.reachHomeTime, label:'🚌 Travel Home'});
-    blocks.push({start:r.reachHomeTime, end:toTimeStr(toMin(r.reachHomeTime)+30), label:'🍽️ Dinner & Rest'});
+    blocks.push({start:r.reachHomeTime, end:mealEnd(r.reachHomeTime, r.dinnerDuration), label:'🍽️ Dinner & Rest'});
     if(!ov.noTuition && (r.tuitionDays||[]).includes(abbr)) blocks.push({start:r.tuitionStart, end:r.tuitionEnd, label:'➗ Math Tuition'});
   } else if(dt==='saturday'){
     if(!ov.noAakash) blocks.push({start:r.satAakashStart, end:r.satAakashEnd, label:'🟣 Aakash'});
+    if(r.dinnerTime) blocks.push({start:r.dinnerTime, end:mealEnd(r.dinnerTime, r.dinnerDuration), label:'🍽️ Dinner'});
   } else {
     if(!ov.noAakash) blocks.push({start:r.sunAakashStart, end:r.sunAakashEnd, label:'🟣 Aakash (Full Day)'});
+    if(r.dinnerTime) blocks.push({start:r.dinnerTime, end:mealEnd(r.dinnerTime, r.dinnerDuration), label:'🍽️ Dinner'});
   }
   return blocks.filter(b=>b.start && b.end && toMin(b.end) > toMin(b.start));
 }
@@ -9857,6 +9948,23 @@ function viewRoutine(){
         ${days.map(d=>`<label class="flex" style="align-items:center; gap:4px; font-size:12.5px;"><input type="checkbox" ${ (r.tuitionDays||[]).includes(d)?'checked':''} onchange="toggleTuitionDay('${d}')"> ${d}</label>`).join('')}
       </div>
       <div class="field-row">${routineField('Tuition start','tuitionStart')}${routineField('Tuition end','tuitionEnd')}</div>
+    </div>
+  </div>
+
+  <div class="card mb-16" style="background:var(--bg-soft);">
+    <div class="card-head"><h3>🍽️ Meals</h3></div>
+    <div class="text-xs muted mb-12">Locked out every day like any other fixed commitment — the generated plan never schedules study over these, and never leaves a long open gap sitting over a mealtime. Weekday dinner stays tied to "Reach home by" above; the dinner time here is only used on Saturday/Sunday/holidays.</div>
+    <div class="field-row">
+      <div class="field"><label>Breakfast time</label><input type="time" value="${r.breakfastTime||'07:00'}" onchange="DATA.routine.breakfastTime=this.value; save(); render();"></div>
+      <div class="field"><label>Duration (min)</label><input type="number" min="5" step="5" value="${r.breakfastDuration||20}" onchange="DATA.routine.breakfastDuration=Math.max(5,parseInt(this.value)||20); save(); render();"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Lunch time</label><input type="time" value="${r.lunchTime||'13:00'}" onchange="DATA.routine.lunchTime=this.value; save(); render();"></div>
+      <div class="field"><label>Duration (min)</label><input type="number" min="5" step="5" value="${r.lunchDuration||30}" onchange="DATA.routine.lunchDuration=Math.max(5,parseInt(this.value)||30); save(); render();"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Dinner time (Sat/Sun/holiday)</label><input type="time" value="${r.dinnerTime||'20:00'}" onchange="DATA.routine.dinnerTime=this.value; save(); render();"></div>
+      <div class="field"><label>Duration (min)</label><input type="number" min="5" step="5" value="${r.dinnerDuration||30}" onchange="DATA.routine.dinnerDuration=Math.max(5,parseInt(this.value)||30); save(); render();"></div>
     </div>
   </div>
 
