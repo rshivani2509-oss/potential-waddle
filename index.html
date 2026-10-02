@@ -6248,7 +6248,10 @@ function generateTodaysPlan(date, selectedChapters, class11Override, vedantuOver
     const level = slotEnergyLevel(slot.start);
     let usedFallback = false;
     while(slot.end - cursor >= 15){
-      if(studyMinScheduled >= dailyStudyCap) break; // realistic daily ceiling reached — leave the rest of the day open
+      // The realistic daily cap only governs auto-filled days. When the student explicitly chose
+      // chapters/time blocks in the Generate Plan modal (selectedSet present), that choice IS the
+      // pacing decision — honor it in full rather than silently truncating it into "Open time".
+      if(!selectedSet && studyMinScheduled >= dailyStudyCap) break; // realistic daily ceiling reached — leave the rest of the day open
       let remaining = taskPool.filter(t=>!used.has(t.key) && (remainingMin.get(t.key)||0) > 0);
       // Once the chosen chapters run out but real study time is still left, don't dump it
       // all into one long undifferentiated block — pull the next-priority chapters from the
